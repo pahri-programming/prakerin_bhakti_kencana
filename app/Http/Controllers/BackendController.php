@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Models\Booking;
 
 class BackendController extends Controller
 {
@@ -11,7 +12,8 @@ class BackendController extends Controller
      */
     public function index()
     {
-      return view('backend.index');
+      $booking = Booking::with(['user', 'ruangan'])->latest()->get();
+      return view('backend.index', compact('booking'));
     }
 
     /**

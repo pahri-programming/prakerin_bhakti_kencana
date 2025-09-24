@@ -12,8 +12,6 @@
             
             </ul>
 
-           
-
             <div class="d-block d-lg-none py-4">
               <a href="./main/index.html" class="text-nowrap logo-img">
                 <img src="{{asset('assets/backend/images/logos/dark-logo.svg')}}" class="dark-logo" alt="Logo-Dark" />

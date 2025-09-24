@@ -13,7 +13,9 @@ class UserController extends Controller
      */
     public function index()
     {
-        $user = User::OrderBy('id', 'DESC')->get();
+        $user = User::orderByDesc('isAdmin') // admin (1) muncul duluan
+            ->orderBy('name')                    // kalau mau diurutkan juga per nama
+            ->get();
         return view('backend.user.index', compact('user'));
     }
 
@@ -39,11 +41,10 @@ class UserController extends Controller
         $user->name     = $request->name;
         $user->email    = $request->email;
         $user->password = Hash::make($request->password);
-        $user->is_admin = $request->Hash('is_admin'); // Set is_admin berdasarkan input
         $user->save();
 
         toast('User Berhasil Ditambahkan!', 'success');
-        return redirect()->route('admin.user.index')->with('success', 'User created successfully.');
+        return redirect()->route('backend.user.index')->with('success', 'User created successfully.');
     }
 
     /**
@@ -81,22 +82,23 @@ class UserController extends Controller
             $user->password = Hash::make($request->password);
         }
 
-        $user->is_admin = $request->Hash('is_admin'); // Set is_admin berdasarkan input
+        $user->isAdmin = $request->Hash('isAdmin'); // Set isAdmin berdasarkan input
         $user->save();
 
         toast('User Berhasil Diupdate!', 'success');
-        return redirect()->route('admin.user.index')->with('success', 'User updated successfully.');
+        return redirect()->route('backend.user.index')->with('success', 'User updated successfully.');
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
-    {
-        $user = User::findOrFail($id);
-        $user->delete();
 
-        toast('User Berhasil Dihapus!', 'success');
-        return redirect()->route('admin.user.index')->with('success', 'User deleted successfully.');    
+    public function destroy(User $user)
+    {
+
+        $user->delete();
+        toast('Data Akun berhasil dihapus', 'success');
+        return redirect()->route('backend.user.index');
     }
+
 }

@@ -1,16 +1,37 @@
+<style>
+    .logo-img {
+        height: 60px;
+        width: auto;
+        object-fit: contain;
+    }
+
+    .brand-text {
+        letter-spacing: 0.5px;
+        /* agak renggang biar elegan */
+        color: #2c3e50;
+        /* abu gelap */
+    }
+
+    .brand-logo {
+        border-bottom: 1px solid #eee;
+        /* biar kayak header sidebar */
+    }
+</style>
 <aside class="left-sidebar with-vertical">
     <div><!-- ---------------------------------- -->
         <!-- Start Vertical Layout Sidebar -->
         <!-- ---------------------------------- -->
-        <div class="brand-logo d-flex align-items-center justify-content-between">
-            <a href="{{ asset('assets/main/index.html') }}" class="text-nowrap logo-img">
-                <img src="{{ asset('assets/backend/images/logos/dark-logo.svg') }}" class="dark-logo" alt="Logo-Dark" />
-                <img src="{{ asset('assets/backend/images/logos/light-logo.svg') }}" class="light-logo" alt="Logo-light" />
+        <div class="brand-logo d-flex align-items-center justify-content-between px-3 py-2">
+            <a href="{{ asset('assets/main/index.html') }}" class="d-flex align-items-center text-decoration-none">
+                <img src="{{ asset('assets/backend/images/logos/ubk2.png') }}" alt="Logo" class="logo-img me-2" />
+                <span class="brand-text fw-semibold fs-5 text-dark">Bhakti Kencana</span>
             </a>
             <a href="javascript:void(0)" class="sidebartoggler ms-auto text-decoration-none fs-5 d-block d-xl-none">
                 <i class="ti ti-x"></i>
             </a>
         </div>
+
+
 
         <nav class="sidebar-nav scroll-sidebar" data-simplebar>
             <ul id="sidebarnav">
@@ -49,11 +70,12 @@
                     <span class="hide-menu">Menu</span>
                 </li>
                 <li class="sidebar-item">
-                    <a class="sidebar-link" href="./main/page-pricing.html" aria-expanded="false">
-                        <span>
-                            <i class="ti ti-currency-dollar"></i>
-                        </span>
-                        <span class="hide-menu">Pricing</span>
+                    <a class="sidebar-link" href="{{ route('backend.user.index') }}" aria-expanded="false">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+                            <path fill="currentColor"
+                                d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5s-3 1.34-3 3s1.34 3 3 3m-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5S5 6.34 5 8s1.34 3 3 3m0 2c-2.33 0-7 1.17-7 3.5V20h14v-3.5c0-2.33-4.67-3.5-7-3.5m8 0c-.29 0-.62.02-.97.05c1.16.84 1.97 1.97 1.97 3.45V20h6v-3.5c0-2.33-4.67-3.5-7-3.5" />
+                        </svg>
+                        <span class="hide-menu">Table Akun</span>
                     </a>
                 </li>
         </nav>

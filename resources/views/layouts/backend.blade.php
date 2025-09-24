@@ -8,7 +8,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <!-- Favicon icon-->
-    <link rel="shortcut icon" type="image/png" href="{{ asset('assets/backend/images/logos/favicon.png') }}" />
+    <link rel="shortcut icon" type="image/jpg" href="{{ asset('assets/backend/images/logos/ubk.jpg') }}" />
 
     <!-- Core Css -->
     <link rel="stylesheet" href="{{ asset('assets/backend/css/styles.css') }}" />
@@ -35,9 +35,11 @@
         </div>
     </div>
     <!-- Preloader -->
-    <div class="preloader">
-        <img src="{{ asset('assets/backend/images/logos/favicon.png') }}" alt="loader" class="lds-ripple img-fluid" />
+    <div class="preloader" style="text-align:center; padding-top: 200px;">
+        <img src="{{ asset('assets/backend/images/logos/ubk2.png') }}" alt="loader" width="250" height="250">
     </div>
+
+
     <div id="main-wrapper">
         <!-- Sidebar Start -->
         @include('layouts.components-backend.sidebar')

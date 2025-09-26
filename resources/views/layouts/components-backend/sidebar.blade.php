@@ -78,6 +78,14 @@
                         <span class="hide-menu">Table Akun</span>
                     </a>
                 </li>
+                <li class="sidebar-item">       
+                    <a class="sidebar-link" href="{{ route('backend.ruangan.index') }}" aria-expanded="false">
+                        <span>
+                            <i class="ti ti-door"></i>
+                        </span>
+                        <span class="hide-menu">Ruangan</span>
+                    </a>
+                </li>
         </nav>
 
         {{-- profile akun --}}

@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Http\Controllers\Backend;
 
 use App\Http\Controllers\Controller;
@@ -39,27 +38,35 @@ class RuanganController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'cover'       => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'cover'        => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'kode_ruangan' => 'required|string|max:100|unique:ruangans,kode_ruangan',
             'nama_ruangan' => 'required|string|max:255',
-            'kapasitas'   => 'required|string|max:250',
-            'fasilitas'   => 'required|string',
+            'kapasitas'    => 'required|string|max:250',
+            'lokasi'       => 'nullable|string|max:255',
+            'fasilitas'    => 'required|string',
         ]);
 
         $ruangan = new ruangan();
-        
         if ($request->hasFile('cover')) {
-            $image      = $request->file('cover');
-            $imageName  = time() . '_' . Str::slug($request->nama_ruangan) . '.' . $image->getClientOriginalExtension();
-            $imagePath  = $image->storeAs('public/ruangan', $imageName);
-            $ruangan->cover = $imageName;
+            $image     = $request->file('cover');
+            $imageName = time() . '_' . Str::slug($request->nama_ruangan) . '.' . $image->getClientOriginalExtension();
+
+            // simpan ke storage/app/public/ruangan
+            $path = $image->storeAs('ruangan', $imageName, 'public');
+
+                                     // simpan path ke database
+            $ruangan->cover = $path; // hasilnya: "ruangan/nama_file.jpg"
         }
+
+        $ruangan->kode_ruangan = $request->kode_ruangan;
         $ruangan->nama_ruangan = $request->nama_ruangan;
         $ruangan->kapasitas    = $request->kapasitas;
+        $ruangan->lokasi       = $request->lokasi;
         $ruangan->fasilitas    = $request->fasilitas;
         $ruangan->save();
 
         toast('Ruangan Berhasil Ditambahkan!', 'success');
-        return redirect()->route('admin.ruangan.index')->with('success', 'Ruangan created successfully.');
+        return redirect()->route('backend.ruangan.index')->with('success', 'Ruangan created successfully.');
     }
 
     /**
@@ -86,33 +93,38 @@ class RuanganController extends Controller
     public function update(Request $request, string $id)
     {
         $request->validate([
-            'cover'       => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'cover'        => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'kode_ruangan' => 'required|string|max:100|unique:ruangans,kode_ruangan,' . $id,
             'nama_ruangan' => 'required|string|max:255',
-            'kapasitas'   => 'required|string|max:250',
-            'fasilitas'   => 'required|string',
+            'kapasitas'    => 'required|string|max:250',
+            'lokasi'       => 'nullable|string|max:255',
+            'fasilitas'    => 'required|string',
+
         ]);
 
         $ruangan = ruangan::findOrFail($id);
-
         if ($request->hasFile('cover')) {
-            // Hapus gambar lama jika ada
-            if ($ruangan->cover && Storage::exists('public/ruangan/' . $ruangan->cover)) {
-                Storage::delete('public/ruangan/' . $ruangan->cover);
+            // hapus gambar lama
+            if ($ruangan->cover && Storage::disk('public')->exists($ruangan->cover)) {
+                Storage::disk('public')->delete($ruangan->cover);
             }
 
-            $image      = $request->file('cover');
-            $imageName  = time() . '_' . Str::slug($request->nama_ruangan) . '.' . $image->getClientOriginalExtension();
-            $imagePath  = $image->storeAs('public/ruangan', $imageName);
-            $ruangan->cover = $imageName;
+            $image     = $request->file('cover');
+            $imageName = time() . '_' . Str::slug($request->nama_ruangan) . '.' . $image->getClientOriginalExtension();
+            $path      = $image->storeAs('ruangan', $imageName, 'public');
+
+            $ruangan->cover = $path;
         }
 
+        $ruangan->kode_ruangan = $request->kode_ruangan;
         $ruangan->nama_ruangan = $request->nama_ruangan;
         $ruangan->kapasitas    = $request->kapasitas;
+        $ruangan->lokasi       = $request->lokasi;
         $ruangan->fasilitas    = $request->fasilitas;
         $ruangan->save();
 
         toast('Ruangan Berhasil Diupdate!', 'success');
-        return redirect()->route('admin.ruangan.index')->with('success', 'Ruangan updated successfully.');
+        return redirect()->route('backend.ruangan.index')->with('success', 'Ruangan updated successfully.');
     }
 
     /**
@@ -129,6 +141,6 @@ class RuanganController extends Controller
         $ruangan->delete();
 
         toast('Ruangan Berhasil Dihapus!', 'success');
-        return redirect()->route('admin.ruangan.index')->with('success', 'Ruangan deleted successfully.');
+        return redirect()->route('backend.ruangan.index')->with('success', 'Ruangan deleted successfully.');
     }
 }

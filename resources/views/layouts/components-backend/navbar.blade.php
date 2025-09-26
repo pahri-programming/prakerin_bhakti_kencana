@@ -9,15 +9,7 @@
                   <i class="ti ti-menu-2"></i>
                 </a>
               </li>
-            
             </ul>
-
-            <div class="d-block d-lg-none py-4">
-              <a href="./main/index.html" class="text-nowrap logo-img">
-                <img src="{{asset('assets/backend/images/logos/dark-logo.svg')}}" class="dark-logo" alt="Logo-Dark" />
-                <img src="{{asset('assets/backend/images/logos/light-logo.svg')}}" class="light-logo" alt="Logo-light" />
-              </a>
-            </div>
             <a class="navbar-toggler nav-icon-hover-bg rounded-circle p-0 mx-0 border-0" href="javascript:void(0)" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
               <i class="ti ti-dots fs-7"></i>
             </a>

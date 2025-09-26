@@ -82,7 +82,6 @@ class UserController extends Controller
             $user->password = Hash::make($request->password);
         }
 
-        $user->isAdmin = $request->Hash('isAdmin'); // Set isAdmin berdasarkan input
         $user->save();
 
         toast('User Berhasil Diupdate!', 'success');

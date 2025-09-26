@@ -14,8 +14,10 @@ return new class extends Migration
         Schema::create('ruangans', function (Blueprint $table) {
             $table->id();
             $table->string('cover');
+            $table->string('kode_ruangan')->unique();
             $table->string('nama_ruangan');
             $table->string('kapasitas');
+            $table->string('lokasi')->nullable();
             $table->text('fasilitas');
             $table->timestamps();
         });

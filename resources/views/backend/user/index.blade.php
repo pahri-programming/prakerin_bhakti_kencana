@@ -10,9 +10,8 @@
                 <div class="card">
                     <div class="card-header bg-secondary text-white">
                         Data Akun
-                        <a href="{{ route('backend.user.create') }}" class="btn btn-info btn-sm"
-                            style="text-color:white;  float: right">
-                            Tambah
+                        <a href="{{ route('backend.user.create') }}" class="btn btn-success btn-sm float-end">
+                            <i class="ti ti-plus fs-5"></i> Tambah Akun
                         </a>
                     </div>
                     <div class="card-body">
@@ -39,14 +38,14 @@
                                             <td>
                                                 <a href="{{ route('backend.user.edit', $data->id) }}"
                                                     class="btn btn-sm btn-warning">
-                                                    Edit
+                                                    <i class="ti ti-pencil me-1"></i>Edit
                                                 </a>
                                                 @if ($data->isAdmin == 1 && $loop->first)
                                                 @else
                                                     <a href="{{ route('backend.user.destroy', $data->id) }}"
                                                         class="btn btn-sm btn-danger"
                                                         onclick="event.preventDefault(); if(confirm('Yakin hapus akun ini?')) { document.getElementById('delete-form-{{ $data->id }}').submit(); }">
-                                                        Delete
+                                                       <i class="ti ti-trash me-1"></i> Delete
                                                     </a>
                                                     <form id="delete-form-{{ $data->id }}"
                                                         action="{{ route('backend.user.destroy', $data->id) }}"

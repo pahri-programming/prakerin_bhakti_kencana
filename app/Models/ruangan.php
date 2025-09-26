@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class ruangan extends Model
 {
-    protected $fillable = ['cover', 'nama_ruangan', 'kapasitas', 'fasilitas'];
+    protected $fillable = ['cover', 'kode_ruangan','nama_ruangan',  'kapasitas', 'lokasi', 'fasilitas'];
 
     public function booking()
     {

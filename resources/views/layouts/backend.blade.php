@@ -27,8 +27,8 @@
         <div class="toast-body hstack align-items-start gap-6">
             <i class="ti ti-alert-circle fs-6"></i>
             <div>
-                <h5 class="text-white fs-3 mb-1">Welcome to Modernize</h5>
-                <h6 class="text-white fs-2 mb-0">Easy to costomize the Template!!!</h6>
+                <h5 class="text-white fs-3 mb-1">Welcome to Bhakti Kencana</h5>
+                <p class="mb-0">Selamat datang di halaman admin Bhakti Kencana University</p>
             </div>
             <button type="button" class="btn-close btn-close-white fs-2 m-0 ms-auto shadow-none"
                 data-bs-dismiss="toast" aria-label="Close"></button>

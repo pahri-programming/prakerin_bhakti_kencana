@@ -132,15 +132,18 @@ class RuanganController extends Controller
      */
     public function destroy(string $id)
     {
-        $ruangan = ruangan::findOrFail($id);
+        $ruangan = Ruangan::findOrFail($id);
+
         // Hapus gambar lama jika ada
-        if ($ruangan->cover && Storage::exists('public/ruangan/' . $ruangan->cover)) {
-            Storage::delete('public/ruangan/' . $ruangan->cover);
+        if ($ruangan->cover && Storage::disk('public')->exists($ruangan->cover)) {
+            Storage::disk('public')->delete($ruangan->cover);
         }
 
+        // Hapus data ruangan
         $ruangan->delete();
 
         toast('Ruangan Berhasil Dihapus!', 'success');
         return redirect()->route('backend.ruangan.index')->with('success', 'Ruangan deleted successfully.');
+
     }
 }

@@ -58,7 +58,7 @@ class JadwalController extends Controller
         $jadwal->save();
 
         toast('Jadwal Berhasil Ditambahkan!', 'success');
-        return redirect()->route('admin.jadwal.index')->with('success', 'Jadwal created successfully.');
+        return redirect()->route('backend.jadwal.index')->with('success', 'Jadwal created successfully.');
     }
 
     /**
@@ -104,7 +104,7 @@ class JadwalController extends Controller
         $jadwal->save();
 
         toast('Jadwal Berhasil Diperbarui!', 'success');
-        return redirect()->route('admin.jadwal.index')->with('success', 'Jadwal updated successfully.');
+        return redirect()->route('backend.jadwal.index')->with('success', 'Jadwal updated successfully.');
     }
 
     /**
@@ -116,6 +116,6 @@ class JadwalController extends Controller
         $jadwal->delete();
 
         toast('Jadwal Berhasil Dihapus!', 'success');
-        return redirect()->route('admin.jadwal.index')->with('success', 'Jadwal deleted successfully.');
+        return redirect()->route('backend.jadwal.index')->with('success', 'Jadwal deleted successfully.');
     }
 }

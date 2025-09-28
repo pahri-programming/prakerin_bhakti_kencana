@@ -86,6 +86,14 @@
                         <span class="hide-menu">Ruangan</span>
                     </a>
                 </li>
+                <li class="sidebar-item">
+                    <a class="sidebar-link" href="{{ route('backend.jadwal.index') }}" aria-expanded="false">
+                        <span>
+                            <i class="ti ti-calendar-time"></i>
+                        </span>
+                        <span class="hide-menu">Jadwal</span>
+                    </a>
+                </li>  
         </nav>
 
         {{-- profile akun --}}

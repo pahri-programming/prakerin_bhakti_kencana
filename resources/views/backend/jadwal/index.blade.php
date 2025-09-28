@@ -1,6 +1,7 @@
 @extends('layouts.backend')
+
 @section('styles')
-    <link rel="stylesheet" href="https://cdn.datatables.net/2.3.2/css/dataTables.bootstrap5.css">
+   <link rel="stylesheet" href="https://cdn.datatables.net/2.3.2/css/dataTables.bootstrap5.css">
 @endsection
 
 @section('content')
@@ -9,66 +10,55 @@
             <div class="col">
                 <div class="card">
                     <div class="card-header bg-secondary text-white">
-                        Data Ruangan
-                        <a href="{{ route('backend.ruangan.create') }}" class="btn btn-success btn-sm float-end">
-                            <i class="ti ti-plus fs-5"></i> Tambah Ruangan
+                        Data Jadwal
+                        <a href="{{ route('backend.jadwal.create') }}" class="btn btn-success btn-sm float-end">
+                            <i class="ti ti-plus fs-5"></i> Tambah Jadwal
                         </a>
                     </div>
                     <div class="card-body">
                         <div class="table-responsive">
-                            <table class="table" id="dataRuangan">
+                            <table class="table" id="dataJadwal">
                                 <thead>
                                     <tr>
                                         <th>No</th>
-                                        <th>Cover</th>
-                                        <th>Kode Ruangan</th>
-                                        <th>Nama Ruangan</th>
-                                        <th>Kapasitas</th>
-                                        <th>Lokasi</th>
-                                        <th>Fasilitas</th>
+                                        <th>Tanggal</th>
+                                        <th>Waktu Mulai</th>
+                                        <th>Waktu Selesai</th>
+                                        <th>Ruangan</th>
+                                        <th>Kegiatan</th>
                                         <th>Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach ($ruangan as $data)
+                                    @foreach ($jadwal as $data)
                                         <tr>
                                             <td>{{ $loop->iteration }}</td>
-                                            <td>
-                                                @if ($data->cover)
-                                                    <img src="{{ Storage::url($data->cover) }}" alt="Cover"
-                                                        width="100">
-                                                @else
-                                                    N/A
-                                                @endif
-
-                                            </td>
-                                            <td>{{ $data->kode_ruangan }}</td>
-                                            <td>{{ $data->nama_ruangan }}</td>
-                                            <td>{{ $data->kapasitas }}</td>
-                                            <td>{{ $data->lokasi }}</td>
-                                            <td>{{ $data->fasilitas }}</td>
+                                            <td>{{ $data->tanggal }}</td>
+                                            <td>{{ $data->waktu_mulai }}</td>
+                                            <td>{{ $data->waktu_selesai }}</td>
+                                            <td>{{ $data->ruangan->nama_ruangan }}</td>
+                                            <td>{{ $data->kegiatan }}</td>
                                             <td class="text-end">
                                                 <div class="d-inline-flex gap-1">
-                                                    <a href="{{ route('backend.ruangan.edit', $data->id) }}"
+                                                    <a href="{{ route('backend.jadwal.edit', $data->id) }}"
                                                         class="btn btn-sm btn-warning">
                                                         <i class="ti ti-pencil me-1"></i>Edit
                                                     </a>
-                                                    <a href="{{ route('backend.ruangan.show', $data->id) }}"
+                                                    <a href="{{ route('backend.jadwal.show', $data->id) }}"
                                                         class="btn btn-sm btn-info">
                                                         <i class="ti ti-eye me-1"></i>Detail
                                                     </a>
-                                                    <form action="{{ route('backend.ruangan.destroy', $data->id) }}"
+                                                    <form action="{{ route('backend.jadwal.destroy', $data->id) }}"
                                                         method="POST"
-                                                        onsubmit="return confirm('Yakin hapus ruangan ini?')">
+                                                        onsubmit="return confirm('Yakin ingin menghapus data ini?');">
                                                         @csrf
                                                         @method('DELETE')
                                                         <button type="submit" class="btn btn-sm btn-danger">
-                                                            <i class="ti ti-trash me-1"></i>Delete
+                                                            <i class="ti ti-trash me-1"></i>Hapus
                                                         </button>
                                                     </form>
                                                 </div>
                                             </td>
-
                                         </tr>
                                     @endforeach
                                 </tbody>
@@ -76,10 +66,8 @@
                         </div>
                     </div>
                 </div>
-
             </div>
         </div>
-
     </div>
 @endsection
 
@@ -87,7 +75,7 @@
     <script src="https://cdn.datatables.net/2.3.2/js/dataTables.js"></script>
     <script src="https://cdn.datatables.net/2.3.2/js/dataTables.bootstrap5.js"></script>
     <script>
-        new DataTable('#dataRuangan', {
+        new DataTable('#dataJadwal', {
             language: {
                 url: 'https://cdn.datatables.net/plug-ins/1.13.6/i18n/id.json'
             }

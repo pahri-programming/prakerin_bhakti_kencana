@@ -3,6 +3,7 @@ namespace App\Http\Controllers\Backend;
 
 use App\Http\Controllers\Controller;
 use App\Models\booking;
+use App\Models\jadwal;
 use App\Models\ruangan;
 use App\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -34,9 +35,9 @@ class BookingController extends Controller
 
         $booking = $filter->orderBy('status')->get();
 
-        $pdf = PDF::loadView('backend.booking.pdfbooking', ['booking' => $booking]);
+        $pdf = Pdf::loadView('backend.booking.pdfbooking', ['booking' => $booking]);
         $pdf->setPaper('A4', 'landscape');
-        return $pdf->stream('laporan-data-booking.pdf');
+        return $pdf->download('laporan-data-booking.pdf');
     }
 
     public function __construct()
@@ -56,7 +57,7 @@ class BookingController extends Controller
             ->update(['status' => 'Selesai']);
 
         //mengabil filter
-        $query = booking::with(['user', 'ruangan'])->ordeyBy('tanggal', 'DESC');
+        $query = booking::with(['user', 'ruangan'])->orderBy('tanggal', 'DESC');
 
         if (request()->filled('ruang_id')) {
             $query->where('ruang_id', request()->ruang_id);
@@ -100,10 +101,17 @@ class BookingController extends Controller
         $hariIni      = Carbon::now()->format('Y-m-d');
 
         if ($tanggalInput === $hariIni) {
-            $jamselesai = Carbon::parse($request->tanggal . ' ' . $request->waktu_selesai);
-            if ($jamselesai->lt(Carbon::now())) {
-                toast('jam Sudah Lewat !!', 'error');
-                return back()->withInput()->with('error', 'Waktu booking sudah lewat. Silakan pilih waktu yang valid.');
+            $jamMulai   = Carbon::parse($request->tanggal . ' ' . $request->waktu_mulai);
+            $jamSelesai = Carbon::parse($request->tanggal . ' ' . $request->waktu_selesai);
+
+            if ($jamMulai->lt(Carbon::now())) {
+                toast('Jam mulai sudah lewat !!', 'error');
+                return back()->withInput()->with('error', 'Waktu mulai booking sudah lewat. Silakan pilih waktu yang valid.');
+            }
+
+            if ($jamSelesai->lt(Carbon::now())) {
+                toast('Jam selesai sudah lewat !!', 'error');
+                return back()->withInput()->with('error', 'Waktu selesai booking sudah lewat. Silakan pilih waktu yang valid.');
             }
         }
 
@@ -166,7 +174,7 @@ class BookingController extends Controller
             'tanggal'       => 'required|date',
             'waktu_mulai'   => 'required',
             'waktu_selesai' => 'required|after:waktu_mulai',
-            'status'        => 'required|in:Pending,Disetujui,Ditolak,Selesai',
+            // 'status'        => 'required|in:Pending,Disetujui,Ditolak,Selesai',
         ]);
 
         $booking                = new booking();
@@ -216,7 +224,7 @@ class BookingController extends Controller
 
         if ($tanggalInput === $hariIni) {
             $jamselesai = Carbon::parse($request->tanggal . ' ' . $request->waktu_selesai);
-            if ($jamselesai->it(Carbon::now())) {
+            if ($jamselesai->lt(Carbon::now())) {
                 toast('jam Sudah Lewat !!', 'error');
                 return back()->withInput()->with('error', 'Waktu booking sudah lewat. Silakan pilih waktu yang valid.');
             }
@@ -265,7 +273,7 @@ class BookingController extends Controller
             'tanggal'       => 'required|date',
             'waktu_mulai'   => 'required',
             'waktu_selesai' => 'required|after:waktu_mulai',
-            'status'        => 'required|in:Pending,Disetujui,Ditolak,Selesai',
+            'status'        => 'required|in:Pending,Diterima,Ditolak,Selesai',
         ]);
 
         $booking                = booking::findOrFail($id);

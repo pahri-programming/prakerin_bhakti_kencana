@@ -33,7 +33,7 @@
                                     @foreach ($jadwal as $data)
                                         <tr>
                                             <td>{{ $loop->iteration }}</td>
-                                            <td>{{ $data->tanggal }}</td>
+                                            <td>{{ $data->tanggal_format }}</td>
                                             <td>{{ $data->waktu_mulai }}</td>
                                             <td>{{ $data->waktu_selesai }}</td>
                                             <td>{{ $data->ruangan->nama_ruangan }}</td>

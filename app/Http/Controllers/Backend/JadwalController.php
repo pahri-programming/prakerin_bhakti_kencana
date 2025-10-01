@@ -42,7 +42,7 @@ class JadwalController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'ruang_id'      => 'required|exists:ruangan,id',
+            'ruang_id'      => 'required|exists:ruangans,id',
             'tanggal'       => 'required|date',
             'waktu_mulai'   => 'required',
             'waktu_selesai' => 'required|after:waktu_mulai',
@@ -88,7 +88,7 @@ class JadwalController extends Controller
     public function update(Request $request, string $id)
     {
         $request->validate([
-            'ruang_id'      => 'required|exists:ruangan,id',
+            'ruang_id'      => 'required|exists:ruangans,id',
             'tanggal'       => 'required|date',
             'waktu_mulai'   => 'required',
             'waktu_selesai' => 'required|after:waktu_mulai',

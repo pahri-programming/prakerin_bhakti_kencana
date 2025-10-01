@@ -17,7 +17,7 @@ class RuanganController extends Controller
         $ruangan = ruangan::latest()->get();
 
         $title = 'Data Ruangan';
-        $text  = "Apkah anda yakin ingin menghapus data ruangan ini?";
+        $text  = "Apakah anda yakin ingin menghapus data ruangan ini?";
         confirmDelete($title, $text);
 
         return view('backend.ruangan.index', compact('ruangan'));
@@ -54,7 +54,7 @@ class RuanganController extends Controller
             // simpan ke storage/app/public/ruangan
             $path = $image->storeAs('ruangan', $imageName, 'public');
 
-                                     // simpan path ke database
+             // simpan path ke database
             $ruangan->cover = $path; // hasilnya: "ruangan/nama_file.jpg"
         }
 

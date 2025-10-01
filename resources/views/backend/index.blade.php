@@ -120,17 +120,27 @@
 
                                             <!-- Status -->
                                             <td>
-                                                @if ($data->status == 'pending')
-                                                    <span class="badge bg-warning">Pending</span>
-                                                @elseif ($data->status == 'disetujui')
-                                                    <span class="badge bg-success">Disetujui</span>
-                                                @elseif ($data->status == 'ditolak')
-                                                    <span class="badge bg-danger">Ditolak</span>
-                                                @elseif ($data->status == 'selesai')
-                                                    <span class="badge bg-primary">Selesai</span>
-                                                @else
-                                                    <span class="badge bg-secondary">{{ $data->status }}</span>
-                                                @endif
+                                                @switch($data->status)
+                                                    @case('Pending')
+                                                        <span class="badge bg-warning text-dark">Pending</span>
+                                                    @break
+
+                                                    @case('Diterima')
+                                                        <span class="badge bg-primary">Diterima</span>
+                                                    @break
+
+                                                    @case('Ditolak')
+                                                        <span class="badge bg-danger">Ditolak</span>
+                                                    @break
+
+                                                    @case('Selesai')
+                                                        <span class="badge bg-success">Selesai</span>
+                                                    @break
+
+                                                    @default
+                                                        <span class="badge bg-secondary">Tidak Diketahui</span>
+                                                    @break
+                                                @endswitch
                                             </td>
                                         </tr>
                                     @endforeach

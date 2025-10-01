@@ -93,7 +93,15 @@
                         </span>
                         <span class="hide-menu">Jadwal</span>
                     </a>
-                </li>  
+                </li> 
+                 <li class="sidebar-item">       
+                    <a class="sidebar-link" href="{{ route('backend.booking.index') }}" aria-expanded="false">
+                        <span>
+                            <i class="ti ti-bookmark"></i>
+                        </span>
+                        <span class="hide-menu">Booking</span>
+                    </a>
+                </li>
         </nav>
 
         {{-- profile akun --}}

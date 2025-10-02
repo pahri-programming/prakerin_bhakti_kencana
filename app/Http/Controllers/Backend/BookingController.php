@@ -8,6 +8,7 @@ use App\Models\ruangan;
 use App\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
+use App\Notifications\BookingStatusNotification;
 use Illuminate\Http\Request;
 
 // Import PDF facade
@@ -284,6 +285,10 @@ class BookingController extends Controller
         $booking->waktu_selesai = $request->waktu_selesai;
         $booking->status        = $request->status;
         $booking->save();
+
+     // kirim notif ke user yang booking
+        $booking->user->notify(new BookingStatusNotification($booking));
+
 
         toast('Data Booking berhasil diupdate', 'success');
         return redirect()->route('backend.booking.index');

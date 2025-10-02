@@ -54,7 +54,7 @@ class RuanganController extends Controller
             // simpan ke storage/app/public/ruangan
             $path = $image->storeAs('ruangan', $imageName, 'public');
 
-             // simpan path ke database
+                                     // simpan path ke database
             $ruangan->cover = $path; // hasilnya: "ruangan/nama_file.jpg"
         }
 
@@ -132,7 +132,13 @@ class RuanganController extends Controller
      */
     public function destroy(string $id)
     {
-        $ruangan = Ruangan::findOrFail($id);
+        $ruangan = ruangan::findOrFail($id);
+
+        // Cek booking yang terkait
+        if ($ruangan->booking()->exists()) {
+            toast('Tidak bisa menghapus ruangan karena masih ada booking terkait!', 'error');
+            return back();
+        }
 
         // Hapus gambar lama jika ada
         if ($ruangan->cover && Storage::disk('public')->exists($ruangan->cover)) {

@@ -11,108 +11,128 @@
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #ffcc00, #ff8800, #ff5722);
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            overflow: hidden;
-            animation: fadeIn 1s ease-out;
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .login-box {
-            background-color: #fff;
-            padding: 2.5rem 2rem;
-            border-radius: 20px;
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.25);
-            width: 100%;
-            max-width: 420px;
-            animation: slideUp 0.7s ease-out;
-            text-align: center;
-        }
-
-        @keyframes slideUp {
-            from {
-                opacity: 0;
-                transform: translateY(50px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            font-family: 'Poppins', sans-serif;
         }
 
         .logo {
+            width: 230px;
+            /* ukuran pas sesuai gambar */
+            height: auto;
+            margin-bottom: 1.2rem;
+            margin-top: -0.5rem;
+            /* sedikit naik biar sejajar pas */
+            object-fit: contain;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+
+
+        body {
+            display: flex;
+            height: 100vh;
+            background: linear-gradient(120deg, #ffcc00, #ff8800, #ff5722);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            background-color: #fff;
+            width: 950px;
+            max-width: 95%;
+            height: 600px;
+            border-radius: 25px;
+            overflow: hidden;
+            display: flex;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+        }
+
+        .left-side {
+            flex: 1;
+            background: linear-gradient(160deg, #ff9800, #ff5722);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+        }
+
+        .left-side img {
             width: 120px;
             margin-bottom: 1rem;
         }
 
-        .login-title {
+        .left-side h2 {
             font-size: 26px;
             font-weight: 700;
-            color: #333;
-            margin-bottom: 0.3rem;
+            margin-bottom: 0.5rem;
         }
 
-        .login-subtitle {
+        .left-side p {
             font-size: 14px;
-            color: #666;
+            max-width: 300px;
+            text-align: center;
+            opacity: 0.9;
+        }
+
+        .right-side {
+            flex: 1.3;
+            background-color: #fff;
+            padding: 3rem 2.5rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        h3 {
+            font-size: 22px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 0.25rem;
+        }
+
+        p.subtitle {
+            color: #777;
+            font-size: 14px;
             margin-bottom: 2rem;
         }
 
         label {
-            font-weight: 600;
-            margin-bottom: 0.5rem;
             display: block;
+            font-weight: 600;
+            margin-bottom: 6px;
             color: #333;
-            text-align: left;
         }
 
-        input[type="email"],
-        input[type="password"] {
+        input {
             width: 100%;
-            padding: 0.75rem;
+            padding: 10px 14px;
             border: 1px solid #ddd;
-            border-radius: 12px;
-            transition: 0.3s ease;
+            border-radius: 10px;
+            margin-bottom: 1.2rem;
+            transition: 0.3s;
             font-size: 14px;
-            margin-bottom: 1rem;
         }
 
         input:focus {
-            border-color: #ff8800;
-            box-shadow: 0 0 10px rgba(255, 136, 0, 0.3);
             outline: none;
+            border-color: #ff9800;
+            box-shadow: 0 0 5px rgba(255, 152, 0, 0.4);
         }
 
         .btn-login {
             width: 100%;
             padding: 0.75rem;
+            border: none;
+            border-radius: 12px;
             background: linear-gradient(to right, #ff9800, #ff5722);
             color: white;
-            border: none;
-            border-radius: 14px;
+            font-size: 15px;
             font-weight: bold;
-            font-size: 16px;
-            transition: transform 0.2s ease, background 0.3s ease;
             cursor: pointer;
+            transition: all 0.3s ease;
         }
 
         .btn-login:hover {
@@ -120,61 +140,84 @@
             background: linear-gradient(to right, #ffb300, #e65100);
         }
 
+        .bottom-text {
+            text-align: center;
+            margin-top: 1rem;
+            font-size: 14px;
+            color: #555;
+        }
+
+        .bottom-text a {
+            color: #ff5722;
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        .bottom-text a:hover {
+            text-decoration: underline;
+        }
+
         .invalid-feedback {
             color: red;
             font-size: 13px;
-            margin-top: -0.5rem;
-            margin-bottom: 0.5rem;
-            text-align: left;
+            margin-top: -10px;
+            margin-bottom: 10px;
         }
 
-        @media (max-width: 500px) {
-            .login-box {
-                padding: 2rem 1.5rem;
-                border-radius: 15px;
+        @media (max-width: 850px) {
+            .container {
+                flex-direction: column;
+                height: auto;
             }
 
-            .login-title {
-                font-size: 22px;
+            .left-side {
+                display: none;
             }
 
-            .logo {
-                width: 70px;
+            .right-side {
+                padding: 2rem;
             }
         }
     </style>
 </head>
 
 <body>
-    <div class="login-box">
-        <!-- Logo UBK -->
-        <img src="{{ asset('assets/backend/images/logos/ubk2.png') }}" alt="Logo" class="logo">
+    <div class="container">
+        <!-- Bagian kiri -->
+        <div class="left-side">
+            <img src="{{ asset('assets/backend/images/logos/ubk2.png') }}" alt="Logo" class="logo">
+            <h2>Universitas Bhakti Kencana</h2>
+            <p>Selamat datang kembali! Login untuk melanjutkan pemesanan ruangan.</p>
+        </div>
 
-        <h2 class="login-title">Selamat Datang</h2>
-        <p class="login-subtitle">Di Website Booking UBK silahkan login terlebih dahulu</p>
+        <!-- Bagian kanan -->
+        <div class="right-side">
+            <h3>Selamat Datang</h3>
+            <p class="subtitle">Silakan login terlebih dahulu untuk mengakses sistem booking</p>
 
-        <form method="POST" action="{{ route('login') }}">
-            @csrf
-            <div class="mb-3">
+            <form method="POST" action="{{ route('login') }}">
+                @csrf
+
                 <label for="email">Email</label>
-                <input id="email" type="email" class="@error('email') is-invalid @enderror" name="email"
-                    value="{{ old('email') }}" required autofocus>
+                <input id="email" type="email" name="email" value="{{ old('email') }}" required autofocus>
                 @error('email')
                     <div class="invalid-feedback">{{ $message }}</div>
                 @enderror
-            </div>
 
-            <div class="mb-4">
                 <label for="password">Password</label>
-                <input id="password" type="password" class="@error('password') is-invalid @enderror" name="password"
-                    required>
+                <input id="password" type="password" name="password" required>
                 @error('password')
                     <div class="invalid-feedback">{{ $message }}</div>
                 @enderror
-            </div>
 
-            <button type="submit" class="btn-login">Login</button>
-        </form>
+                <button type="submit" class="btn-login">Login</button>
+            </form>
+
+            <p class="bottom-text">
+                Belum punya akun?
+                <a href="{{ route('register') }}">Daftar di sini</a>
+            </p>
+        </div>
     </div>
 </body>
 

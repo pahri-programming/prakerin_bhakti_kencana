@@ -270,8 +270,30 @@
         .room-card:hover .position-absolute .badge {
             transform: scale(1.1);
         }
+
+        .room-item {
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            filter: blur(0px);
+        }
+
+        .room-item.d-none {
+            opacity: 0 !important;
+            transform: scale(0.9);
+            filter: blur(3px);
+        }
+
+
+        .filter-btn.active {
+            background-color: #0d6efd;
+            color: white !important;
+            border-color: #0d6efd;
+        }
     </style>
 @endsection
+
+@php
+    use Illuminate\Support\Str;
+@endphp
 
 @section('content')
     <div class="container py-5">
@@ -307,7 +329,8 @@
         <!-- Rooms Grid -->
         <div class="row g-4" id="rooms-container">
             @foreach ($ruangans as $ruangan)
-                <div class="col-lg-4 col-md-6 room-item" data-category="{{ strtolower($ruangan->kategori ?? 'lab') }}">
+                <div class="col-lg-4 col-md-6 room-item"
+                    data-category="{{ Str::contains(strtolower($ruangan->nama_ruangan), 'lab') ? 'lab' : (Str::contains(strtolower($ruangan->nama_ruangan), 'meeting') ? 'meeting' : 'other') }}">
                     <div class="card room-card h-100 border-0 rounded-4 overflow-hidden shadow-sm">
 
                         <div class="px-4 pt-3">
@@ -469,34 +492,48 @@
 @push('scripts')
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Filter functionality
-            const filterBtns = document.querySelectorAll('.filter-btn');
+            const filterButtons = document.querySelectorAll('.filter-btn');
             const roomItems = document.querySelectorAll('.room-item');
 
-            filterBtns.forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const filter = this.dataset.filter;
-
-                    // Update active state
-                    filterBtns.forEach(b => b.classList.remove('active'));
+            // --- FILTERING DENGAN ANIMASI HALUS ---
+            filterButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    // ubah tombol aktif
+                    filterButtons.forEach(btn => btn.classList.remove('active'));
                     this.classList.add('active');
 
-                    // Filter rooms
+                    const filter = this.dataset.filter;
+
                     roomItems.forEach(item => {
-                        if (filter === 'all' || item.dataset.category === filter) {
-                            item.style.display = 'block';
-                            item.classList.add('fadeIn');
+                        const category = item.dataset.category;
+
+                        if (filter === 'all' || category === filter) {
+                            // tampilkan dengan efek smooth
+                            item.classList.remove('d-none');
+                            item.style.opacity = '0';
+                            item.style.transform = 'scale(0.95)';
+                            item.style.transition = 'all 0.3s ease';
+                            setTimeout(() => {
+                                item.style.opacity = '1';
+                                item.style.transform = 'scale(1)';
+                            }, 50);
                         } else {
-                            item.style.display = 'none';
-                            item.classList.remove('fadeIn');
+                            // sembunyikan dengan efek smooth
+                            item.style.opacity = '0';
+                            item.style.transform = 'scale(0.95)';
+                            item.style.transition = 'all 0.3s ease';
+                            setTimeout(() => {
+                                item.classList.add('d-none');
+                            }, 300);
                         }
                     });
                 });
             });
 
-            // Quick book modal
+            // --- QUICK BOOK MODAL ---
             const quickBookBtns = document.querySelectorAll('.quick-book-btn');
-            const quickBookModal = new bootstrap.Modal(document.getElementById('quickBookModal'));
+            const quickBookModalEl = document.getElementById('quickBookModal');
+            const quickBookModal = new bootstrap.Modal(quickBookModalEl);
 
             quickBookBtns.forEach(btn => {
                 btn.addEventListener('click', function() {
@@ -506,21 +543,21 @@
                 });
             });
 
-            // Intersection Observer for animations
+            // --- ANIMASI SAAT ELEMENT MUNCUL DI VIEWPORT ---
             const observerOptions = {
                 threshold: 0.1,
                 rootMargin: '0px 0px -50px 0px'
             };
 
-            const observer = new IntersectionObserver((entries) => {
+            const observer = new IntersectionObserver(entries => {
                 entries.forEach(entry => {
                     if (entry.isIntersecting) {
                         entry.target.classList.add('animate-in');
+                        observer.unobserve(entry.target);
                     }
                 });
             }, observerOptions);
 
-            // Observe room cards
             roomItems.forEach(item => {
                 observer.observe(item);
             });

@@ -1,10 +1,11 @@
 <?php
 namespace App\Providers;
 
-use Carbon\Carbon;
-use Illuminate\Support\Facades\View;
-use Illuminate\Support\Facades\Auth;
 use App\Models\booking;
+use App\Models\PeminjamanBarang;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -26,16 +27,26 @@ class AppServiceProvider extends ServiceProvider
         Carbon::setLocale('id');
 
         View::composer('*', function ($view) {
-            if (Auth::check()) {
-                $notifications = booking::where('user_id', Auth::id())
+            $userId = Auth::id();
+
+            if ($userId) {
+                $userNotifications = Booking::where('user_id', $userId)
                     ->whereIn('status', ['Diterima', 'Ditolak'])
                     ->where('is_read', false)
                     ->latest()
-                    ->take(5)
                     ->get();
 
-                $view->with('userNotifications', $notifications);
+                $userBorrowNotifications = PeminjamanBarang::where('user_id', $userId)
+                    ->whereIn('status', ['disetujui', 'ditolak', 'selesai'])
+                    ->where('is_read', false)
+                    ->latest()
+                    ->get();
+            } else {
+                $userNotifications       = collect();
+                $userBorrowNotifications = collect();
             }
+
+            $view->with(compact('userNotifications', 'userBorrowNotifications'));
         });
     }
 }

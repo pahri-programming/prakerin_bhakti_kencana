@@ -1,28 +1,28 @@
 <?php
-
 namespace App\Http\Controllers;
-
-use Illuminate\Http\Request;
 
 class HomeController extends Controller
 {
-    /**
-     * Create a new controller instance.
-     *
-     * @return void
-     */
     public function __construct()
     {
         $this->middleware('auth');
     }
 
-    /**
-     * Show the application dashboard.
-     *
-     * @return \Illuminate\Contracts\Support\Renderable
-     */
     public function index()
     {
-        return view('home');
+        $user = auth()->user();
+
+        // Kalau admin -> ke dashboard backend
+        if ($user->isAdmin == 1) {
+            return redirect()->route('backend.index');
+        }
+
+        // Kalau teknisi -> ke dashboard teknisi
+        if ($user->role === 'teknisi') {
+            return redirect()->route('teknisi.index');
+        }
+
+        // Selain itu (member/user biasa) -> tampilkan welcome page
+      return redirect()->route('frontend.welcome');
     }
 }

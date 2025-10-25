@@ -94,7 +94,7 @@
                         <span class="hide-menu">Jadwal</span>
                     </a>
                 </li> 
-                 <li class="sidebar-item">       
+                <li class="sidebar-item">       
                     <a class="sidebar-link" href="{{ route('backend.booking.index') }}" aria-expanded="false">
                         <span>
                             <i class="ti ti-bookmark"></i>
@@ -102,6 +102,39 @@
                         <span class="hide-menu">Booking</span>
                     </a>
                 </li>
+                <li class="sidebar-item">       
+                    <a class="sidebar-link" href="{{ route('backend.barang.index') }}" aria-expanded="false">
+                        <span>
+                            <i class="ti ti-box"></i>
+                        </span>
+                        <span class="hide-menu">Barang</span>
+                    </a>
+                </li>
+                {{-- <li class="sidebar-item">       
+                    <a class="sidebar-link" href="{{ route('backend.peminjaman-barang.index') }}" aria-expanded="false">
+                        <span>
+                            <i class="ti ti-package"></i>
+                        </span>
+                        <span class="hide-menu">Peminjaman Barang</span>
+                    </a>
+                </li> --}}
+                {{-- <li class="sidebar-item">
+                    <a class="sidebar-link" href="{{ route('backend.kategori.index') }}" aria-expanded="false">
+                        <span>
+                            <i class="ti ti-tags"></i>
+                        </span>
+                        <span class="hide-menu">Kategori</span>
+                    </a>
+                </li> --}}
+                {{-- <li class="sidebar-item">
+                    <a class="sidebar-link" href="{{ route('backend.laporan.index') }}" aria-expanded="false">
+                        <span>
+                            <i class="ti ti-report-money"></i>
+                        </span>
+                        <span class="hide-menu">Laporan</span>
+                    </a>
+                </li> --}}
+            </ul>
         </nav>
 
         {{-- profile akun --}}

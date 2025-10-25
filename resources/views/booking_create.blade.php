@@ -21,60 +21,78 @@
                             @csrf
                             <input type="hidden" name="user_id" value="{{ auth()->id() }}">
 
-                            <div class="mb-4">
-                                <label class="form-label fw-semibold">Pilih Ruangan</label>
-                                <select name="ruang_id"
-                                    class="form-select form-select-lg @error('ruang_id') is-invalid @enderror" required>
-                                    <option value="">-- Pilih Ruangan --</option>
-                                    @foreach ($ruangans as $ruangan)
-                                        <option value="{{ $ruangan->id }}"
-                                            {{ request('ruangan_id') == $ruangan->id || old('ruang_id') == $ruangan->id ? 'selected' : '' }}>
-                                            {{ $ruangan->nama_ruangan}}
-                                        </option>
-                                    @endforeach
-                                </select>
-                                @error('ruang_id')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-
-                            <div class="mb-4">
-                                <label class="form-label fw-semibold">Tanggal</label>
-                                <input type="date" name="tanggal"
-                                    class="form-control form-control-lg @error('tanggal') is-invalid @enderror"
-                                    value="{{ old('tanggal') }}" required>
-                                @error('tanggal')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-
-                            <div class="row g-4">
+                            <div class="row g-3">
                                 <div class="col-md-6">
-                                    <label class="form-label fw-semibold">Jam Mulai</label>
-                                    <input type="time" name="waktu_mulai"
-                                        class="form-control form-control-lg @error('waktu_mulai') is-invalid @enderror"
-                                        value="{{ old('waktu_mulai') }}" required>
-                                    @error('waktu_mulai')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
+                                    <label class="form-label fw-semibold"><i
+                                            class="bi bi-calendar-date me-2"></i>Tanggal</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light"><i class="bi bi-calendar"></i></span>
+                                        <input type="date" name="tanggal"
+                                            class="form-control @error('tanggal') is-invalid @enderror"
+                                            value="{{ old('tanggal') }}" required>
+                                        @error('tanggal')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
                                 </div>
+
                                 <div class="col-md-6">
-                                    <label class="form-label fw-semibold">Jam Selesai</label>
-                                    <input type="time" name="waktu_selesai"
-                                        class="form-control form-control-lg @error('waktu_selesai') is-invalid @enderror"
-                                        value="{{ old('waktu_selesai') }}" required>
-                                    @error('waktu_selesai')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
+                                    <label class="form-label fw-semibold"><i
+                                            class="bi bi-door-closed me-2"></i>Ruangan</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light"><i class="bi bi-building"></i></span>
+                                        <select name="ruang_id" class="form-select @error('ruang_id') is-invalid @enderror"
+                                            required>
+                                            <option value="">Pilih Ruangan</option>
+                                            @foreach ($ruangans as $ruangan)
+                                                <option value="{{ $ruangan->id }}"
+                                                    {{ old('ruang_id') == $ruangan->id ? 'selected' : '' }}>
+                                                    {{ $ruangan->nama_ruangan }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                        @error('ruang_id')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold"><i class="bi bi-clock me-2"></i>Waktu
+                                        Mulai</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light"><i class="bi bi-clock-history"></i></span>
+                                        <input type="time" name="waktu_mulai"
+                                            class="form-control @error('waktu_mulai') is-invalid @enderror"
+                                            value="{{ old('waktu_mulai') }}" required>
+                                        @error('waktu_mulai')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold"><i class="bi bi-clock-fill me-2"></i>Waktu
+                                        Selesai</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light"><i class="bi bi-clock"></i></span>
+                                        <input type="time" name="waktu_selesai"
+                                            class="form-control @error('waktu_selesai') is-invalid @enderror"
+                                            value="{{ old('waktu_selesai') }}" required>
+                                        @error('waktu_selesai')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
                                 </div>
                             </div>
 
-                            <div class="d-grid mt-5">
-                                <button type="submit" class="btn btn-primary btn-lg rounded-pill shadow">
+                            <div class="d-grid mt-4">
+                                <button type="submit" class="btn btn-primary btn-lg rounded-pill shadow-sm">
                                     <i class="bi bi-send-check me-2"></i> Ajukan Booking
                                 </button>
                             </div>
                         </form>
+
 
                         @if ($errors->any())
                             <script>
@@ -139,6 +157,40 @@
             border-left: 4px solid #3b82f6;
             background-color: #f0f9ff;
             color: #1e3a8a;
+        }
+
+        .input-group-text {
+            border: 1px solid #dbe3ec;
+            color: #4b5563;
+        }
+
+        .form-control,
+        .form-select {
+            border: 1px solid #dbe3ec;
+            padding: 0.75rem 1rem;
+            transition: 0.2s ease;
+            background-color: #f9fafb;
+        }
+
+        .form-control:focus,
+        .form-select:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+            background-color: #fff;
+        }
+
+        .btn-primary {
+            background: linear-gradient(90deg, #2563eb, #1d4ed8);
+            border: none;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(90deg, #1d4ed8, #1e3a8a);
+            transform: translateY(-2px);
+        }
+
+        label i {
+            color: #2563eb;
         }
     </style>
 @endsection

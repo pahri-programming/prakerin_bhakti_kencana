@@ -54,7 +54,7 @@ class RuanganController extends Controller
             // simpan ke storage/app/public/ruangan
             $path = $image->storeAs('ruangan', $imageName, 'public');
 
-                                     // simpan path ke database
+            // simpan path ke database
             $ruangan->cover = $path; // hasilnya: "ruangan/nama_file.jpg"
         }
 

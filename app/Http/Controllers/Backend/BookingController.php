@@ -8,6 +8,7 @@ use App\Models\ruangan;
 use App\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
+use App\Events\BookingStatusUpdated;
 use App\Notifications\BookingStatusNotification;
 use Illuminate\Http\Request;
 
@@ -288,6 +289,8 @@ class BookingController extends Controller
 
      // kirim notif ke user yang booking
         $booking->user->notify(new BookingStatusNotification($booking));
+        event(new BookingStatusUpdated($booking));
+
 
 
         toast('Data Booking berhasil diupdate', 'success');

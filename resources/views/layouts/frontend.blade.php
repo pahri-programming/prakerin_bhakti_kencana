@@ -18,14 +18,16 @@
     <!-- Owl Carousel (optional) -->
     <link rel="stylesheet" href="{{ asset('assets/backend/libs/owl.carousel/dist/assets/owl.carousel.min.css') }}" />
 
+
     <!-- Tambahin di <head> atau sebelum </body> -->
     <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
-
+   
     @stack('styles')
 </head>
 
 <body>
+
 
     {{-- PRELOADER DIMATIKAN UNTUK KELANCARAN --}}
     {{-- <div class="preloader">
@@ -95,6 +97,7 @@
             });
         });
     </script>
+ {{-- @vite(['resources/js/app.js']) --}}
 </body>
 
 </html>

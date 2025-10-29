@@ -68,7 +68,7 @@
 
                                 <!-- Peminjaman Section -->
                                 <li class="dropdown-header fw-semibold px-3 pt-2">📦 Notifikasi Peminjaman</li>
-                                @forelse ($userBorrowNotifications as $notif)
+                                {{-- @forelse ($userBorrowNotifications as $notif)
                                     <li>
                                         <a class="dropdown-item small py-2 px-3" href="{{ route('peminjaman.index') }}">
                                             @if ($notif->status == 'disetujui')
@@ -83,7 +83,7 @@
                                     </li>
                                 @empty
                                     <li><span class="dropdown-item text-muted small">Tidak ada notifikasi peminjaman.</span></li>
-                                @endforelse
+                                @endforelse --}}
 
                                 <li><hr class="dropdown-divider"></li>
 

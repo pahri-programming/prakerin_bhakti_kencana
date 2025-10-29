@@ -37,12 +37,13 @@
 
 <body>
     <h2>Laporan Data Barang</h2>
-    <p>Tanggal: {{ $tanggal }}</p>
+    <p>Tanggal Cetak: {{ $tanggal }}</p>
 
     <table>
         <thead>
             <tr>
                 <th>No</th>
+                <th>Photo</th>
                 <th>Kode</th>
                 <th>Nama</th>
                 <th>Kategori</th>
@@ -55,6 +56,14 @@
             @foreach ($barangs as $data)
                 <tr>
                     <td>{{ $loop->iteration }}</td>
+                    <td>
+                        @if (!empty($data->foto_base64))
+                            <img src="{{ $data->foto_base64 }}" alt="Foto Barang"
+                                style="width:60px; height:60px; object-fit:cover; border-radius:4px;">
+                        @else
+                            N/A
+                        @endif
+                    </td>
                     <td>{{ $data->kode }}</td>
                     <td>{{ $data->nama }}</td>
                     <td>{{ $data->kategori?->nama ?? '-' }}</td>

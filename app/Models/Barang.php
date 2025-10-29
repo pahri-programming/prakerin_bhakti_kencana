@@ -7,9 +7,10 @@ use Illuminate\Database\Eloquent\Model;
 class Barang extends Model
 {
     protected $fillable = [
+        'foto',
         'nama',
         'kode',
-        'kategori',
+        'kategori_id',
         'stok',
         'keterangan'
     ];

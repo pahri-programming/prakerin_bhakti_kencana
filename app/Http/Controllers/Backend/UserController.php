@@ -16,6 +16,10 @@ class UserController extends Controller
         $user = User::orderByDesc('isAdmin') // admin (1) muncul duluan
             ->orderBy('name')                    // kalau mau diurutkan juga per nama
             ->get();
+
+            $title = 'Data User';
+            $text  = "Apakah anda yakin ingin menghapus data akun ini?";
+            confirmDelete($title, $text);
         return view('backend.user.index', compact('user'));
     }
 

@@ -11,7 +11,6 @@ use App\Http\Controllers\Backend\UserController;
 use App\Http\Controllers\FrontendController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\User\UserBookingController;
-use App\Http\Middleware\Admin;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -25,16 +24,16 @@ Route::get('/booking', [FrontendController::class, 'booking']);
 
 Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
 
-Route::group(['prefix' => 'admin', 'as' => 'backend.', 'middleware' => ['auth', Admin::class]], function () {
+Route::group(['prefix' => 'admin', 'as' => 'backend.', 'middleware' => ['auth', 'admin']], function () {
     Route::get('/', [BackendController::class, 'index'])->name('index');
     //crud
     Route::resource('/ruangan', RuanganController::class);
     Route::resource('/jadwal', JadwalController::class);
     Route::resource('/booking', BookingController::class);
-    Route::resource('/peminjaman-barang', PeminjamanBarangController::class);
+    Route::resource('/peminjaman', PeminjamanBarangController::class);
     Route::resource('/kategori', KategoriController::class);
+    Route::get('barang/export-pdf', [BarangController::class, 'export'])->name('barang.exportpdf');
     Route::resource('/barang', BarangController::class);
-    Route::get('/barang/exportpdf', [BarangController::class, 'export'])->name('barang.exportpdf');
     Route::resource('/user', UserController::class);
     Route::get('booking-export', [BookingController::class, 'export'])->name('booking.export');
 });

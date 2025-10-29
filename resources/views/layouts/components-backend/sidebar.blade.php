@@ -110,22 +110,22 @@
                         <span class="hide-menu">Barang</span>
                     </a>
                 </li>
-                {{-- <li class="sidebar-item">       
-                    <a class="sidebar-link" href="{{ route('backend.peminjaman-barang.index') }}" aria-expanded="false">
+                <li class="sidebar-item">       
+                    <a class="sidebar-link" href="{{ route('backend.peminjaman.index') }}" aria-expanded="false">
                         <span>
                             <i class="ti ti-package"></i>
                         </span>
                         <span class="hide-menu">Peminjaman Barang</span>
                     </a>
-                </li> --}}
-                {{-- <li class="sidebar-item">
+                </li>
+                <li class="sidebar-item">
                     <a class="sidebar-link" href="{{ route('backend.kategori.index') }}" aria-expanded="false">
                         <span>
                             <i class="ti ti-tags"></i>
                         </span>
                         <span class="hide-menu">Kategori</span>
                     </a>
-                </li> --}}
+                </li>
                 {{-- <li class="sidebar-item">
                     <a class="sidebar-link" href="{{ route('backend.laporan.index') }}" aria-expanded="false">
                         <span>

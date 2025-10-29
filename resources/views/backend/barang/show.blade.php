@@ -33,6 +33,17 @@
                             <th>Tanggal Input</th>
                             <td>{{ $barang->created_at_format }}</td>
                         </tr>
+                        <tr>
+                            <th>Photo Barang</th>
+                            <td>
+                                @if ($barang->foto)
+                                    <img src="{{ Storage::url($barang->foto) }}" alt="Foto Barang" width="150"
+                                        class="rounded">
+                                @else
+                                    <span class="text-muted">N/A</span>
+                                @endif
+                            </td>
+                        </tr>
                     </table>
                     <a href="{{ route('backend.barang.index') }}" class="btn btn-secondary mt-3">
                         <i class="ti ti-arrow-left"></i> Kembali

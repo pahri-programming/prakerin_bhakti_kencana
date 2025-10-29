@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('barangs', function (Blueprint $table) {
             $table->id();
+            $table->string('foto')->nullable(); // menyimpan nama file / path foto
             $table->string('nama')->unique();
             $table->string('kode')->nullable();
 

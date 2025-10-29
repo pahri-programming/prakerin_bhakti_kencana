@@ -11,6 +11,57 @@ use Illuminate\Support\Facades\Log;
 
 class BarangController extends Controller
 {
+    // export pdf
+    public function export()
+    {
+        $barangs = Barang::with('kategori')->orderByDesc('created_at')->get()->map(function ($b) {
+            $b->created_at_format = Carbon::parse($b->created_at)->translatedFormat('d F Y');
+
+            // prepare base64 image (safe for DomPDF)
+            if ($b->foto && \Storage::disk('public')->exists($b->foto)) {
+                $fullPath = \Storage::disk('public')->path($b->foto); // absolute path
+                try {
+                    $contents       = file_get_contents($fullPath);
+                    $mime           = mime_content_type($fullPath) ?: 'image/jpeg';
+                    $b->foto_base64 = 'data:' . $mime . ';base64,' . base64_encode($contents);
+                } catch (\Throwable $e) {
+                    \Log::warning("Gagal baca file foto untuk barang {$b->id}: {$e->getMessage()}");
+                    $b->foto_base64 = null;
+                }
+            } else {
+                $b->foto_base64 = null;
+            }
+
+            return $b;
+        });
+
+        $tanggal = Carbon::now()->translatedFormat('d F Y');
+
+        // dd($barangs->first()->foto_base64);
+        $pdf = Pdf::loadView('backend.barang.exportpdf', compact('barangs', 'tanggal'));
+        $pdf->setPaper('A4', 'landscape');
+
+        return $pdf->download('laporan-data-barang-' . Carbon::now()->format('Ymd_His') . '.pdf');
+    }
+
+    // public function export()
+    // {
+    //     $barangs = Barang::with('kategori')->orderByDesc('created_at')->get()->map(function ($b) {
+    //         $b->created_at_format = Carbon::parse($b->created_at)->translatedFormat('d F Y');
+    //         return $b;
+    //     });
+
+    //     foreach ($barangs as $b) {
+    //         $b->foto_url = $b->foto ? Storage::url($b->foto) : null;
+    //     }
+
+    //     $tanggal = Carbon::now()->translatedFormat('d F Y'); // <— tambahkan ini
+
+    //     $pdf = Pdf::loadView('backend.barang.exportpdf', compact('barangs', 'tanggal'));
+    //     $pdf->setPaper('A4', 'landscape');
+    //     return $pdf->download('laporan-data-barang-' . Carbon::now()->format('Ymd_His') . '.pdf');
+    // }
+
     public function __construct()
     {
         $this->middleware('auth');
@@ -18,32 +69,37 @@ class BarangController extends Controller
 
     public function index(Request $request)
     {
-        $query = Barang::query();
+        $query = Barang::with('kategori')->orderByDesc('created_at');
 
-        // urutkan berdasarkan waktu dibuat
-        $query->orderByDesc('created_at');
-
-        // filter nama / kode / kategori
+        // Filter pencarian nama / kode
         if ($request->filled('search')) {
             $keyword = trim($request->search);
             $query->where(function ($q) use ($keyword) {
                 $q->where('nama', 'like', "%{$keyword}%")
-                    ->orWhere('kode', 'like', "%{$keyword}%")
-                    ->orWhere('kategori', 'like', "%{$keyword}%");
-            });
+                    ->orWhere('kode', 'like', "%{$keyword}%");
+            })
+            // juga cari di nama kategori jika user mengetik nama kategori
+                ->orWhereHas('kategori', function ($q2) use ($keyword) {
+                    $q2->where('nama', 'like', "%{$keyword}%");
+                });
         }
 
-        // filter stok kritis
+        // Filter berdasarkan kategori id (select dropdown mengirim param name="kategori")
+        if ($request->filled('kategori')) {
+            $query->where('kategori_id', $request->kategori);
+        }
+
+        // filter stok (opsional)
         if ($request->filled('stok')) {
             if ($request->stok === 'habis') {
-                $query->where('stok', '=', 0);
+                $query->where('stok', 0);
             } elseif ($request->stok === 'rendah') {
                 $query->whereBetween('stok', [1, 5]);
             }
         }
 
         $barangs = $query->get()->map(function ($b) {
-            $b->tanggal_input = Carbon::parse($b->created_at)->translatedFormat('d F Y');
+            $b->created_at_format = Carbon::parse($b->created_at)->translatedFormat('d F Y');
             return $b;
         });
 
@@ -62,20 +118,30 @@ class BarangController extends Controller
     public function store(Request $request)
     {
         $request->validate([
+            'foto'        => 'required|image|mimes:jpeg,png,jpg|max:2048',
             'kode'        => 'required|string|max:50|unique:barangs,kode',
             'nama'        => 'required|string|max:255',
             'kategori_id' => 'nullable|exists:kategoris,id',
             'stok'        => 'required|integer|min:0',
-            'deskripsi'   => 'nullable|string',
+            'keterangan'  => 'nullable|string',
         ]);
 
         try {
-            $barang              = new Barang();
+            $barang = new Barang();
+            // handle foto upload
+            if ($request->hasFile('foto')) {
+                $file     = $request->file('foto');
+                $ext      = $file->getClientOriginalExtension();
+                $filename = 'barang_' . time() . '_' . uniqid() . '.' . $ext;
+                // menyimpan di storage/app/public/barangs -> dapat diakses via asset('storage/'.$barang->foto)
+                $path         = $file->storeAs('barangs', $filename, 'public');
+                $barang->foto = $path;
+            }
             $barang->kode        = strtoupper(trim($request->kode));
             $barang->nama        = ucwords(strtolower(trim($request->nama)));
             $barang->kategori_id = $request->kategori_id;
             $barang->stok        = $request->stok;
-            $barang->deskripsi   = $request->deskripsi ?: '-';
+            $barang->keterangan  = $request->keterangan ?: '-';
             $barang->save();
 
             Log::info("Barang baru ditambahkan: {$barang->nama} ({$barang->kode})");
@@ -89,10 +155,19 @@ class BarangController extends Controller
         }
     }
 
+    // show
+    public function show($id)
+    {
+        $barang                    = Barang::with('kategori')->findOrFail($id);
+        $barang->created_at_format = Carbon::parse($barang->created_at)->translatedFormat('d F Y');
+        return view('backend.barang.show', compact('barang'));
+    }
+
     public function edit($id)
     {
-        $barang = Barang::findOrFail($id);
-        return view('backend.barang.edit', compact('barang'));
+        $barang    = Barang::findOrFail($id);
+        $kategoris = Kategori::orderBy('nama')->get();
+        return view('backend.barang.edit', compact('barang', 'kategoris'));
     }
 
     public function update(Request $request, $id)
@@ -100,14 +175,29 @@ class BarangController extends Controller
         $barang = Barang::findOrFail($id);
 
         $request->validate([
+            'foto' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+
             'kode' => "required|max:50|unique:barangs,kode,{$barang->id}",
-            'nama'      => 'required|string|max:255',
-            'kategori'  => 'nullable|string|max:100',
-            'stok'      => 'required|integer|min:0',
-            'deskripsi' => 'nullable|string',
+            'nama'        => 'required|string|max:255',
+            'kategori_id' => 'nullable|exists:kategoris,id',
+            'stok'        => 'required|integer|min:0',
+            'keterangan'  => 'nullable|string',
         ]);
 
         try {
+            // handle foto upload
+            if ($request->hasFile('foto')) {
+                // hapus foto lama jika ada
+                if ($barang->foto && \Storage::disk('public')->exists($barang->foto)) {
+                    \Storage::disk('public')->delete($barang->foto);
+                }
+                $file     = $request->file('foto');
+                $ext      = $file->getClientOriginalExtension();
+                $filename = 'barang_' . time() . '_' . uniqid() . '.' . $ext;
+                // menyimpan di storage/app/public/barangs -> dapat diakses via asset('storage/'.$barang->foto)
+                $path         = $file->storeAs('barangs', $filename, 'public');
+                $barang->foto = $path;
+            }
             // Simpan data lama buat log perubahan
             $stokLama = $barang->stok;
 
@@ -116,7 +206,7 @@ class BarangController extends Controller
             $barang->nama        = ucwords(strtolower($request->nama));
             $barang->kategori_id = $request->kategori_id;
             $barang->stok        = (int) $request->stok;
-            $barang->deskripsi   = $request->deskripsi ?: $barang->deskripsi;
+            $barang->keterangan  = $request->keterangan ?: $barang->keterangan;
             $barang->save();
 
             // Catat jika stok berubah
@@ -146,6 +236,15 @@ class BarangController extends Controller
             return back();
         }
 
+        // hapus file foto lama jika ada
+        if ($barang->foto && \Storage::disk('public')->exists($barang->foto)) {
+            try {
+                \Storage::disk('public')->delete($barang->foto);
+            } catch (\Exception $e) {
+                Log::error("Gagal menghapus file foto barang ({$barang->nama}): " . $e->getMessage());
+            }
+        }
+
         try {
             $nama = $barang->nama;
             $barang->delete();
@@ -159,19 +258,4 @@ class BarangController extends Controller
         return back();
     }
 
-    public function export()
-    {
-        $barangs = Barang::orderBy('nama')->get();
-
-        if ($barangs->isEmpty()) {
-            toast('Tidak ada data untuk diexport.', 'warning');
-            return back();
-        }
-
-        $tanggal = Carbon::now()->translatedFormat('d F Y');
-        $pdf     = Pdf::loadView('backend.barang.exportpdf', compact('barangs', 'tanggal'))
-            ->setPaper('A4', 'landscape');
-
-        return $pdf->download("data-barang-{$tanggal}.pdf");
-    }
 }

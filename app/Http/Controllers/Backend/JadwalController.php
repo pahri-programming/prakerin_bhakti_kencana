@@ -21,7 +21,7 @@ class JadwalController extends Controller
         });
 
         $title = 'Data Jadwal';
-        $text  = "Apkah anda yakin ingin menghapus data jadwal ini?";
+        $text  = "Apakah anda yakin ingin menghapus data jadwal ini?";
         confirmDelete($title, $text);
 
         return view('backend.jadwal.index', compact('jadwal'));

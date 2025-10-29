@@ -289,7 +289,7 @@ class BookingController extends Controller
 
      // kirim notif ke user yang booking
         $booking->user->notify(new BookingStatusNotification($booking));
-        event(new BookingStatusUpdated($booking));
+        // event(new BookingStatusUpdated($booking));
 
 
 

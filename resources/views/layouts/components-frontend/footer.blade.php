@@ -72,7 +72,7 @@
             <div class="row">
                 <div class="col-md-4">
                     <h5>Bhakti Kencana</h5>
-                    <p>Sistem Penjadwalan ruangan Labkom dan laboratorium secara digital. Bebas bentrok dan efisien.</p>
+                    <p>Sistem Penjadwalan ruangan Labkom dan Peminjaman Barang secara digital. Bebas bentrok dan efisien.</p>
                 </div>
 
                 <div class="col-md-4">

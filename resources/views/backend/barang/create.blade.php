@@ -67,12 +67,24 @@
                             @enderror
                         </div>
                         <div class="form-floating mb-3">
-                            <textarea name="deskripsi" class="form-control @error('deskripsi') is-invalid @enderror" placeholder="Deskripsi Barang"
-                                style="height: 100px">{{ old('deskripsi') }}</textarea>
+                            <textarea name="keterangan" class="form-control @error('keterangan') is-invalid @enderror"
+                                placeholder="Deskripsi Barang" style="height: 100px">{{ old('keterangan') }}</textarea>
                             <label>
                                 <i class="ti ti-file-description me-2 fs-4"></i>Deskripsi Barang
                             </label>
-                            @error('deskripsi')
+                            @error('keterangan')
+                                <span class="invalid-feedback" role="alert">
+                                    <strong>{{ $message }}</strong>
+                                </span>
+                            @enderror
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">
+                                <i class="ti ti-photo me-2 fs-4"></i>Photo Barang
+                            </label>
+                            <input type="file" name="foto" class="form-control @error('foto') is-invalid @enderror"
+                                accept="image/*">
+                            @error('foto')
                                 <span class="invalid-feedback" role="alert">
                                     <strong>{{ $message }}</strong>
                                 </span>

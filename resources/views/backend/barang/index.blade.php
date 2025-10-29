@@ -57,6 +57,7 @@
                     <thead class="table-primary">
                         <tr>
                             <th>#</th>
+                            <th>Photo</th>
                             <th>Kode</th>
                             <th>Nama</th>
                             <th>Kategori</th>
@@ -70,6 +71,13 @@
                         @forelse($barangs as $barang)
                             <tr>
                                 <td>{{ $loop->iteration }}</td>
+                                <td>
+                                    @if ($barang->foto)
+                                        <img src="{{ Storage::url($barang->foto) }}" alt="Foto Barang" width="60" height="60" class="rounded">
+                                    @else
+                                        <span class="text-muted">N/A</span>
+                                    @endif
+                                </td>
                                 <td><span class="badge bg-secondary">{{ $barang->kode }}</span></td>
                                 <td>{{ $barang->nama }}</td>
                                 <td>{{ $barang->kategori?->nama ?? '-' }}</td>
@@ -79,19 +87,29 @@
                                 <td>{{ Str::limit($barang->keterangan, 40) }}</td>
                                 <td>{{ $barang->created_at_format }}</td>
                                 <td class="text-center">
-                                    <a href="{{ route('backend.barang.edit', $barang->id) }}"
-                                        class="btn btn-sm btn-warning">
-                                        <i class="ti ti-edit"></i>
-                                    </a>
-                                    <form action="{{ route('backend.barang.destroy', $barang->id) }}" method="POST"
-                                        class="d-inline" id="delete-form-{{ $barang->id }}">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="button" class="btn btn-sm btn-danger"
-                                            onclick="confirmDelete({{ $barang->id }})">
-                                            <i class="ti ti-trash"></i>
-                                        </button>
-                                    </form>
+                                    <div class="d-flex justify-content-center align-items-center gap-2">
+                                        <a href="{{ route('backend.barang.edit', $barang->id) }}"
+                                            class="btn btn-sm btn-warning d-flex align-items-center px-2">
+                                            <i class="ti ti-edit"></i>
+                                            <span class="ms-1 d-none d-md-inline">Edit</span>
+                                        </a>
+
+                                        <a href="{{ route('backend.barang.show', $barang->id) }}"
+                                            class="btn btn-sm btn-info text-white d-flex align-items-center px-2">
+                                            <i class="ti ti-eye"></i>
+                                            <span class="ms-1 d-none d-md-inline">Show</span>
+                                        </a>
+
+                                        <form action="{{ route('backend.barang.destroy', $barang->id) }}" method="POST" class="d-inline">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="button" class="btn btn-sm btn-danger d-flex align-items-center px-2"
+                                                onclick="confirmDelete({{ $barang->id }})">
+                                                <i class="ti ti-trash"></i>
+                                                <span class="ms-1 d-none d-md-inline">Delete</span>
+                                            </button>
+                                        </form>
+                                    </div>
                                 </td>
                             </tr>
                         @empty

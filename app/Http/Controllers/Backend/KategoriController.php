@@ -16,6 +16,7 @@ class KategoriController extends Controller
 
     public function index(Request $request)
     {
+
         $query = Kategori::query()->orderByDesc('created_at');
 
         if ($request->filled('search')) {
@@ -37,19 +38,27 @@ class KategoriController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
+        $validator = \Validator::make($request->all(), [
             'nama' => 'required|string|max:100|unique:kategoris,nama',
-            'deskripsi' => 'nullable|string',
+            'deskripsi' => 'required|string',
+        ], [
+            'nama.required' => 'Nama kategori wajib diisi!',
+            'nama.unique' => 'Nama kategori sudah ada!',
+            'deskripsi.required' => 'Deskripsi wajib diisi!',
         ]);
+
+        if ($validator->fails()) {
+            toast($validator->messages()->first(), 'error');
+            return back()->withErrors($validator)->withInput();
+        }
 
         try {
             $kategori = new Kategori();
             $kategori->nama = ucwords(strtolower($request->nama));
-            $kategori->deskripsi = $request->deskripsi ?: '-';
+            $kategori->deskripsi = $request->deskripsi;
             $kategori->save();
 
             Log::info("Kategori baru dibuat: {$kategori->nama}");
-
             toast('Kategori baru berhasil ditambahkan.', 'success');
             return redirect()->route('backend.kategori.index');
         } catch (\Exception $e) {
@@ -58,6 +67,31 @@ class KategoriController extends Controller
             return back()->withInput();
         }
     }
+
+    // public function store(Request $request)
+    // {
+    //     $request->validate([
+    //         'nama' => 'required|string|max:100|unique:kategoris,nama',
+    //         'deskripsi' => 'nullable|string',
+
+    //     ]);
+
+    //     try {
+    //         $kategori = new Kategori();
+    //         $kategori->nama = ucwords(strtolower($request->nama));
+    //         $kategori->deskripsi = $request->deskripsi ?: '-';
+    //         $kategori->save();
+
+    //         Log::info("Kategori baru dibuat: {$kategori->nama}");
+
+    //         toast('Kategori baru berhasil ditambahkan.', 'success');
+    //         return redirect()->route('backend.kategori.index');
+    //     } catch (\Exception $e) {
+    //         Log::error('Gagal menambah kategori: ' . $e->getMessage());
+    //         toast('Terjadi kesalahan saat menambah kategori.', 'error');
+    //         return back()->withInput();
+    //     }
+    // }
 
     public function edit($id)
     {

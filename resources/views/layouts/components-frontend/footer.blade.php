@@ -79,7 +79,9 @@
                     <h5>Menu</h5>
                     <a href="#" class="footer-link">Booking Ruangan</a>
                     <a href="#" class="footer-link">Daftar Ruangan</a>
-                    <a href="#" class="footer-link">Login Admin</a>
+                    <a href="#" class="footer-link">Peminjaman Barang</a>
+                    <a href="#" class="footer-link">Daftar Barang</a>
+                    <a href="#" class="footer-link">Kontak Kami</a>
                 </div>
 
                 <div class="col-md-4">

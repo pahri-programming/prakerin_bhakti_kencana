@@ -19,6 +19,8 @@ class FrontendController extends Controller
 
     $jadwal = jadwal::with('ruangan')->get();
 
+    
+
     $events = [];
 
     foreach ($booking as $bookings) {

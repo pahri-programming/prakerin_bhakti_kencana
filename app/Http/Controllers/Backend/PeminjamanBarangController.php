@@ -12,6 +12,22 @@ use Illuminate\Support\Facades\Log;
 
 class PeminjamanBarangController extends Controller
 {
+    public function export()
+    {
+        $data = PeminjamanBarang::with(['user', 'barang'])
+            ->latest()
+            ->get()
+            ->map(function ($p) {
+                $p->tanggal_format = Carbon::parse($p->tanggal)->translatedFormat('d F Y');
+                return $p;
+            });
+
+        $pdf = Pdf::loadView('backend.peminjaman.pinjampdf', compact('data'))
+            ->setPaper('A4', 'landscape');
+
+        return $pdf->download('laporan-peminjaman-' . Carbon::now()->format('Ymd_His') . '.pdf');
+    }
+    
     public function __construct()
     {
         $this->middleware('auth');
@@ -85,21 +101,21 @@ class PeminjamanBarangController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'user_id' => 'required|exists:users,id',
-            'barang_id' => 'required|exists:barangs,id',
-            'jumlah' => 'required|integer|min:1',
-            'tanggal' => 'required|date',
-            'waktu_mulai' => 'required|date_format:H:i',
+            'user_id'       => 'required|exists:users,id',
+            'barang_id'     => 'required|exists:barangs,id',
+            'jumlah'        => 'required|integer|min:1',
+            'tanggal'       => 'required|date',
+            'waktu_mulai'   => 'required|date_format:H:i',
             'waktu_selesai' => 'required|date_format:H:i|after:waktu_mulai',
-            'keterangan' => 'required|string|min:3',
+            'keterangan'    => 'required|string|min:3',
         ], [
-            'required' => ':attribute harus diisi',
-            'exists' => ':attribute tidak valid',
-            'integer' => ':attribute harus berupa angka',
-            'min' => ':attribute minimal :min',
-            'date' => ':attribute harus berupa tanggal',
+            'required'    => ':attribute harus diisi',
+            'exists'      => ':attribute tidak valid',
+            'integer'     => ':attribute harus berupa angka',
+            'min'         => ':attribute minimal :min',
+            'date'        => ':attribute harus berupa tanggal',
             'date_format' => ':attribute harus berupa format waktu yang valid',
-            'after' => ':attribute harus setelah waktu mulai'
+            'after'       => ':attribute harus setelah waktu mulai',
         ]);
 
         $startDateTime = Carbon::parse($request->tanggal . ' ' . $request->waktu_mulai);
@@ -112,31 +128,31 @@ class PeminjamanBarangController extends Controller
 
         $cek = $this->checkAvailability(
             $barang->id,
-            $request->tanggal, 
+            $request->tanggal,
             $request->waktu_mulai,
             $request->waktu_selesai,
             (int) $request->jumlah
         );
 
-        if (!$cek['ok']) {
+        if (! $cek['ok']) {
             toast($cek['message'], 'error');
             return back()->withInput();
         }
 
         try {
             $peminjaman = PeminjamanBarang::create([
-                'user_id' => $validated['user_id'],
-                'barang_id' => $barang->id,
-                'jumlah' => (int) $validated['jumlah'],
-                'tanggal' => $validated['tanggal'],
-                'waktu_mulai' => $validated['waktu_mulai'],
+                'user_id'       => $validated['user_id'],
+                'barang_id'     => $barang->id,
+                'jumlah'        => (int) $validated['jumlah'],
+                'tanggal'       => $validated['tanggal'],
+                'waktu_mulai'   => $validated['waktu_mulai'],
                 'waktu_selesai' => $validated['waktu_selesai'],
-                'keterangan' => $validated['keterangan'],
-                'status' => 'menunggu',
+                'keterangan'    => $validated['keterangan'],
+                'status'        => 'menunggu',
             ]);
 
             Log::info('Peminjaman baru dibuat', [
-                'id' => $peminjaman->id,
+                'id'     => $peminjaman->id,
                 'barang' => $barang->nama,
             ]);
 
@@ -215,7 +231,7 @@ class PeminjamanBarangController extends Controller
 
         // format tanggal & waktu untuk tampilan
         $peminjaman->tanggal_format = Carbon::parse($peminjaman->tanggal)->translatedFormat('d F Y');
-        $peminjaman->waktu_range = "{$peminjaman->waktu_mulai} - {$peminjaman->waktu_selesai}";
+        $peminjaman->waktu_range    = "{$peminjaman->waktu_mulai} - {$peminjaman->waktu_selesai}";
 
         return view('backend.peminjaman.show', compact('peminjaman'));
     }
@@ -258,7 +274,7 @@ class PeminjamanBarangController extends Controller
         $oldStatus = $peminjaman->status;
         $newStatus = $request->status;
 
-        // ✅ Update stok hanya kalau status berubah
+        //Update stok hanya kalau status berubah
         if ($oldStatus !== $newStatus) {
             if (in_array($newStatus, ['disetujui', 'dipinjam']) && ! in_array($oldStatus, ['disetujui', 'dipinjam'])) {
                 // Barang baru disetujui → kurangi stok
@@ -303,25 +319,6 @@ class PeminjamanBarangController extends Controller
         $p->delete();
         toast('Peminjaman dihapus', 'success');
         return back();
-    }
-
-    /**
-     * EXPORT PDF
-     */
-    public function export()
-    {
-        $data = PeminjamanBarang::with(['user', 'barang'])
-            ->latest()
-            ->get()
-            ->map(function ($p) {
-                $p->tanggal_format = Carbon::parse($p->tanggal)->translatedFormat('d F Y');
-                return $p;
-            });
-
-        $pdf = Pdf::loadView('backend.peminjaman.pinjampdf', compact('data'))
-            ->setPaper('A4', 'landscape');
-
-        return $pdf->download('laporan-peminjaman-' . Carbon::now()->format('Ymd_His') . '.pdf');
     }
 
     /**

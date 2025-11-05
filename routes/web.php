@@ -5,6 +5,7 @@ use App\Http\Controllers\Backend\BarangController;
 use App\Http\Controllers\Backend\BookingController;
 use App\Http\Controllers\Backend\JadwalController;
 use App\Http\Controllers\Backend\KategoriController;
+use App\Http\Controllers\Backend\LaporanUbkController;
 use App\Http\Controllers\Backend\PeminjamanBarangController;
 use App\Http\Controllers\Backend\RuanganController;
 use App\Http\Controllers\Backend\UserController;
@@ -30,12 +31,18 @@ Route::group(['prefix' => 'admin', 'as' => 'backend.', 'middleware' => ['auth', 
     Route::resource('/ruangan', RuanganController::class);
     Route::resource('/jadwal', JadwalController::class);
     Route::resource('/booking', BookingController::class);
+    Route::get('/peminjaman-barang/export-pdf', [PeminjamanBarangController::class, 'export'])->name('peminjaman.pinjampdf');
     Route::resource('/peminjaman', PeminjamanBarangController::class);
     Route::resource('/kategori', KategoriController::class);
     Route::get('barang/export-pdf', [BarangController::class, 'export'])->name('barang.exportpdf');
     Route::resource('/barang', BarangController::class);
     Route::resource('/user', UserController::class);
     Route::get('booking-export', [BookingController::class, 'export'])->name('booking.export');
+    Route::get('/laporan-ubk', [LaporanUbkController::class, 'index'])
+        ->name('laporan-ubk.index');
+    Route::get('/laporan-ubk/pdf', [LaporanUbkController::class, 'pdf'])
+        ->name('laporan-ubk.pdf');
+
 });
 
 Route::middleware(['auth'])->group(function () {

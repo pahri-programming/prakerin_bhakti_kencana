@@ -10,9 +10,9 @@
                 <i class="ti ti-clipboard fs-4 me-2"></i> <span>Data Peminjaman</span>
             </h5>
             <div class="d-flex gap-2 ms-auto">
-                {{-- <a href="{{ route('backend.peminjaman.exportpdf') }}" class="btn btn-sm btn-danger">
+                <a href="{{ route('backend.peminjaman.pinjampdf') }}" class="btn btn-sm btn-danger">
                     <i class="fa fa-file-pdf me-1"></i> Export PDF
-                </a> --}}
+                </a>
                 <a href="{{ route('backend.peminjaman.create') }}" class="btn btn-success btn-sm">
                     <i class="ti ti-plus fs-5"></i> Tambah Peminjaman
                 </a>

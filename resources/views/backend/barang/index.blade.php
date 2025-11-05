@@ -73,7 +73,8 @@
                                 <td>{{ $loop->iteration }}</td>
                                 <td>
                                     @if ($barang->foto)
-                                        <img src="{{ Storage::url($barang->foto) }}" alt="Foto Barang" width="60" height="60" class="rounded">
+                                        <img src="{{ Storage::url($barang->foto) }}" alt="Foto Barang" width="60"
+                                            height="60" class="rounded">
                                     @else
                                         <span class="text-muted">N/A</span>
                                     @endif
@@ -100,10 +101,12 @@
                                             <span class="ms-1 d-none d-md-inline">Show</span>
                                         </a>
 
-                                        <form action="{{ route('backend.barang.destroy', $barang->id) }}" method="POST" class="d-inline">
+                                        <form action="{{ route('backend.barang.destroy', $barang->id) }}" method="POST"
+                                            class="d-inline">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="button" class="btn btn-sm btn-danger d-flex align-items-center px-2"
+                                            <button type="button"
+                                                class="btn btn-sm btn-danger d-flex align-items-center px-2"
                                                 onclick="confirmDelete({{ $barang->id }})">
                                                 <i class="ti ti-trash"></i>
                                                 <span class="ms-1 d-none d-md-inline">Delete</span>

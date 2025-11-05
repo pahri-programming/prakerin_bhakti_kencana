@@ -126,14 +126,14 @@
                         <span class="hide-menu">Kategori</span>
                     </a>
                 </li>
-                {{-- <li class="sidebar-item">
-                    <a class="sidebar-link" href="{{ route('backend.laporan.index') }}" aria-expanded="false">
+                <li class="sidebar-item">
+                    <a class="sidebar-link" href="{{ route('backend.laporan-ubk.index') }}" aria-expanded="false">
                         <span>
                             <i class="ti ti-report-money"></i>
                         </span>
                         <span class="hide-menu">Laporan</span>
                     </a>
-                </li> --}}
+                </li>
             </ul>
         </nav>
 

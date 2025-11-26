@@ -86,34 +86,32 @@
             </div>
 
             <div class="col-md-3 col-sm-6">
-                <a href="{{ route('backend.kategori.index') }}" class="text-decoration-none">
-                    <div class="card dash-card shadow-sm border-0 bg-primary text-white d-flex align-items-center">
-                        <div class="w-100 d-flex justify-content-between align-items-center">
-                            <div>
-                                <div class="label">Kategori</div>
-                                <div class="count">{{ $counts['kategoris'] ?? 0 }}</div>
-                                <div class="small-note">Kategori barang</div>
-                            </div>
-                            <div class="icon"><i class="ti ti-tag"></i></div>
+                <div class="card dash-card shadow-sm border-0 bg-info text-white d-flex align-items-center">
+                    <div class="w-100 d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="label">Peminjam Hari Ini</div>
+                            <div class="count">{{ $counts['peminjamanHariIni'] ?? 0 }}</div>
+                            <div class="small-note">Total Peminjaman hari ini</div>
                         </div>
+                        <div class="icon"><i class="ti ti-calendar-event"></i></div>
                     </div>
-                </a>
+                </div>
             </div>
 
+
             <div class="col-md-3 col-sm-6">
-                <a href="{{ route('backend.peminjaman.index') }}" class="text-decoration-none">
-                    <div class="card dash-card shadow-sm border-0 bg-primary text-white d-flex align-items-center">
-                        <div class="w-100 d-flex justify-content-between align-items-center">
-                            <div>
-                                <div class="label">Peminjaman</div>
-                                <div class="count">{{ $counts['peminjaman'] ?? 0 }}</div>
-                                <div class="small-note">Permintaan & riwayat</div>
-                            </div>
-                            <div class="icon"><i class="ti ti-clipboard"></i></div>
+                <div class="card dash-card shadow-sm border-0 bg-warning text-white d-flex align-items-center">
+                    <div class="w-100 d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="label">Pending</div>
+                            <div class="count">{{ $counts['PeminjamanPending'] ?? 0 }}</div>
+                            <div class="small-note">Peminjam menunggu approval</div>
                         </div>
+                        <div class="icon"><i class="ti ti-clock"></i></div>
                     </div>
-                </a>
+                </div>
             </div>
+
 
             <div class="col-md-3 col-sm-6">
                 <a href="{{ route('backend.booking.index') }}" class="text-decoration-none">
@@ -158,7 +156,7 @@
                 </div>
             </div>
 
-            <div class="col-md-3 col-sm-6"> 
+            <div class="col-md-3 col-sm-6">
                 <div class="card dash-card shadow-sm border-0 bg-warning text-white d-flex align-items-center">
                     <div class="w-100 d-flex justify-content-between align-items-center">
                         <div>
@@ -185,7 +183,6 @@
                         </div>
                         <div>
                             <a href="{{ route('backend.booking.index') }}" class="btn btn-light btn-sm">Lihat Semua</a>
-                            <a href="{{ route('backend.booking.export') }}" class="btn btn-danger btn-sm">Export PDF</a>
                         </div>
                     </div>
 
@@ -194,6 +191,7 @@
                             <table class="table table-borderless align-middle mb-0">
                                 <thead>
                                     <tr class="text-muted small">
+                                        <th>Kode Booking</th>
                                         <th>Nama</th>
                                         <th>Kode Ruangan</th>
                                         <th>Nama Ruangan</th>
@@ -208,6 +206,9 @@
                                     @forelse($booking as $b)
                                         <tr>
                                             <td>
+                                                <strong>{{ $b->kode }}</strong>
+                                            </td>
+                                            <td>
                                                 <div class="d-flex flex-column">
                                                     <strong>{{ $b->user->name }}</strong>
                                                     <small class="text-muted">{{ $b->user->email }}</small>
@@ -215,7 +216,7 @@
                                             </td>
                                             <td>{{ $b->ruangan->kode_ruangan ?? '-' }}</td>
                                             <td>{{ $b->ruangan->nama_ruangan ?? '-' }}</td>
-                                            <td>{{ Str::limit($b->ruangan->lokasi ?? '-', 30) }}</td>
+                                            <td>{{ Str::limit($b->ruangan->lokasi ?? '-', 45) }}</td>
                                             <td>{{ $b->tanggal_format }}</td>
                                             <td>{{ \Carbon\Carbon::parse($b->waktu_mulai)->format('H:i') }}</td>
                                             <td>{{ \Carbon\Carbon::parse($b->waktu_selesai)->format('H:i') }}</td>
@@ -253,7 +254,8 @@
                             <small class="small-note"> peminjaman terbaru</small>
                         </div>
                         <div>
-                            <a href="{{ route('backend.peminjaman.index') }}" class="btn btn-light btn-sm">Lihat Semua</a>
+                            <a href="{{ route('backend.peminjaman.index') }}" class="btn btn-light btn-sm">Lihat
+                                Semua</a>
                         </div>
                     </div>
 
@@ -262,10 +264,12 @@
                             <table class="table table-borderless align-middle mb-0">
                                 <thead>
                                     <tr class="text-muted small">
+                                        <th>Kode Peminjam</th>
                                         <th>Peminjam</th>
                                         <th>Barang</th>
                                         <th>Jumlah</th>
-                                        <th>Tanggal</th>
+                                        <th>Tanggal Pinjam</th>
+                                        <th>Tanggal Kembali</th>
                                         <th>Waktu</th>
                                         <th>Status</th>
                                         <th>Keterangan</th>
@@ -276,12 +280,15 @@
                                     @forelse($peminjamanBarang as $p)
                                         <tr>
                                             <td>
+                                                <strong>{{ $p->kode }}</strong>
+                                            <td>
                                                 <strong>{{ $p->user->name }}</strong>
                                                 <div class="text-muted small">{{ $p->user->email }}</div>
                                             </td>
                                             <td>{{ $p->barang->nama ?? '-' }}</td>
                                             <td><span class="badge bg-info text-dark">{{ $p->jumlah }}</span></td>
-                                            <td>{{ $p->tanggal_format }}</td>
+                                            <td>{{ $p->tanggal_pinjam_format }}</td>
+                                            <td>{{ $p->tanggal_kembali_format }}</td>
                                             <td>{{ substr($p->waktu_mulai, 0, 5) }} -
                                                 {{ substr($p->waktu_selesai, 0, 5) }}
                                             </td>

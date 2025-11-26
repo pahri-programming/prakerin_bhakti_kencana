@@ -2,6 +2,26 @@
 
 @section('title', 'Data Peminjaman')
 
+@section('styles')
+    <style>
+        .table-responsive {
+            position: relative;
+            z-index: 1;
+        }
+
+        .table-responsive table {
+            position: relative;
+            z-index: 5;
+        }
+
+        .table-responsive thead {
+            position: relative;
+            z-index: 10;
+            background: white;
+        }
+    </style>
+@endsection
+
 @section('content')
     <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
         <div class="card-header d-flex justify-content-between align-items-center py-3"
@@ -64,11 +84,12 @@
                     <thead class="table-primary">
                         <tr>
                             <th>#</th>
-                            {{-- <th>Nama Customer</th> --}}
+                            <th>Kode Peminjam </th>
                             <th>Nama Peminjam</th>
                             <th>Barang</th>
                             <th>Jumlah</th>
-                            <th>Tanggal</th>
+                            <th>Tanggal Pinjam</th>
+                            <th>Tanggal Kembali</th>
                             <th>Waktu</th>
                             <th>Status</th>
                             <th>Keterangan</th>
@@ -77,12 +98,14 @@
                     </thead>
                     <tbody>
                         @forelse($peminjaman as $p)
-                            <tr>
+                            <tr data-peminjaman-id="{{ $p->id }}">
                                 <td>{{ $loop->iteration }}</td>
+                                <td>{{ $p->kode }}</td>
                                 <td>{{ $p->user->name }}</td>
                                 <td>{{ $p->barang->nama }}</td>
                                 <td>{{ $p->jumlah }}</td>
-                                <td>{{ $p->tanggal_format }}</td>
+                                <td>{{ \Carbon\Carbon::parse($p->tanggal_pinjam)->format('d/m/Y') }}</td>
+                                <td>{{ \Carbon\Carbon::parse($p->tanggal_kembali)->format('d/m/Y') }}</td>
                                 <td>{{ substr($p->waktu_mulai, 0, 5) }} - {{ substr($p->waktu_selesai, 0, 5) }}</td>
                                 <td>
                                     @if ($p->status == 'menunggu')
@@ -104,7 +127,7 @@
                                     <div class="d-flex justify-content-center align-items-center gap-2">
                                         <a href="{{ route('backend.peminjaman.edit', $p->id) }}"
                                             class="btn btn-sm btn-warning d-flex align-items-center px-2">
-                                            <i class="ti ti-edit"></i>Edit 
+                                            <i class="ti ti-edit"></i>Edit
                                         </a>
                                         <a href="{{ route('backend.peminjaman.show', $p->id) }}"
                                             class="btn btn-sm btn-info text-white d-flex align-items-center px-2">
@@ -115,9 +138,9 @@
                                             @csrf
                                             @method('DELETE')
                                             <button type="button"
-                                                class="btn btn-sm btn-danger d-flex align-items-center px-2"
+                                                class="btn btn-sm btn-danger d-flex align-items-center gap-1 px-2"
                                                 onclick="confirmDelete({{ $p->id }})">
-                                                <i class="ti ti-trash"></i>Delete
+                                                <i class="ti ti-trash"></i> Delete
                                             </button>
                                         </form>
                                     </div>
@@ -137,21 +160,61 @@
         </div>
     </div>
 
-    <script>
-        function confirmDelete(id) {
-            Swal.fire({
-                title: 'Yakin Hapus?',
-                text: "Data peminjaman akan dihapus permanen!",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#d33',
-                cancelButtonText: 'Batal',
-                confirmButtonText: 'Ya, Hapus!'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    document.getElementById('delete-form-' + id).submit();
-                }
+    @push('scripts')
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        <script>
+            // Pastikan SweetAlert2 ter-load
+            document.addEventListener('DOMContentLoaded', function() {
+                window.confirmDelete = function(id) {
+                    Swal.fire({
+                        title: 'Yakin hapus data ini?',
+                        text: 'Data peminjaman barang akan dihapus secara permanen!',
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#d33',
+                        cancelButtonText: 'Batal',
+                        confirmButtonText: 'Ya, hapus!',
+                        reverseButtons: true
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            document.getElementById('delete-form-' + id).submit();
+                        }
+                    });
+                };
             });
-        }
-    </script>
+            // Cek otomatis setiap 30 detik
+            setInterval(async () => {
+                try {
+                    await fetch("{{ route('api.peminjaman.check') }}", {
+                        headers: {
+                            "X-CSRF-TOKEN": "{{ csrf_token() }}"
+                        }
+                    });
+                } catch (e) {
+                    console.error(e);
+                }
+            }, 30000);
+
+            // Real-time update`
+    window.Echo?.channel('peminjaman')
+        .listen('PeminjamanExpired', (e) => {
+            const row = document.querySelector(`[data-peminjaman-id="${e.peminjaman.id}"]`);
+            if (row) {
+                const badge = row.querySelector('.badge');
+                if (badge) {
+                    badge.className = 'badge bg-secondary';
+                    badge.textContent = 'Selesai';
+                }
+            }
+
+            Toastify?.({
+                text: `Peminjaman ${e.peminjaman.barang.nama} selesai! Stok +${e.peminjaman.jumlah}`,
+                        backgroundColor: "linear-gradient(to right, #00b09b, #96c93d)",
+                        duration: 5000
+                    }).showToast();
+                });
+        </script>
+    @endpush
+    @stack('scripts')
+
 @endsection

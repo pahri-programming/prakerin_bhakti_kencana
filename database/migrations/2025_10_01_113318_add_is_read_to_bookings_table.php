@@ -11,9 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('bookings', function (Blueprint $table) {
-            $table->boolean('is_read')->default(false);
+        Schema::table('bookings', function ($table) {
+            $table->boolean('is_read')->default(false)->after('status');
         });
+
     }
 
     public function down(): void

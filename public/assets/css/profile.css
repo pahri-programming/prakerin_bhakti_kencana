@@ -1,0 +1,85 @@
+.profile-header {
+    background: linear-gradient(135deg, #2563eb, #1e3a8a);
+    padding: 25px 30px;
+    border-radius: 16px;
+}
+
+.profile-card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 25px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, .03);
+}
+
+.profile-avatar {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: #e5efff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 50px;
+    color: #2563eb;
+    margin: 0 auto;
+}
+
+.info-box {
+    background: #e7f0ff;
+    border-radius: 12px;
+    padding: 12px;
+    display: flex;
+    gap: 12px;
+    margin-bottom: 12px;
+    align-items: center;
+}
+
+.stat-card {
+    background: #fff;
+    padding: 20px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, .03);
+}
+
+.stat-icon {
+    width: 55px;
+    height: 55px;
+    background: #e7f0ff;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    color: #2563eb;
+}
+
+.activity-box {
+    background: #fff;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, .03);
+}
+
+.activity-header {
+    background: linear-gradient(135deg, #2563eb, #1e3a8a);
+    color: #fff;
+    padding: 15px 20px;
+    font-weight: 600;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.activity-content {
+    display: flex;
+    justify-content: space-around;
+    padding: 25px 10px;
+}
+
+.activity-item h2 {
+    color: #2563eb;
+    font-weight: bold;
+}

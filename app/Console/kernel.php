@@ -14,6 +14,8 @@ class Kernel extends ConsoleKernel
     protected $commands = [
         // Daftar command yang Anda buat
         \App\Console\Commands\UpdateBookingStatus::class,
+        \App\Console\Commands\ExpireBookings::class,
+
     ];
 
     /**
@@ -26,6 +28,13 @@ class Kernel extends ConsoleKernel
     {
         // Menjadwalkan command untuk memperbarui status booking setiap menit
         $schedule->command('booking:update-status')->everyMinute();
+        $schedule->command('booking:expire')->everyMinute();
+        $schedule->command('peminjaman:check-expired')
+        ->everyMinute()
+        ->withoutOverlapping();
+
+
+
     }
 
     /**

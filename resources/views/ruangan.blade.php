@@ -375,7 +375,7 @@
                                         <span class="fw-medium">{{ $ruangan->kapasitas }} Orang</span>
                                     </div>
                                 </div>
-                                <div class="text-end">
+                                {{-- <div class="text-end">
                                     <div class="rating-stars">
                                         <i class="bi bi-star-fill text-warning"></i>
                                         <i class="bi bi-star-fill text-warning"></i>
@@ -384,7 +384,7 @@
                                         <i class="bi bi-star-half text-warning"></i>
                                         <small class="text-muted ms-1">4.5</small>
                                     </div>
-                                </div>
+                                </div> --}}
                             </div>
 
                             <div class="mb-3">

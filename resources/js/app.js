@@ -1,37 +1,49 @@
 import './bootstrap';
 
-document.addEventListener('DOMContentLoaded', () => {
-    const notifButton = document.querySelector('#notif-read-all');
+console.log('Pusher Channels siap!');
 
-    if (notifButton) {
-        notifButton.addEventListener('click', () => {
-            fetch('/notifications/read-all', {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                    'Accept': 'application/json'
-                }
-            })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.success) {
-                        // Hapus semua notif dari tampilan
-                        document.querySelectorAll('.notif-item').forEach(el => el.remove());
-                    }
-                });
-        });
-    }
-});
+    // TEST: Dengar event
+    window.Echo.channel('peminjaman')
+    .listen('.test', (e) => {
+        console.log('TEST EVENT DITERIMA:', e);
+    });
 
+    // REAL: Dengar status selesai
+    window.Echo.channel('peminjaman')
+    .listen('PeminjamanExpired', (e) => {
+        console.log('PEMINJAMAN SELESAI:', e);
 
-// window.Echo.channel('booking-channel')
-//     .listen('.booking.updated', (data) => {
-//         console.log('📢 Booking event diterima:', data);
-//         alert(`Status booking ${data.booking.id} berubah jadi ${data.booking.status}`);
-//     });
+        // Update badge status
+        const row = document.querySelector(`[data-peminjaman-id="${e.id}"]`);
+        if (row) {
+            const badge = row.querySelector('.status-badge');
+            if (badge) {
+                badge.innerHTML = '<span class="badge bg-success">Selesai</span>';
+            }
+        }
 
-// window.Echo.channel('peminjaman-channel')
-//     .listen('.peminjaman.updated', (data) => {
-//         console.log('📦 Peminjaman event diterima:', data);
-//         alert(`Status peminjaman barang "${data.peminjaman.barang.nama_barang}" kini ${data.peminjaman.status}`);
-//     });
+        // Toast
+        Toastify({
+            text: `Peminjaman ${e.barang} selesai! Stok +${e.jumlah}`,
+            backgroundColor: "linear-gradient(to right, #00b09b, #96c93d)",
+            duration: 5000
+        }).showToast();
+    });
+
+    window.Echo.channel('booking')
+    .listen('BookingExpired', (e) => {
+        console.log('BOOKING SELESAI:', e);
+
+        const row = document.querySelector(`[data-booking-id="${e.id}"]`);
+        if (row) {
+            const badge = row.querySelector('.badge');
+            badge.className = 'badge bg-success px-3 py-2';
+            badge.textContent = 'Selesai';
+        }
+
+        Toastify({
+            text: `Booking ${e.booking.ruang_nama} selesai!`,
+            backgroundColor: "linear-gradient(to right, #00b09b, #96c93d)",
+            duration: 5000
+        }).showToast();
+    });

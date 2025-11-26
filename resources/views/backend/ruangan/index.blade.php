@@ -50,7 +50,7 @@
                                             <td>{{ $data->nama_ruangan }}</td>
                                             <td>{{ $data->kapasitas }}</td>
                                             <td>{{ $data->lokasi }}</td>
-                                            <td>{{ $data->fasilitas }}</td>
+                                            <td>{{ Str::limit($data->fasilitas,35) }}</td>
                                             <td class="text-center">
                                                 <div class="d-flex justify-content-center gap-2">
                                                     <a href="{{ route('backend.ruangan.edit', $data->id) }}"

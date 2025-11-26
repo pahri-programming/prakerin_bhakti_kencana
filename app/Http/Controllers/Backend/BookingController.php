@@ -1,15 +1,15 @@
 <?php
 namespace App\Http\Controllers\Backend;
 
+use App\Events\BookingExpired;
 use App\Http\Controllers\Controller;
 use App\Models\booking;
 use App\Models\jadwal;
 use App\Models\ruangan;
 use App\Models\User;
+use App\Notifications\BookingStatusNotification;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
-use App\Events\BookingStatusUpdated;
-use App\Notifications\BookingStatusNotification;
 use Illuminate\Http\Request;
 
 // Import PDF facade
@@ -47,39 +47,84 @@ class BookingController extends Controller
         $this->middleware('auth');
     }
 
+    // public function index()
+    // {
+    //     booking::where(function ($query) {
+    //         $query->where('tanggal', '<', now()->toDateString())->orWhere(function ($q) {
+    //             $q->where('tanggal', now()->toDateString())
+    //                 ->where('waktu_selesai', '<', now()->format('H:i:s'));
+    //         });
+    //     })
+    //         ->where('status', '!=', 'Selesai')
+    //         ->update(['status' => 'Selesai']);
+
+    //     //mengabil filter
+    //     $query = booking::with(['user', 'ruangan'])->orderBy('tanggal', 'DESC');
+
+    //     if (request()->filled('ruang_id')) {
+    //         $query->where('ruang_id', request()->ruang_id);
+    //     }
+    //     if (request()->filled('tanggal')) {
+    //         $query->where('tanggal', request()->tanggal);
+    //     }
+    //     if (request()->filled('status')) {
+    //         $query->where('status', request()->status);
+    //     }
+
+    //     // format tanggal
+    //     $booking = $query->get()->map(function ($booking) {
+    //         $booking->tanggal_format = Carbon::parse($booking->tanggal)->translatedFormat('d F Y');
+    //         return $booking;
+    //     });
+
+    //     $ruangan = ruangan::all();
+
+    //     confirmDelete('Data Booking', 'Apakah anda yakin ingin menghapus data booking ini?');
+    //     return view('backend.booking.index', compact('booking', 'ruangan'));
+    // }
+
     public function index()
     {
-        booking::where(function ($query) {
-            $query->where('tanggal', '<', now()->toDateString())->orWhere(function ($q) {
-                $q->where('tanggal', now()->toDateString())
-                    ->where('waktu_selesai', '<', now()->format('H:i:s'));
-            });
-        })
-            ->where('status', '!=', 'Selesai')
-            ->update(['status' => 'Selesai']);
+        // OTOMATIS CEK & TRIGGER EVENT
+        $now     = now();
+        $expired = Booking::whereNotIn('status', ['Selesai', 'Ditolak'])
+            ->where(function ($q) use ($now) {
+                $q->where('tanggal', '<', $now->toDateString())
+                    ->orWhere(function ($s) use ($now) {
+                        $s->where('tanggal', $now->toDateString())
+                            ->where('waktu_selesai', '<', $now->format('H:i:s'));
+                    });
+            })
+            ->get();
 
-        //mengabil filter
-        $query = booking::with(['user', 'ruangan'])->orderBy('tanggal', 'DESC');
+        foreach ($expired as $b) {
+            $b->update(['status' => 'Selesai']);
+            event(new BookingExpired($b)); // TRIGGER PUSHER!
+        }
+
+        // FILTER & DATA
+        $query = Booking::with(['user', 'ruangan'])->orderBy('tanggal', 'DESC');
 
         if (request()->filled('ruang_id')) {
             $query->where('ruang_id', request()->ruang_id);
         }
+
         if (request()->filled('tanggal')) {
             $query->where('tanggal', request()->tanggal);
         }
+
         if (request()->filled('status')) {
             $query->where('status', request()->status);
         }
 
-        // format tanggal
-        $booking = $query->get()->map(function ($booking) {
-            $booking->tanggal_format = Carbon::parse($booking->tanggal)->translatedFormat('d F Y');
-            return $booking;
+        $booking = $query->get()->map(function ($b) {
+            $b->tanggal_format = \Carbon\Carbon::parse($b->tanggal)->translatedFormat('d F Y');
+            return $b;
         });
 
-        $ruangan = ruangan::all();
+        $ruangan = Ruangan::all();
 
-        confirmDelete('Data Booking', 'Apakah anda yakin ingin menghapus data booking ini?');
+        confirmDelete('Data Booking', 'Yakin hapus?');
         return view('backend.booking.index', compact('booking', 'ruangan'));
     }
 
@@ -276,22 +321,26 @@ class BookingController extends Controller
             'waktu_mulai'   => 'required',
             'waktu_selesai' => 'required|after:waktu_mulai',
             'status'        => 'required|in:Pending,Diterima,Ditolak,Selesai',
+            'keterangan'    => 'required_if:status,Ditolak|nullable|string|max:250',
         ]);
 
         $booking                = booking::findOrFail($id);
+        $oldStatus              = $booking->status;
         $booking->user_id       = $request->user_id;
         $booking->ruang_id      = $request->ruang_id;
         $booking->tanggal       = $request->tanggal;
         $booking->waktu_mulai   = $request->waktu_mulai;
         $booking->waktu_selesai = $request->waktu_selesai;
         $booking->status        = $request->status;
+        $booking->keterangan    = $request->status === 'Ditolak' ? $request->keterangan : null;
         $booking->save();
 
-     // kirim notif ke user yang booking
+        // kirim notif ke user yang booking
         $booking->user->notify(new BookingStatusNotification($booking));
         // event(new BookingStatusUpdated($booking));
-
-
+        if ($booking->status !== $oldStatus) {
+            event(new \App\Events\BookingStatusChanged($booking, $oldStatus));
+        }
 
         toast('Data Booking berhasil diupdate', 'success');
         return redirect()->route('backend.booking.index');

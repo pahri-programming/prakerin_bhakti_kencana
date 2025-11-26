@@ -111,6 +111,14 @@
                                 </span>
                             @enderror
                         </div>
+                        @if ($booking->status == 'Ditolak' && $booking->keterangan)
+                            <div class="form-floating mb-3">
+                                <label class="form-label fw-semibold"><i class="bi bi-chat-dots me-2"></i>Alasan Penolakan
+                                    (jika ditolak)</label>
+                                <textarea name="keterangan" rows="3" class="form-control"
+                                    placeholder="Contoh: Ruangan sudah dipesan pada jam tersebut">{{ old('keterangan', $booking->keterangan) }}</textarea>
+                            </div>
+                        @endif
                         <button type="submit" class="btn btn-success">
                             <i class="ti ti-check me-1"></i>Update Booking
                         </button>

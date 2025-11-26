@@ -15,6 +15,10 @@
                             <table class="table table-borderless">
                                 <tbody>
                                     <tr>
+                                        <th style="width:170px">Kode Booking</th>
+                                        <td>{{ $booking->kode }}</td>
+                                    </tr>
+                                    <tr>
                                         <th style="width:170px">Nama Customer</th>
                                         <td>
                                             {{ $booking->user->name }}
@@ -69,6 +73,16 @@
                                     </tr>
                                 </tbody>
                             </table>
+                        </div>
+
+                        <div class="col-md-6">
+                            @if ($booking->status === 'Ditolak' && $booking->keterangan)
+                                <div class="alert alert-danger">
+                                    <h6><i class="ti ti-alert-circle"></i> Alasan Penolakan</h6>
+                                    <hr>
+                                    <p class="mb-0">{{ $booking->keterangan }}</p>
+                                </div>
+                            @endif
                         </div>
 
                         <div class="col-md-4">

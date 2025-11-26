@@ -63,13 +63,30 @@
                                 </span>
                             @enderror
                         </div>
+                        {{-- tanggal_pinjam --}}
                         <div class="form-floating mb-3">
-                            <input type="date" name="tanggal" class="form-control @error('tanggal') is-invalid @enderror"
-                                placeholder="Tanggal Peminjaman" value="{{ old('tanggal') }}">
+                            <input type="date" name="tanggal_pinjam"
+                                class="form-control @error('tanggal_pinjam') is-invalid @enderror"
+                                placeholder="Tanggal Pinjam" value="{{ old('tanggal_pinjam') }}">
                             <label>
-                                <i class="ti ti-calendar-measurement me-2 fs-4"></i>Tanggal Peminjaman
+                                <i class="ti ti-calendar-event me-2 fs-4"></i>Tanggal Pinjam
                             </label>
-                            @error('tanggal')
+                            @error('tanggal_pinjam')
+                                <span class="invalid-feedback" role="alert">
+                                    <strong>{{ $message }}</strong>
+                                </span>
+                            @enderror
+                        </div>
+
+                        {{-- tanggal_kembali --}}
+                        <div class="form-floating mb-3">
+                            <input type="date" name="tanggal_kembali"
+                                class="form-control @error('tanggal_kembali') is-invalid @enderror"
+                                placeholder="Tanggal Kembali" value="{{ old('tanggal_kembali') }}">
+                            <label>
+                                <i class="ti ti-calendar-event-measurement me-2 fs-4"></i>Tanggal Kembali
+                            </label>
+                            @error('tanggal_kembali')
                                 <span class="invalid-feedback" role="alert">
                                     <strong>{{ $message }}</strong>
                                 </span>

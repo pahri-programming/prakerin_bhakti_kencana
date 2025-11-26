@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Http\Controllers\Backend;
 
 use App\Http\Controllers\Controller;
@@ -26,7 +25,9 @@ class KategoriController extends Controller
 
         $kategoris = $query->get();
 
-        confirmDelete('Data Kategori', 'Yakin ingin menghapus kategori ini?');
+        $title = 'Data Kategori';
+        $text  = "Apakah anda yakin ingin menghapus data kategori ini?";
+        confirmDelete($title, $text);
 
         return view('backend.kategori.index', compact('kategoris'));
     }
@@ -39,11 +40,11 @@ class KategoriController extends Controller
     public function store(Request $request)
     {
         $validator = \Validator::make($request->all(), [
-            'nama' => 'required|string|max:100|unique:kategoris,nama',
+            'nama'      => 'required|string|max:100|unique:kategoris,nama',
             'deskripsi' => 'required|string',
         ], [
-            'nama.required' => 'Nama kategori wajib diisi!',
-            'nama.unique' => 'Nama kategori sudah ada!',
+            'nama.required'      => 'Nama kategori wajib diisi!',
+            'nama.unique'        => 'Nama kategori sudah ada!',
             'deskripsi.required' => 'Deskripsi wajib diisi!',
         ]);
 
@@ -53,8 +54,8 @@ class KategoriController extends Controller
         }
 
         try {
-            $kategori = new Kategori();
-            $kategori->nama = ucwords(strtolower($request->nama));
+            $kategori            = new Kategori();
+            $kategori->nama      = ucwords(strtolower($request->nama));
             $kategori->deskripsi = $request->deskripsi;
             $kategori->save();
 
@@ -109,7 +110,7 @@ class KategoriController extends Controller
         ]);
 
         try {
-            $kategori->nama = ucwords(strtolower($request->nama));
+            $kategori->nama      = ucwords(strtolower($request->nama));
             $kategori->deskripsi = $request->deskripsi ?: '-';
             $kategori->save();
 
@@ -143,8 +144,7 @@ class KategoriController extends Controller
             toast('Terjadi kesalahan saat menghapus kategori.', 'error');
         }
 
-       toast('Kategori Berhasil Dihapus!', 'success');
+        toast('Kategori Berhasil Dihapus!', 'success');
         return redirect()->route('backend.kategori.index')->with('success', 'Kategori deleted successfully.');
     }
 }
-       

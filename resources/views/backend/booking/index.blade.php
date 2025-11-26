@@ -92,6 +92,7 @@
                         <thead class="table-primary">
                             <tr>
                                 <th>No</th>
+                                <th>Kode Booking</th>
                                 <th>Nama Customer</th>
                                 <th>Ruangan</th>
                                 <th>Tanggal</th>
@@ -103,8 +104,9 @@
                         </thead>
                         <tbody>
                             @foreach ($booking as $data)
-                                <tr>
+                                <tr data-booking-id="{{ $data->id }}">
                                     <td>{{ $loop->iteration }}</td>
+                                    <td>{{ $data->kode }}</td>
                                     <td>{{ $data->user->name }}</td>
                                     <td>{{ $data->ruangan->nama_ruangan }}</td>
                                     <td>{{ $data->tanggal_format }}</td>
@@ -133,6 +135,16 @@
                                             @break
                                         @endswitch
                                     </td>
+                                    {{-- <td>
+                                        @if ($data->status === 'Ditolak' && $data->keterangan)
+                                            <button class="btn btn-sm btn-outline-danger" data-bs-toggle="tooltip"
+                                                title="{{ $data->keterangan }}">
+                                                <i class="ti ti-message"></i> Ada Alasan
+                                            </button>
+                                        @else
+                                            {{ $data->status }}
+                                        @endif
+                                    </td> --}}
                                     <td class="text-center">
                                         <div class="d-flex justify-content-center gap-2">
                                             <a href="{{ route('backend.booking.edit', $data->id) }}"
@@ -193,5 +205,32 @@
                 }
             });
         }
+
+        // POLLING
+        setInterval(async () => {
+            try {
+                await fetch("{{ route('api.booking.check') }}", {
+                    headers: {
+                        "X-CSRF-TOKEN": "{{ csrf_token() }}"
+                    }
+                });
+            } catch (e) {}
+        }, 30000);
+
+        // REAL-TIME
+        window.Echo.channel('booking')
+            .listen('BookingExpired', (e) => {
+                const row = document.querySelector(`[data-booking-id="${e.booking.id}"]`);
+                if (row) {
+                    const badge = row.querySelector('.badge');
+                    badge.className = 'badge bg-success';
+                    badge.textContent = 'Selesai';
+                }
+                Toastify({
+                    text: `Booking ${e.booking.ruang_nama} selesai!`,
+                    backgroundColor: "#00b09b",
+                    duration: 4000
+                }).showToast();
+            });
     </script>
 @endpush

@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Riwayat Booking - {{ auth()->user()->name }}</title>
+    <title>Riwayat Peminjaman - {{ auth()->user()->name }}</title>
     <style>
         @page {
             margin: 40px 30px;
@@ -18,13 +18,13 @@
         header {
             text-align: center;
             margin-bottom: 25px;
-            border-bottom: 3px solid #0d6efd;
+            border-bottom: 3px solid #198754;
             padding-bottom: 10px;
         }
 
         header h2 {
             margin: 0;
-            color: #0d6efd;
+            color: #198754;
             font-size: 18px;
             text-transform: uppercase;
         }
@@ -35,6 +35,11 @@
             color: #555;
         }
 
+        .logo {
+            width: 120px;
+            margin-bottom: 10px;
+        }
+
         table {
             width: 100%;
             border-collapse: collapse;
@@ -42,7 +47,7 @@
         }
 
         table th {
-            background-color: #0d6efd;
+            background-color: #198754;
             color: white;
             padding: 8px 6px;
             font-weight: bold;
@@ -62,7 +67,8 @@
             background-color: #f8f9fa;
         }
 
-        .status-pending {
+        /* STATUS COLORS */
+        .status-menunggu {
             background-color: #fff3cd;
             color: #856404;
             font-weight: 600;
@@ -86,12 +92,6 @@
             font-weight: 600;
         }
 
-        .status-tidakdiketahui {
-            background-color: #e2e3e5;
-            color: #41464b;
-            font-weight: 600;
-        }
-
         footer {
             position: fixed;
             bottom: 0;
@@ -106,7 +106,8 @@
 
 <body>
     <header>
-        <h2>Riwayat Booking Ruangan</h2>
+        <img src="{{ public_path('assets/backend/images/logos/BKU2.png') }}" class="logo" alt="Logo">
+        <h2>Riwayat Peminjaman Barang</h2>
         <p>Nama Pengguna: <strong>{{ auth()->user()->name }}</strong></p>
         <p>Tanggal Cetak: {{ \Carbon\Carbon::now()->translatedFormat('d F Y, H:i') }}</p>
     </header>
@@ -115,27 +116,44 @@
         <thead>
             <tr>
                 <th>#</th>
-                <th>Ruangan</th>
-                <th>Tanggal</th>
+                <th>Kode Pinjam</th>
+                <th>Barang</th>
+                <th>Jumlah</th>
+                <th>Tanggal Pinjam</th>
+                <th>Tanggal Kembali</th>
                 <th>Waktu</th>
                 <th>Status</th>
             </tr>
         </thead>
+
         <tbody>
-            @forelse ($bookings as $index => $data)
+            @forelse ($peminjaman as $index => $data)
                 <tr>
                     <td>{{ $loop->iteration }}</td>
-                    <td>{{ $data->ruangan->nama_ruangan }}</td>
-                    <td>{{ \Carbon\Carbon::parse($data->tanggal)->translatedFormat('d/m/Y') }}</td>
-                    <td>{{ $data->waktu_mulai }} - {{ $data->waktu_selesai }}</td>
+                    <td>{{ $data->kode }}</td>
+                    <td>{{ $data->barang->nama }}</td>
+                    <td>{{ $data->jumlah }}</td>
+                    <td>{{ \Carbon\Carbon::parse($data->tanggal_pinjam)->translatedFormat('d/m/Y') }}</td>
+                    <td>
+                        @if ($data->tanggal_kembali)
+                            {{ \Carbon\Carbon::parse($data->tanggal_kembali)->translatedFormat('d/m/Y') }}
+                        @else
+                            -
+                        @endif
+
+                    <td>
+                        {{ $data->waktu_mulai ?? '-' }}
+                        @if ($data->waktu_selesai)
+                            - {{ $data->waktu_selesai }}
+                        @endif
+                    </td>
                     <td
                         class="
                         @switch($data->status)
-                            @case('Pending') status-pending @break
-                            @case('Diterima') status-disetujui @break
-                            @case('Ditolak') status-ditolak @break
-                            @case('Selesai') status-selesai @break
-                            @default status-tidakdiketahui
+                            @case('menunggu') status-menunggu @break
+                            @case('disetujui') status-disetujui @break
+                            @case('ditolak') status-ditolak @break
+                            @case('selesai') status-selesai @break
                         @endswitch
                     ">
                         {{ ucfirst($data->status) }}
@@ -143,14 +161,16 @@
                 </tr>
             @empty
                 <tr>
-                    <td colspan="5" style="text-align:center; color:#777; padding:15px;">Tidak ada data booking.</td>
+                    <td colspan="7" style="text-align:center; color:#777; padding:15px;">
+                        Tidak ada data peminjaman.
+                    </td>
                 </tr>
             @endforelse
         </tbody>
     </table>
 
     <footer>
-        Dicetak otomatis oleh sistem Booking Ruangan &copy; {{ date('Y') }}
+        Dicetak otomatis oleh sistem Peminjaman Barang &copy; {{ date('Y') }}
     </footer>
 </body>
 

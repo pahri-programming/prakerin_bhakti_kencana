@@ -38,7 +38,8 @@
         <thead> 
             <tr>
                 <th>No</th>
-                <th>Nama User</th>
+                <th>Kode Booking</th>
+                <th>Nama Customer</th>
                 <th>Ruangan</th>
                 <th>Tanggal</th>
                 <th>Waktu Mulai</th>
@@ -50,6 +51,7 @@
             @foreach ($booking as $data)
                 <tr>
                     <td>{{ $loop->iteration }}</td>
+                    <td>{{ $data->kode }}</td>
                     <td>{{ $data->user->name ?? '-' }}</td>
                     <td>{{ $data->ruangan->nama_ruangan ?? '-' }}</td>
                     <td>{{ \Carbon\Carbon::parse($data->tanggal)->format('d-m-Y') }}</td>

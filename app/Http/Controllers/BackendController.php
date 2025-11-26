@@ -25,7 +25,8 @@ class BackendController extends Controller
             ->limit(6)
             ->get()
             ->map(function ($p) {
-                $p->tanggal_format = \Carbon\Carbon::parse($p->tanggal)->translatedFormat('d F Y');
+                $p->tanggal_pinjam_format  = \Carbon\Carbon::parse($p->tanggal_pinjam)->translatedFormat('d F Y');
+                $p->tanggal_kembali_format = \Carbon\Carbon::parse($p->tanggal_kembali)->translatedFormat('d F Y');
                 return $p;
             });
 
@@ -42,6 +43,10 @@ class BackendController extends Controller
                 ->count(),
 
             'bookingPending' => \App\Models\Booking::where('status', 'Pending')->count(),
+
+            'peminjamanHariIni' => \App\Models\PeminjamanBarang::whereDate('tanggal_pinjam', now()->toDateString())->count(),
+            'PeminjamanPending' => \App\Models\PeminjamanBarang::where('status', 'menunggu')->count(),
+
         ];
 
         return view('backend.index', compact('booking', 'peminjamanBarang', 'counts'));

@@ -129,21 +129,27 @@
         </div>
     </div>
 
-    <script>
-        function confirmDelete(id) {
-            Swal.fire({
-                title: 'Yakin Hapus?',
-                text: "Data barang akan dihapus permanen!",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#d33',
-                cancelButtonText: 'Batal',
-                confirmButtonText: 'Ya, Hapus!'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    document.getElementById('delete-form-' + id).submit();
-                }
-            });
-        }
-    </script>
+    {{-- SCRIPT SWEETALERT YANG BENAR & AMAN --}}
+    @push('scripts')
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        <script>
+            // Fungsi global biar gak bentrok sama halaman lain
+            window.confirmDelete = function(id) {
+                Swal.fire({
+                    title: 'Yakin ingin menghapus barang ini?',
+                    text: "Data barang akan dihapus permanen dan tidak bisa dikembalikan!",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonText: 'Batal',
+                    confirmButtonText: 'Ya, Hapus!',
+                    reverseButtons: true
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        document.getElementById('delete-form-' + id).submit();
+                    }
+                });
+            };
+        </script>
+    @endpush
 @endsection

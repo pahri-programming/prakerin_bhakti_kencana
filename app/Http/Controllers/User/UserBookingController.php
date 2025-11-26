@@ -31,7 +31,7 @@ class UserBookingController extends Controller
 
         $bookings = $query->orderBy('tanggal', 'desc')->get();
 
-        $pdf = Pdf::loadView('riwayat_pdf', ['bookings' => $bookings]);
+        $pdf = Pdf::loadView('riwayat_booking_pdf', ['bookings' => $bookings]);
         return $pdf->download('riwayat-booking-' . Auth::user()->name . '.pdf');
     }
     /**

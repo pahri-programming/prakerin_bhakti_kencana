@@ -8,9 +8,10 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('peminjaman_barangs', function (Blueprint $table) {
+        Schema::table('peminjaman_barangs', function ($table) {
             $table->boolean('is_read')->default(false)->after('status');
         });
+
     }
 
     public function down(): void

@@ -57,7 +57,8 @@
                     <td>{{ $p->user->name }}</td>
                     <td>{{ $p->barang->nama }}</td>
                     <td>{{ $p->jumlah }}</td>
-                    <td>{{ $p->tanggal_format }}</td>
+                    <td>{{ $p->tanggal_pinjam }}</td>
+                    <td>{{ $p->tanggal_kembali}}</td>
                     <td>{{ substr($p->waktu_mulai, 0, 5) }} - {{ substr($p->waktu_selesai, 0, 5) }}</td>
                     <td>{{ ucfirst($p->status) }}</td>
                     <td>{{ $p->keterangan }}</td>

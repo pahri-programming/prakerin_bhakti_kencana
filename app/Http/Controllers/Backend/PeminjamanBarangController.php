@@ -5,20 +5,36 @@ use App\Http\Controllers\Controller;
 use App\Models\Barang;
 use App\Models\PeminjamanBarang;
 use App\Models\User;
+use App\Services\AvailabilityService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
+use Exception;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class PeminjamanBarangController extends Controller
 {
+    protected $avail;
+
+    public function __construct(AvailabilityService $avail)
+    {
+        $this->middleware('auth');
+        $this->avail = $avail;
+    }
+
+    /**
+     * Export laporan
+     */
     public function export()
     {
         $data = PeminjamanBarang::with(['user', 'barang'])
             ->latest()
             ->get()
             ->map(function ($p) {
-                $p->tanggal_format = Carbon::parse($p->tanggal)->translatedFormat('d F Y');
+                $p->tanggal_pinjam_format  = Carbon::parse($p->tanggal_pinjam)->translatedFormat('d F Y');
+                $p->tanggal_kembali_format = Carbon::parse($p->tanggal_kembali)->translatedFormat('d F Y');
                 return $p;
             });
 
@@ -27,66 +43,73 @@ class PeminjamanBarangController extends Controller
 
         return $pdf->download('laporan-peminjaman-' . Carbon::now()->format('Ymd_His') . '.pdf');
     }
-    
-    public function __construct()
-    {
-        $this->middleware('auth');
-    }
 
     /**
-     * INDEX
+     * Index
      */
     public function index(Request $request)
     {
-        // ✅ Auto-update status "selesai" kalau sudah lewat waktu
-        $expired = PeminjamanBarang::whereNotIn('status', ['selesai', 'dikembalikan'])
-            ->where(function ($q) {
-                $q->where('tanggal', '<', now()->toDateString())
-                    ->orWhere(function ($s) {
-                        $s->where('tanggal', now()->toDateString())
-                            ->where('waktu_selesai', '<', now()->format('H:i:s'));
-                    });
-            })
+        // AUTO-CHECK: ubah status jadi 'selesai' jika end_datetime < now()
+        $now = now()->toDateTimeString();
+
+        // Gunakan TIMESTAMP(tanggal_kembali, waktu_selesai) < now
+        $expired = PeminjamanBarang::whereNotIn('status', ['selesai', 'dikembalikan', 'ditolak'])
+            ->whereRaw("TIMESTAMP(tanggal_kembali, waktu_selesai) < ?", [$now])
             ->get();
 
         foreach ($expired as $p) {
-            $p->status = 'selesai';
-            $p->save();
+            DB::transaction(function () use ($p) {
+                $oldStatus = $p->status;
 
-            // kembalikan stok
-            if ($p->barang) {
-                $p->barang->increment('stok', $p->jumlah);
-            }
+                // Kembalikan stok HANYA jika status sebelumnya disetujui/dipinjam
+                if (in_array($oldStatus, ['disetujui', 'dipinjam'])) {
+                    $barang = Barang::where('id', $p->barang_id)->lockForUpdate()->first();
+                    if ($barang) {
+                        $barang->increment('stok', $p->jumlah);
+                    }
+                }
+
+                // ubah status
+                $p->update(['status' => 'selesai']);
+
+                // broadcast
+                event(new \App\Events\PeminjamanExpired($p));
+                event(new \App\Events\PeminjamanStatusChanged($p, $oldStatus));
+            });
         }
 
-        // ✅ Query utama
-        $query = PeminjamanBarang::with(['user', 'barang'])->orderByDesc('tanggal');
+        // FILTER & QUERY
+        $query = PeminjamanBarang::with(['user', 'barang']);
+
         if ($request->filled('barang_id')) {
             $query->where('barang_id', $request->barang_id);
         }
 
-        if ($request->filled('tanggal')) {
-            $query->where('tanggal', $request->tanggal);
+        if ($request->filled('tanggal_pinjam')) {
+            $query->whereDate('tanggal_pinjam', $request->tanggal_pinjam);
+        }
+
+        if ($request->filled('tanggal_kembali')) {
+            $query->whereDate('tanggal_kembali', $request->tanggal_kembali);
         }
 
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
 
-        $peminjaman = $query->get()->map(function ($p) {
-            $p->tanggal_format = Carbon::parse($p->tanggal)->translatedFormat('d F Y');
-            return $p;
-        });
+        //confirm delete
+        $title = 'Data Peminjaman Barang';
+        $text  = "Apakah anda yakin ingin menghapus data peminjaman barang ini?";
+        confirmDelete($title, $text);
 
-        $barangs = Barang::all();
-        confirmDelete('Data Peminjaman', 'Apakah anda yakin ingin menghapus data ini?');
+        $peminjaman = $query->latest()->get();
+        $barangs    = Barang::orderBy('nama')->get();
+
+        
 
         return view('backend.peminjaman.index', compact('peminjaman', 'barangs'));
     }
 
-    /**
-     * CREATE
-     */
     public function create()
     {
         $barangs = Barang::all();
@@ -95,19 +118,19 @@ class PeminjamanBarangController extends Controller
     }
 
     /**
-     * STORE: buat peminjaman baru + validasi stok & waktu
+     * Store new peminjaman (multi-day)
      */
-
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'user_id'       => 'required|exists:users,id',
-            'barang_id'     => 'required|exists:barangs,id',
-            'jumlah'        => 'required|integer|min:1',
-            'tanggal'       => 'required|date',
-            'waktu_mulai'   => 'required|date_format:H:i',
-            'waktu_selesai' => 'required|date_format:H:i|after:waktu_mulai',
-            'keterangan'    => 'required|string|min:3',
+            'user_id'         => 'required|exists:users,id',
+            'barang_id'       => 'required|exists:barangs,id',
+            'jumlah'          => 'required|integer|min:1',
+            'tanggal_pinjam'  => 'required|date|after_or_equal:today',
+            'tanggal_kembali' => 'required|date|after_or_equal:tanggal_pinjam',
+            'waktu_mulai'     => 'required|date_format:H:i',
+            'waktu_selesai'   => 'required|date_format:H:i',
+            'keterangan'      => 'nullable|string|max:255',
         ], [
             'required'    => ':attribute harus diisi',
             'exists'      => ':attribute tidak valid',
@@ -115,40 +138,54 @@ class PeminjamanBarangController extends Controller
             'min'         => ':attribute minimal :min',
             'date'        => ':attribute harus berupa tanggal',
             'date_format' => ':attribute harus berupa format waktu yang valid',
-            'after'       => ':attribute harus setelah waktu mulai',
         ]);
 
-        $startDateTime = Carbon::parse($request->tanggal . ' ' . $request->waktu_mulai);
-        if ($startDateTime->lt(Carbon::now())) {
+        // Build start/end datetime
+        $start = Carbon::parse("{$validated['tanggal_pinjam']} {$validated['waktu_mulai']}");
+        $end   = Carbon::parse("{$validated['tanggal_kembali']} {$validated['waktu_selesai']}");
+
+        // Validasi waktu
+        if ($start->lt(now())) {
             toast('Waktu mulai sudah lewat. Silakan pilih waktu yang valid.', 'error');
             return back()->withInput();
         }
+        if ($end->lte($start)) {
+            toast('Waktu kembali harus setelah waktu pinjam.', 'error');
+            return back()->withInput();
+        }
 
-        $barang = Barang::findOrFail($request->barang_id);
+        $barang = Barang::findOrFail($validated['barang_id']);
 
-        $cek = $this->checkAvailability(
-            $barang->id,
-            $request->tanggal,
-            $request->waktu_mulai,
-            $request->waktu_selesai,
-            (int) $request->jumlah
+        // Check availability (pass tanggal_pinjam, tanggal_kembali, waktu)
+        $cek = $this->avail->check(
+            $validated['barang_id'],
+            $validated['tanggal_pinjam'],
+            $validated['tanggal_kembali'],
+            $validated['waktu_mulai'],
+            $validated['waktu_selesai']
         );
 
-        if (! $cek['ok']) {
+        if (! $cek['status']) {
             toast($cek['message'], 'error');
+            return back()->withInput();
+        }
+
+        if ($validated['jumlah'] > $cek['available']) {
+            toast("Hanya tersedia {$cek['available']} unit.", 'error');
             return back()->withInput();
         }
 
         try {
             $peminjaman = PeminjamanBarang::create([
-                'user_id'       => $validated['user_id'],
-                'barang_id'     => $barang->id,
-                'jumlah'        => (int) $validated['jumlah'],
-                'tanggal'       => $validated['tanggal'],
-                'waktu_mulai'   => $validated['waktu_mulai'],
-                'waktu_selesai' => $validated['waktu_selesai'],
-                'keterangan'    => $validated['keterangan'],
-                'status'        => 'menunggu',
+                'user_id'         => $validated['user_id'],
+                'barang_id'       => $validated['barang_id'],
+                'jumlah'          => (int) $validated['jumlah'],
+                'tanggal_pinjam'  => $validated['tanggal_pinjam'],
+                'tanggal_kembali' => $validated['tanggal_kembali'],
+                'waktu_mulai'     => $validated['waktu_mulai'],
+                'waktu_selesai'   => $validated['waktu_selesai'],
+                'keterangan'      => $validated['keterangan'] ?? '-',
+                'status'          => 'menunggu',
             ]);
 
             Log::info('Peminjaman baru dibuat', [
@@ -156,88 +193,33 @@ class PeminjamanBarangController extends Controller
                 'barang' => $barang->nama,
             ]);
 
-            toast('Peminjaman berhasil diajukan, menunggu persetujuan.', 'success');
+            toast('Peminjaman berhasil Dibuat.', 'success');
             return redirect()->route('backend.peminjaman.index');
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Gagal membuat peminjaman: ' . $e->getMessage());
             toast('Gagal membuat peminjaman. Silakan coba lagi.', 'error');
             return back()->withInput();
         }
     }
 
-    // public function store(Request $request)
-    // {
-    //     $request->validate([
-    //         'user_id'       => 'required|exists:users,id',
-    //         'barang_id'     => 'required|exists:barangs,id',
-    //         'jumlah'        => 'required|integer|min:1',
-    //         'tanggal'       => 'required|date',
-    //         'waktu_mulai'   => 'required',
-    //         'waktu_selesai' => 'required|after:waktu_mulai',
-    //         'keterangan'    => 'nullable|string',
-    //     ]);
-
-    //     // cek jam sudah lewat (gabungkan tanggal + waktu)
-    //     $startDateTime = Carbon::parse($request->tanggal . ' ' . $request->waktu_mulai);
-    //     if ($startDateTime->lt(Carbon::now())) {
-    //         toast('Waktu mulai sudah lewat. Silakan pilih waktu yang valid.', 'error');
-    //         return back()->withInput();
-    //     }
-
-    //     $barang = Barang::find($request->barang_id);
-    //     if (! $barang) {
-    //         toast('Barang tidak ditemukan.', 'error');
-    //         return back()->withInput();
-    //     }
-
-    //     // cek stok & bentrok jadwal
-    //     $cek = $this->checkAvailability(
-    //         $barang->id,
-    //         $request->tanggal,
-    //         $request->waktu_mulai,
-    //         $request->waktu_selesai,
-    //         (int) $request->jumlah
-    //     );
-
-    //     if (! $cek['ok']) {
-    //         toast($cek['message'], 'error');
-    //         return back()->withInput();
-    //     }
-
-    //     $peminjaman = PeminjamanBarang::create([
-    //         'user_id'       => $request->user_id,
-    //         'barang_id'     => $barang->id,
-    //         'jumlah'        => (int) $request->jumlah,
-    //         'tanggal'       => $request->tanggal,
-    //         'waktu_mulai'   => $request->waktu_mulai,
-    //         'waktu_selesai' => $request->waktu_selesai,
-    //         'keterangan'    => $request->keterangan ?? '-',
-    //         'status'        => 'menunggu',
-    //     ]);
-
-    //     Log::info('Peminjaman baru dibuat', [
-    //         'id'     => $peminjaman->id,
-    //         'barang' => $barang->nama,
-    //     ]);
-
-    //     toast('Peminjaman berhasil diajukan, menunggu persetujuan.', 'success');
-    //     return redirect()->route('backend.peminjaman.index');
-    // }
-
+    /**
+     * Show
+     */
     public function show($id)
     {
         $peminjaman = PeminjamanBarang::with(['user', 'barang'])->findOrFail($id);
 
-        // format tanggal & waktu untuk tampilan
-        $peminjaman->tanggal_format = Carbon::parse($peminjaman->tanggal)->translatedFormat('d F Y');
-        $peminjaman->waktu_range    = "{$peminjaman->waktu_mulai} - {$peminjaman->waktu_selesai}";
+        // prepare formatted fields for view
+        $peminjaman->tanggal_pinjam_format  = Carbon::parse($peminjaman->tanggal_pinjam)->translatedFormat('d F Y');
+        $peminjaman->tanggal_kembali_format = Carbon::parse($peminjaman->tanggal_kembali)->translatedFormat('d F Y');
+        $peminjaman->waktu_range            = "{$peminjaman->waktu_mulai} - {$peminjaman->waktu_selesai}";
 
         return view('backend.peminjaman.show', compact('peminjaman'));
     }
 
     /**
-     * EDIT
+     * Edit
      */
     public function edit($id)
     {
@@ -248,116 +230,157 @@ class PeminjamanBarangController extends Controller
     }
 
     /**
-     * UPDATE: ubah data + sesuaikan stok sesuai perubahan status
+     * Update with safe stock handling (transaction + lock)
      */
+
     public function update(Request $request, $id)
     {
         $peminjaman = PeminjamanBarang::findOrFail($id);
 
         $request->validate([
-            'user_id'       => 'required|exists:users,id',
-            'barang_id'     => 'required|exists:barangs,id',
-            'jumlah'        => 'required|integer|min:1',
-            'tanggal'       => 'required|date',
-            'waktu_mulai'   => 'required',
-            'waktu_selesai' => 'required|after:waktu_mulai',
-            'status'        => 'required|in:menunggu,disetujui,ditolak,dipinjam,dikembalikan,selesai',
-            'keterangan'    => 'nullable|string',
+            'user_id'         => 'required|exists:users,id',
+            'barang_id'       => 'required|exists:barangs,id',
+            'jumlah'          => 'required|integer|min:1',
+            'tanggal_pinjam'  => 'required|date',
+            'tanggal_kembali' => 'required|date|after_or_equal:tanggal_pinjam',
+            'waktu_mulai'     => 'required|date_format:H:i',
+            'waktu_selesai'   => 'required|date_format:H:i',
+            'status'          => 'required|in:menunggu,disetujui,ditolak,dipinjam,dikembalikan,selesai',
+            'deskripsi'       => 'nullable|string|max:500',
+            'keterangan'      => 'nullable|string|max:2000',
         ]);
-
-        $barang = Barang::find($request->barang_id);
-        if (! $barang) {
-            toast('Barang tidak ditemukan.', 'error');
-            return back();
-        }
 
         $oldStatus = $peminjaman->status;
         $newStatus = $request->status;
 
-        //Update stok hanya kalau status berubah
-        if ($oldStatus !== $newStatus) {
-            if (in_array($newStatus, ['disetujui', 'dipinjam']) && ! in_array($oldStatus, ['disetujui', 'dipinjam'])) {
-                // Barang baru disetujui → kurangi stok
-                if ($barang->stok < $request->jumlah) {
-                    toast("Stok {$barang->nama} tidak mencukupi.", 'error');
-                    return back()->withInput();
-                }
-                $barang->decrement('stok', $request->jumlah);
-            } elseif (in_array($newStatus, ['selesai', 'dikembalikan']) && in_array($oldStatus, ['dipinjam', 'disetujui'])) {
-                // Barang dikembalikan → tambah stok
-                $barang->increment('stok', $peminjaman->jumlah);
-            }
+        // Validate overall datetime ordering
+        $start = Carbon::parse("{$request->tanggal_pinjam} {$request->waktu_mulai}");
+        $end   = Carbon::parse("{$request->tanggal_kembali} {$request->waktu_selesai}");
+        if ($start->gte($end)) {
+            toast('Waktu kembali harus setelah waktu pinjam.', 'error');
+            return back()->withInput();
         }
 
-        $peminjaman->update([
-            'user_id'       => $request->user_id,
-            'barang_id'     => $request->barang_id,
-            'jumlah'        => (int) $request->jumlah,
-            'tanggal'       => $request->tanggal,
-            'waktu_mulai'   => $request->waktu_mulai,
-            'waktu_selesai' => $request->waktu_selesai,
-            'status'        => $newStatus,
-            'keterangan'    => $request->keterangan ?? '-',
-        ]);
+        try {
+            DB::transaction(function () use ($request, $peminjaman, $oldStatus, $newStatus) {
+                $oldBarangId = $peminjaman->barang_id;
+                $oldJumlah   = (int) $peminjaman->jumlah;
 
-        Log::info('Peminjaman diupdate', [
-            'id'          => $peminjaman->id,
-            'status_lama' => $oldStatus,
-            'status_baru' => $newStatus,
-        ]);
+                $newBarangId = (int) $request->barang_id;
+                $newJumlah   = (int) $request->jumlah;
 
-        toast('Data peminjaman berhasil diperbarui.', 'success');
-        return redirect()->route('backend.peminjaman.index');
-    }
+                // Flag apakah status "reservasi" yang mengurangi stok
+                $isOldReserving = in_array($oldStatus, ['disetujui', 'dipinjam']);
+                $isNewReserving = in_array($newStatus, ['disetujui', 'dipinjam']);
+
+                // 1) HANDLE switching antara barang yang berbeda saat keduanya reserving:
+                //    kembalikan stok ke barang lama dulu (unlock old), lalu reserve barang baru.
+                if ($isOldReserving && $isNewReserving && $oldBarangId !== $newBarangId) {
+                    // kembalikan stok ke old barang (lock row)
+                    $oldBarang = Barang::where('id', $oldBarangId)->lockForUpdate()->first();
+                    if ($oldBarang) {
+                        $oldBarang->increment('stok', $oldJumlah);
+                    }
+                }
+
+                // 2) HANDLE reserving pada new barang (decrement stok sesuai net logic)
+                if ($isNewReserving) {
+                    $newBarang = Barang::where('id', $newBarangId)->lockForUpdate()->first();
+                    if (! $newBarang) {
+                        throw new ModelNotFoundException("Barang tidak ditemukan.");
+                    }
+
+                    if ($oldBarangId === $newBarangId && $isOldReserving) {
+                        // same barang and previously reserving -> apply net change
+                        $net = $newJumlah - $oldJumlah;
+                        if ($net > 0) {
+                            if ($newBarang->stok < $net) {
+                                throw new Exception("Stok {$newBarang->nama} tidak mencukupi. Tersedia: {$newBarang->stok}, dibutuhkan tambahan: {$net}");
+                            }
+                            $newBarang->decrement('stok', $net);
+                        } elseif ($net < 0) {
+                            $newBarang->increment('stok', abs($net));
+                        }
+                    } else {
+                        // barang berbeda OR old tidak reserving -> full reserve
+                        if ($newBarang->stok < $newJumlah) {
+                            throw new Exception("Stok {$newBarang->nama} tidak mencukupi. Tersedia: {$newBarang->stok}, diminta: {$newJumlah}");
+                        }
+                        $newBarang->decrement('stok', $newJumlah);
+                    }
+                }
+
+                // 3) HANDLE kasus where old was reserving but new is NOT reserving:
+                //    (return stock for the old barang) — DO THIS ONLY ONCE.
+                if ($isOldReserving && ! $isNewReserving) {
+                    // gunakan StockService agar logic stok terpusat (bila ada auditing / logs di service)
+                    $stock = new \App\Services\StockService();
+
+                    // jika barang diganti sebelumnya pada langkah (1) kita sudah mengembalikan old barang
+                    // hanya lakukan increase jika oldBarangId == newBarangId OR kita belum mengembalikan old
+                    if (! ($isNewReserving && $oldBarangId !== $newBarangId && $isOldReserving)) {
+                        // safe increase
+                        $stock->increase($oldBarangId, $oldJumlah);
+                    } else {
+                        // pada path switching yang sudah menangani increment langsung di DB (step 1),
+                        // jangan panggil StockService lagi (menghindari double-return).
+                    }
+                }
+
+                // 4) akhirnya update model peminjaman
+                $peminjaman->update([
+                    'user_id'         => $request->user_id,
+                    'barang_id'       => $request->barang_id,
+                    'jumlah'          => $request->jumlah,
+                    'tanggal_pinjam'  => $request->tanggal_pinjam,
+                    'tanggal_kembali' => $request->tanggal_kembali,
+                    'waktu_mulai'     => $request->waktu_mulai,
+                    'waktu_selesai'   => $request->waktu_selesai,
+                    'status'          => $request->status,
+                    'deskripsi'       => $request->deskripsi ?? null,
+                    'keterangan'      => $request->keterangan ?? '-',
+                ]);
+            }, 5);
+
+            // broadcast/notify jika status berubah
+            if ($peminjaman->wasChanged('status')) {
+                event(new \App\Events\PeminjamanStatusChanged($peminjaman, $oldStatus));
+            }
+
+            toast('Data peminjaman berhasil diperbarui.', 'success');
+            return redirect()->route('backend.peminjaman.index');
+
+        } catch (ModelNotFoundException $e) {
+            toast($e->getMessage(), 'error');
+            return back()->withInput();
+        } catch (Exception $e) {
+            // transaksi otomatis rollback saat exception
+            Log::error('Update peminjaman error: ' . $e->getMessage());
+            toast($e->getMessage(), 'error');
+            return back()->withInput();
+        }
+    }   
 
     /**
-     * DESTROY
+     * Destroy
      */
     public function destroy($id)
     {
         $p = PeminjamanBarang::findOrFail($id);
-        $p->delete();
+        // Jika ingin restore stok saat menghapus record yang sedang disetujui/dipinjam:
+        if (in_array($p->status, ['disetujui', 'dipinjam'])) {
+            DB::transaction(function () use ($p) {
+                $barang = Barang::where('id', $p->barang_id)->lockForUpdate()->first();
+                if ($barang) {
+                    $barang->increment('stok', $p->jumlah);
+                }
+                $p->delete();
+            });
+        } else {
+            $p->delete();
+        }
+
         toast('Peminjaman dihapus', 'success');
         return back();
-    }
-
-    /**
-     * HELPER: cek ketersediaan stok & waktu tumpang tindih
-     */
-    protected function checkAvailability($barangId, $tanggal, $mulai, $selesai, $jumlah, $excludeId = null)
-    {
-        $barang = Barang::find($barangId);
-        if (! $barang) {
-            return ['ok' => false, 'message' => 'Barang tidak ditemukan.'];
-        }
-
-        $query = PeminjamanBarang::where('barang_id', $barangId)
-            ->whereDate('tanggal', $tanggal)
-            ->whereIn('status', ['menunggu', 'disetujui', 'dipinjam'])
-            ->where(function ($q) use ($mulai, $selesai) {
-                $q->whereBetween('waktu_mulai', [$mulai, $selesai])
-                    ->orWhereBetween('waktu_selesai', [$mulai, $selesai])
-                    ->orWhere(function ($r) use ($mulai, $selesai) {
-                        $r->where('waktu_mulai', '<=', $mulai)
-                            ->where('waktu_selesai', '>=', $selesai);
-                    });
-            });
-
-        if ($excludeId) {
-            $query->where('id', '!=', $excludeId);
-        }
-
-        $totalReserved = $query->sum('jumlah');
-        $available     = $barang->stok - $totalReserved;
-
-        if ($available <= 0) {
-            return ['ok' => false, 'message' => "Stok {$barang->nama} habis pada waktu tersebut."];
-        }
-
-        if ($jumlah > $available) {
-            return ['ok' => false, 'message' => "Hanya tersedia {$available} unit {$barang->nama}."];
-        }
-
-        return ['ok' => true, 'message' => 'Tersedia'];
     }
 }

@@ -6,17 +6,16 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('peminjaman_barangs', function (Blueprint $table) {
             $table->id();
+            $table->string('kode', 30)->unique();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->foreignId('barang_id')->constrained('barangs')->onDelete('cascade');
             $table->integer('jumlah')->default(1);
-            $table->date('tanggal')->nullable(false);
+            $table->date('tanggal_pinjam')->nullable(false);
+            $table->date('tanggal_kembali')->nullable(false);
             $table->time('waktu_mulai')->nullable(false);
             $table->time('waktu_selesai')->nullable(false);
             $table->enum('status', ['menunggu', 'disetujui', 'ditolak', 'dipinjam', 'dikembalikan', 'selesai'])
@@ -24,14 +23,10 @@ return new class extends Migration
             $table->text('keterangan')->nullable();
             $table->timestamps();
         });
-
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
-        Schema::dropIfExists('peminjamanbarangs');
+        Schema::dropIfExists('peminjaman_barangs'); 
     }
 };

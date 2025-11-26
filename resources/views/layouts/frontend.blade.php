@@ -18,11 +18,11 @@
     <!-- Owl Carousel (optional) -->
     <link rel="stylesheet" href="{{ asset('assets/backend/libs/owl.carousel/dist/assets/owl.carousel.min.css') }}" />
 
-
-    <!-- Tambahin di <head> atau sebelum </body> -->
     <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
-   
+
+    <link rel="stylesheet" href="{{ asset('assets/css/profile.css') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+
     @stack('styles')
 </head>
 
@@ -74,10 +74,14 @@
     <!-- Iconify -->
     <script src="https://cdn.jsdelivr.net/npm/iconify-icon@1.0.8/dist/iconify-icon.min.js"></script>
 
+    <!-- Toastify -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+
     <!-- SweetAlert -->
     @include('sweetalert::alert')
 
     @stack('scripts')
+
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
@@ -97,7 +101,7 @@
             });
         });
     </script>
- {{-- @vite(['resources/js/app.js']) --}}
+    {{-- @vite(['resources/js/app.js']) --}}
 </body>
 
 </html>

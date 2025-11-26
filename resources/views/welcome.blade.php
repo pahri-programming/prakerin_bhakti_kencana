@@ -9,7 +9,7 @@
         <div class="col-lg-6 mb-4 mb-lg-0">
           <h1 class="fw-bold display-3 text-primary mb-3">Bhakti Kencana</h1>
           <p class="fs-5 text-muted mb-3">
-            Sistem Penjadwalan Ruangan Labkom & Laboratorium.
+            Sistem Penjadwalan Ruangan Labkom & Peminjaman Barang.
           </p>
           <p class="fw-semibold text-dark mb-4">
             <i class="bi bi-lightning-charge text-warning me-1"></i> Cepat. 

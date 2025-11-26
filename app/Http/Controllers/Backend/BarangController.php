@@ -176,7 +176,6 @@ class BarangController extends Controller
 
         $request->validate([
             'foto' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
-
             'kode' => "required|max:50|unique:barangs,kode,{$barang->id}",
             'nama'        => 'required|string|max:255',
             'kategori_id' => 'nullable|exists:kategoris,id',

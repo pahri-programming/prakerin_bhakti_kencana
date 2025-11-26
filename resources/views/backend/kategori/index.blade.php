@@ -56,21 +56,33 @@
         </div>
     </div>
 
-    <script>
-        function confirmDelete(id) {
-            Swal.fire({
-                title: 'Yakin Hapus?',
-                text: "Data kategori akan dihapus permanen!",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#d33',
-                cancelButtonText: 'Batal',
-                confirmButtonText: 'Ya, Hapus!'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    document.getElementById('delete-form-' + id).submit();
-                }
-            });
-        }
-    </script>
+    {{-- SCRIPT SWEETALERT YANG AMAN & TIDAK BENTROK --}}
+    @push('scripts')
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        <script>
+            // Fungsi global, aman dari bentrokan
+            window.confirmDelete = function(id) {
+                Swal.fire({
+                    title: 'Yakin ingin menghapus kategori ini?',
+                    text: "Data kategori akan dihapus secara permanen!",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonText: 'Batal',
+                    confirmButtonText: 'Ya, Hapus!',
+                    reverseButtons: true,
+                    width: '400px'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        // Cari form berdasarkan ID
+                        const form = document.getElementById('delete-form-' + id);
+                        if (form) {
+                            form.submit();
+                        }
+                    }
+                });
+            };
+        </script>
+    @endpush
+
 @endsection

@@ -24,33 +24,25 @@
                                 <thead class="table-primary">
                                     <tr>
                                         <th>No</th>
-                                        <th>Cover</th>
-                                        <th>Kode Ruangan</th>
                                         <th>Nama Ruangan</th>
                                         <th>Kapasitas</th>
                                         <th>Lokasi</th>
-                                        <th>Fasilitas</th>
-                                        <th class="text-center">Aksi</th>
+                                        <th>Status</th>
+=                                        <th class="text-center">Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @foreach ($ruangan as $data)
                                         <tr>
                                             <td>{{ $loop->iteration }}</td>
-                                            <td>
-                                                @if ($data->cover)
-                                                    <img src="{{ Storage::url($data->cover) }}" alt="Cover"
-                                                        width="80" class="rounded-3 shadow-sm"
-                                                        style="object-fit: cover; height: 60px;">
-                                                @else
-                                                    <span class="text-muted">N/A</span>
-                                                @endif
-                                            </td>
-                                            <td>{{ $data->kode_ruangan }}</td>
                                             <td>{{ $data->nama_ruangan }}</td>
                                             <td>{{ $data->kapasitas }}</td>
                                             <td>{{ $data->lokasi }}</td>
-                                            <td>{{ Str::limit($data->fasilitas,35) }}</td>
+                                        @if ($data->status == 'tersedia')
+                                                <td><span class="badge bg-success">Tersedia</span></td>
+                                            @else
+                                                <td><span class="badge bg-warning">Tidak Tersedia</span></td>
+                                            @endif
                                             <td class="text-center">
                                                 <div class="d-flex justify-content-center gap-2">
                                                     <a href="{{ route('backend.ruangan.edit', $data->id) }}"

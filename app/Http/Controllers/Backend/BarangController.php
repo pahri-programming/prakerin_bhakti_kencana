@@ -118,33 +118,19 @@ class BarangController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'foto'        => 'required|image|mimes:jpeg,png,jpg|max:2048',
-            'kode'        => 'required|string|max:50|unique:barangs,kode',
             'nama'        => 'required|string|max:255',
             'kategori_id' => 'nullable|exists:kategoris,id',
-            'stok'        => 'required|integer|min:0',
             'keterangan'  => 'nullable|string',
         ]);
 
         try {
             $barang = new Barang();
-            // handle foto upload
-            if ($request->hasFile('foto')) {
-                $file     = $request->file('foto');
-                $ext      = $file->getClientOriginalExtension();
-                $filename = 'barang_' . time() . '_' . uniqid() . '.' . $ext;
-                // menyimpan di storage/app/public/barangs -> dapat diakses via asset('storage/'.$barang->foto)
-                $path         = $file->storeAs('barangs', $filename, 'public');
-                $barang->foto = $path;
-            }
-            $barang->kode        = strtoupper(trim($request->kode));
             $barang->nama        = ucwords(strtolower(trim($request->nama)));
             $barang->kategori_id = $request->kategori_id;
-            $barang->stok        = $request->stok;
             $barang->keterangan  = $request->keterangan ?: '-';
             $barang->save();
 
-            Log::info("Barang baru ditambahkan: {$barang->nama} ({$barang->kode})");
+            Log::info("Barang baru ditambahkan: {$barang->nama}");
 
             toast('Barang baru berhasil ditambahkan ke sistem!', 'success');
             return redirect()->route('backend.barang.index');

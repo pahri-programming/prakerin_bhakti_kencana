@@ -13,17 +13,12 @@ return new class extends Migration
     {
         Schema::create('barangs', function (Blueprint $table) {
             $table->id();
-            $table->string('foto')->nullable(); // menyimpan nama file / path foto
             $table->string('nama')->unique();
-            $table->string('kode')->nullable();
-
             // relasi ke tabel kategoris
             $table->foreignId('kategori_id')
                 ->nullable()
                 ->constrained('kategoris')
                 ->nullOnDelete(); // jika kategori dihapus, kategori_id di barang jadi null
-
-            $table->integer('stok')->default(0);
             $table->text('keterangan')->nullable();
             $table->timestamps();
         });

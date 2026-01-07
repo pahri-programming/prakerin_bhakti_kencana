@@ -12,13 +12,11 @@ return new class extends Migration
             $table->id();
             $table->string('kode', 30)->unique();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->foreignId('barang_id')->constrained('barangs')->onDelete('cascade');
-            $table->integer('jumlah')->default(1);
+            $table->string('nama_peminjam')->nullable();
+            $table->string('instansi')->nullable();
             $table->date('tanggal_pinjam')->nullable(false);
             $table->date('tanggal_kembali')->nullable(false);
-            $table->time('waktu_mulai')->nullable(false);
-            $table->time('waktu_selesai')->nullable(false);
-            $table->enum('status', ['menunggu', 'disetujui', 'ditolak', 'dipinjam', 'dikembalikan', 'selesai'])
+            $table->enum('status', ['menunggu', 'disetujui', 'ditolak', 'dikembalikan'])
                 ->default('menunggu');
             $table->text('keterangan')->nullable();
             $table->timestamps();

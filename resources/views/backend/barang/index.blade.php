@@ -57,11 +57,8 @@
                     <thead class="table-primary">
                         <tr>
                             <th>#</th>
-                            <th>Photo</th>
-                            <th>Kode</th>
                             <th>Nama</th>
                             <th>Kategori</th>
-                            <th>Stok</th>
                             <th>Keterangan</th>
                             <th>Tanggal Input</th>
                             <th class="text-center">Aksi</th>
@@ -71,20 +68,8 @@
                         @forelse($barangs as $barang)
                             <tr>
                                 <td>{{ $loop->iteration }}</td>
-                                <td>
-                                    @if ($barang->foto)
-                                        <img src="{{ Storage::url($barang->foto) }}" alt="Foto Barang" width="60"
-                                            height="60" class="rounded">
-                                    @else
-                                        <span class="text-muted">N/A</span>
-                                    @endif
-                                </td>
-                                <td><span class="badge bg-secondary">{{ $barang->kode }}</span></td>
                                 <td>{{ $barang->nama }}</td>
                                 <td>{{ $barang->kategori?->nama ?? '-' }}</td>
-                                <td>
-                                    <span class="badge bg-info text-dark">{{ $barang->stok }}</span>
-                                </td>
                                 <td>{{ Str::limit($barang->keterangan, 40) }}</td>
                                 <td>{{ $barang->created_at_format }}</td>
                                 <td class="text-center">

@@ -13,13 +13,12 @@ class PeminjamanBarang extends Model
         'kode',
         'user_id',
         'barang_id',
+        'nama_peminjam',
+        'instansi',
         'jumlah',
         'tanggal_pinjam',
         'tanggal_kembali',
-        'waktu_mulai',
-        'waktu_selesai',
         'status',
-        'deskripsi',
         'keterangan',
         'is_read',
     ];
@@ -27,8 +26,6 @@ class PeminjamanBarang extends Model
     protected $casts = [
         'tanggal_pinjam'  => 'date:Y-m-d',
         'tanggal_kembali' => 'date:Y-m-d',
-        'waktu_mulai'     => 'string',
-        'waktu_selesai'   => 'string',
         'status'          => 'string',
         'is_read'         => 'boolean',
     ];
@@ -44,16 +41,6 @@ class PeminjamanBarang extends Model
         return Carbon::parse($this->tanggal_kembali)->translatedFormat('d F Y');
     }
 
-    public function getWaktuMulaiFullAttribute()
-    {
-        return Carbon::parse($this->tanggal_pinjam . ' ' . $this->waktu_mulai);
-    }
-
-    public function getWaktuSelesaiFullAttribute()
-    {
-        return Carbon::parse($this->tanggal_kembali . ' ' . $this->waktu_selesai);
-    }
-
     public function user()
     {
         return $this->belongsTo(User::class);
@@ -62,6 +49,11 @@ class PeminjamanBarang extends Model
     public function barang()
     {
         return $this->belongsTo(Barang::class, 'barang_id');
+    }
+
+    public function detailbarangs()
+    {
+        return $this->hasMany(DetailPeminjamanBarang::class, 'peminjaman_barang_id');
     }
 
     protected static function boot()
@@ -74,28 +66,28 @@ class PeminjamanBarang extends Model
             $pinjam->kode = "PINJ-{$today}-{$unique}";
         });
 
-        // Perubahan stok saat status berubah — hati-hati race condition
-        static::updating(function ($pinjam) {
-            // $oldStatus = $pinjam->getOriginal('status');
-            // $newStatus = $pinjam->status;
+        // // Perubahan stok saat status berubah — hati-hati race condition
+        // static::updating(function ($pinjam) {
+        //     // $oldStatus = $pinjam->getOriginal('status');
+        //     // $newStatus = $pinjam->status;
 
-            // if (! $pinjam->barang) {
-            //     return;
-            // }
+        //     // if (! $pinjam->barang) {
+        //     //     return;
+        //     // }
 
-            // $barang = $pinjam->barang;
-            // $jumlah = (int) $pinjam->jumlah;
+        //     // $barang = $pinjam->barang;
+        //     // $jumlah = (int) $pinjam->jumlah;
 
-            // if ($oldStatus === 'menunggu' && $newStatus === 'disetujui') {
-            //     if ($barang->stok < $jumlah) {
-            //         throw new \Exception("Stok tidak mencukupi: tersedia {$barang->stok}, diminta {$jumlah}");
-            //     }
-            //     $barang->decrement('stok', $jumlah);
-            // }
+        //     // if ($oldStatus === 'menunggu' && $newStatus === 'disetujui') {
+        //     //     if ($barang->stok < $jumlah) {
+        //     //         throw new \Exception("Stok tidak mencukupi: tersedia {$barang->stok}, diminta {$jumlah}");
+        //     //     }
+        //     //     $barang->decrement('stok', $jumlah);
+        //     // }
 
-            // if (in_array($oldStatus, ['disetujui', 'dipinjam']) && in_array($newStatus, ['selesai', 'ditolak', 'dikembalikan'])) {
-            //     $barang->increment('stok', $jumlah);
-            // }
-        });
+        //     // if (in_array($oldStatus, ['disetujui', 'dipinjam']) && in_array($newStatus, ['selesai', 'ditolak', 'dikembalikan'])) {
+        //     //     $barang->increment('stok', $jumlah);
+        //     // }
+        // });
     }
 }

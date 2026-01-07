@@ -20,6 +20,8 @@
     "dependencies": {
         "laravel-echo": "^2.2.6",
         "lodash": "^4.17.21",
-        "pusher-js": "^8.4.0"
+        "pusher-js": "^8.4.0",
+        "sweetalert2": "^11.26.3",
+        "toastify-js": "^1.12.0"
     }
 }

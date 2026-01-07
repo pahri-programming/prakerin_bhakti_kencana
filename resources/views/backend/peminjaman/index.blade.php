@@ -8,12 +8,10 @@
             position: relative;
             z-index: 1;
         }
-
         .table-responsive table {
             position: relative;
             z-index: 5;
         }
-
         .table-responsive thead {
             position: relative;
             z-index: 10;
@@ -58,12 +56,10 @@
                     <select name="status" class="form-select">
                         <option value="">Semua Status</option>
                         <option value="menunggu" {{ request('status') == 'menunggu' ? 'selected' : '' }}>Menunggu</option>
-                        <option value="disetujui" {{ request('status') == 'disetujui' ? 'selected' : '' }}>Disetujui
-                        </option>
+                        <option value="disetujui" {{ request('status') == 'disetujui' ? 'selected' : '' }}>Disetujui</option>
                         <option value="ditolak" {{ request('status') == 'ditolak' ? 'selected' : '' }}>Ditolak</option>
                         <option value="dipinjam" {{ request('status') == 'dipinjam' ? 'selected' : '' }}>Dipinjam</option>
-                        <option value="dikembalikan" {{ request('status') == 'dikembalikan' ? 'selected' : '' }}>
-                            Dikembalikan</option>
+                        <option value="dikembalikan" {{ request('status') == 'dikembalikan' ? 'selected' : '' }}>Dikembalikan</option>
                         <option value="selesai" {{ request('status') == 'selesai' ? 'selected' : '' }}>Selesai</option>
                     </select>
                 </div>
@@ -84,7 +80,7 @@
                     <thead class="table-primary">
                         <tr>
                             <th>#</th>
-                            <th>Kode Peminjam </th>
+                            <th>Kode Peminjaman</th>
                             <th>Nama Peminjam</th>
                             <th>Barang</th>
                             <th>Jumlah</th>
@@ -99,14 +95,26 @@
                     <tbody>
                         @forelse($peminjaman as $p)
                             <tr data-peminjaman-id="{{ $p->id }}">
-                                <td>{{ $loop->iteration }}</td>
-                                <td>{{ $p->kode }}</td>
+                                <td>{{ $loop->iteration + ($peminjaman->currentPage() - 1) * $peminjaman->perPage() }}</td>
+                                <td><strong>{{ $p->kode }}</strong></td>
                                 <td>{{ $p->user->name }}</td>
-                                <td>{{ $p->barang->nama }}</td>
-                                <td>{{ $p->jumlah }}</td>
+
+                                <td>
+                                    @foreach($p->details as $detail)
+                                        <div>{{ $detail->barang->nama }}</div>
+                                    @endforeach
+                                </td>
+
+                                <td>
+                                    @foreach($p->details as $detail)
+                                        <div>{{ $detail->jumlah }}</div>
+                                    @endforeach
+                                </td>
+
                                 <td>{{ \Carbon\Carbon::parse($p->tanggal_pinjam)->format('d/m/Y') }}</td>
                                 <td>{{ \Carbon\Carbon::parse($p->tanggal_kembali)->format('d/m/Y') }}</td>
                                 <td>{{ substr($p->waktu_mulai, 0, 5) }} - {{ substr($p->waktu_selesai, 0, 5) }}</td>
+
                                 <td>
                                     @if ($p->status == 'menunggu')
                                         <span class="badge bg-warning">Menunggu</span>
@@ -114,24 +122,22 @@
                                         <span class="badge bg-info">Disetujui</span>
                                     @elseif($p->status == 'ditolak')
                                         <span class="badge bg-danger">Ditolak</span>
-                                    @elseif($p->status == 'dipinjam')
-                                        <span class="badge bg-primary">Dipinjam</span>
-                                    @elseif($p->status == 'dikembalikan')
-                                        <span class="badge bg-success">Dikembalikan</span>
                                     @else
-                                        <span class="badge bg-secondary">Selesai</span>
+                                        <span class="badge bg-success">Dikembalikan</span>
                                     @endif
                                 </td>
+
                                 <td>{{ Str::limit($p->keterangan, 30) }}</td>
+
                                 <td class="text-center">
                                     <div class="d-flex justify-content-center align-items-center gap-2">
                                         <a href="{{ route('backend.peminjaman.edit', $p->id) }}"
                                             class="btn btn-sm btn-warning d-flex align-items-center px-2">
-                                            <i class="ti ti-edit"></i>Edit
+                                            <i class="ti ti-edit"></i> Edit
                                         </a>
                                         <a href="{{ route('backend.peminjaman.show', $p->id) }}"
                                             class="btn btn-sm btn-info text-white d-flex align-items-center px-2">
-                                            <i class="ti ti-eye"></i>Show
+                                            <i class="ti ti-eye"></i> Show
                                         </a>
                                         <form action="{{ route('backend.peminjaman.destroy', $p->id) }}" method="POST"
                                             class="d-inline" id="delete-form-{{ $p->id }}">
@@ -148,7 +154,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="9" class="text-center text-muted py-4">
+                                <td colspan="11" class="text-center text-muted py-4">
                                     <i class="ti ti-clipboard-x fs-1 d-block mb-2 text-secondary"></i>
                                     Belum ada data peminjaman.
                                 </td>
@@ -162,8 +168,10 @@
 
     @push('scripts')
         <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+
         <script>
-            // Pastikan SweetAlert2 ter-load
             document.addEventListener('DOMContentLoaded', function() {
                 window.confirmDelete = function(id) {
                     Swal.fire({
@@ -182,6 +190,7 @@
                     });
                 };
             });
+
             // Cek otomatis setiap 30 detik
             setInterval(async () => {
                 try {
@@ -195,26 +204,28 @@
                 }
             }, 30000);
 
-            // Real-time update`
-    window.Echo?.channel('peminjaman')
-        .listen('PeminjamanExpired', (e) => {
-            const row = document.querySelector(`[data-peminjaman-id="${e.peminjaman.id}"]`);
-            if (row) {
-                const badge = row.querySelector('.badge');
-                if (badge) {
-                    badge.className = 'badge bg-secondary';
-                    badge.textContent = 'Selesai';
-                }
-            }
+            // Real-time update ketika peminjaman selesai otomatis
+            window.Echo?.channel('peminjaman')
+                .listen('PeminjamanExpired', (e) => {
+                    const row = document.querySelector(`[data-peminjaman-id="${e.peminjaman.id}"]`);
+                    if (row) {
+                        const badge = row.querySelector('.badge');
+                        if (badge) {
+                            badge.className = 'badge bg-secondary';
+                            badge.textContent = 'Selesai';
+                        }
+                    }
 
-            Toastify?.({
-                text: `Peminjaman ${e.peminjaman.barang.nama} selesai! Stok +${e.peminjaman.jumlah}`,
+                    // Tampilkan semua barang yang kembali
+                    let barangText = e.peminjaman.details.map(d => `${d.barang.nama} (${d.jumlah})`).join(', ');
+
+                    Toastify({
+                        text: `Peminjaman ${e.peminjaman.kode} selesai! Stok kembali: ${barangText}`,
                         backgroundColor: "linear-gradient(to right, #00b09b, #96c93d)",
-                        duration: 5000
+                        duration: 6000
                     }).showToast();
                 });
         </script>
     @endpush
     @stack('scripts')
-
 @endsection

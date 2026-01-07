@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\BookingCheckController;
 use App\Http\Controllers\Api\PeminjamanCheckController;
 use App\Http\Controllers\BackendController;
 use App\Http\Controllers\Backend\BarangController;
+use App\Http\Controllers\Backend\BarangRuanganController;
 use App\Http\Controllers\Backend\BookingController;
 use App\Http\Controllers\Backend\JadwalController;
 use App\Http\Controllers\Backend\KategoriController;
@@ -15,9 +16,9 @@ use App\Http\Controllers\FrontendController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\User\BookingNotificationController;
 use App\Http\Controllers\User\PeminjamanNotificationController;
+use App\Http\Controllers\User\ProfileController;
 use App\Http\Controllers\User\UserBookingController;
 use App\Http\Controllers\User\UserPeminjamanController;
-use App\Http\Controllers\User\ProfileController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -39,11 +40,21 @@ Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name
 Route::group(['prefix' => 'admin', 'as' => 'backend.', 'middleware' => ['auth', 'admin']], function () {
     Route::get('/', [BackendController::class, 'index'])->name('index');
     //crud
+    Route::put('ruangan/{id}/status', [RuanganController::class, 'updateStatus'])->name('backend.ruangan.update-status');
+
     Route::resource('/ruangan', RuanganController::class);
+
     Route::resource('/jadwal', JadwalController::class);
     Route::resource('/booking', BookingController::class);
     Route::get('/peminjaman-barang/export-pdf', [PeminjamanBarangController::class, 'export'])->name('peminjaman.pinjampdf');
     Route::resource('/peminjaman', PeminjamanBarangController::class);
+
+    Route::resource('barangruangan', BarangRuanganController::class);
+
+    // Gunakan path yang berbeda
+    Route::put('barangruangan/update-status/{id}', [BarangRuanganController::class, 'updateStatus'])
+        ->name('barangruangan.update-status');
+
     Route::resource('/kategori', KategoriController::class);
     Route::get('barang/export-pdf', [BarangController::class, 'export'])->name('barang.exportpdf');
     Route::resource('/barang', BarangController::class);

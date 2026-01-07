@@ -5,7 +5,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class ruangan extends Model
 {
-    protected $fillable = ['cover', 'kode_ruangan', 'nama_ruangan', 'kapasitas', 'lokasi', 'fasilitas'];
+    protected $fillable = ['nama_ruangan', 'kapasitas', 'lokasi', 'status'];
+    
 
     public function booking()
     {
@@ -17,6 +18,10 @@ class ruangan extends Model
     {
         return $this->hasMany(Jadwal::class, 'ruang_id');
         // sama juga untuk tabel jadwal
+    }
+    public function barangRuangan()
+    {
+        return $this->hasMany(BarangRuangan::class);
     }
 
 }

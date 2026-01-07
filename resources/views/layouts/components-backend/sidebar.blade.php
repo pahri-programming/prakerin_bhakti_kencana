@@ -78,7 +78,7 @@
                         <span class="hide-menu">Table Akun</span>
                     </a>
                 </li>
-                <li class="sidebar-item">       
+                <li class="sidebar-item">
                     <a class="sidebar-link" href="{{ route('backend.ruangan.index') }}" aria-expanded="false">
                         <span>
                             <i class="ti ti-door"></i>
@@ -93,8 +93,8 @@
                         </span>
                         <span class="hide-menu">Jadwal</span>
                     </a>
-                </li> 
-                <li class="sidebar-item">       
+                </li>
+                <li class="sidebar-item">
                     <a class="sidebar-link" href="{{ route('backend.booking.index') }}" aria-expanded="false">
                         <span>
                             <i class="ti ti-bookmark"></i>
@@ -102,7 +102,7 @@
                         <span class="hide-menu">Booking</span>
                     </a>
                 </li>
-                <li class="sidebar-item">       
+                <li class="sidebar-item">
                     <a class="sidebar-link" href="{{ route('backend.barang.index') }}" aria-expanded="false">
                         <span>
                             <i class="ti ti-box"></i>
@@ -110,7 +110,7 @@
                         <span class="hide-menu">Barang</span>
                     </a>
                 </li>
-                <li class="sidebar-item">       
+                <li class="sidebar-item">
                     <a class="sidebar-link" href="{{ route('backend.peminjaman.index') }}" aria-expanded="false">
                         <span>
                             <i class="ti ti-package"></i>
@@ -126,6 +126,15 @@
                         <span class="hide-menu">Kategori</span>
                     </a>
                 </li>
+                <li class="sidebar-item">
+                    <a class="sidebar-link" href="{{ route('backend.barangruangan.index') }}" aria-expanded="false">
+                        <span>
+                            <i class="ti ti-layout-grid"></i>
+                        </span>
+                        <span class="hide-menu">Barang Ruangan</span>
+                    </a>
+                </li>
+
                 <li class="sidebar-item">
                     <a class="sidebar-link" href="{{ route('backend.laporan-ubk.index') }}" aria-expanded="false">
                         <span>

@@ -11,18 +11,6 @@
                     <form action="{{ route('backend.barang.store') }}" method="POST" enctype="multipart/form-data">
                         @csrf
                         <div class="form-floating mb-3">
-                            <input type="text" name="kode" class="form-control @error('kode') is-invalid @enderror"
-                                placeholder="Kode Barang" value="{{ old('kode') }}">
-                            <label>
-                                <i class="ti ti-barcode me-2 fs-4"></i>Kode Barang
-                            </label>
-                            @error('kode')
-                                <span class="invalid-feedback" role="alert">
-                                    <strong>{{ $message }}</strong>
-                                </span>
-                            @enderror
-                        </div>
-                        <div class="form-floating mb-3">
                             <input type="text" name="nama" class="form-control @error('nama') is-invalid @enderror"
                                 placeholder="Nama Barang" value="{{ old('nama') }}">
                             <label>
@@ -55,36 +43,12 @@
                             @enderror
                         </div>
                         <div class="form-floating mb-3">
-                            <input type="number" name="stok" class="form-control @error('stok') is-invalid @enderror"
-                                placeholder="Stok Barang" value="{{ old('stok') }}">
-                            <label>
-                                <i class="ti ti-stack me-2 fs-4"></i>Stok Barang
-                            </label>
-                            @error('stok')
-                                <span class="invalid-feedback" role="alert">
-                                    <strong>{{ $message }}</strong>
-                                </span>
-                            @enderror
-                        </div>
-                        <div class="form-floating mb-3">
                             <textarea name="keterangan" class="form-control @error('keterangan') is-invalid @enderror"
                                 placeholder="Deskripsi Barang" style="height: 100px">{{ old('keterangan') }}</textarea>
                             <label>
                                 <i class="ti ti-file-description me-2 fs-4"></i>Deskripsi Barang
                             </label>
                             @error('keterangan')
-                                <span class="invalid-feedback" role="alert">
-                                    <strong>{{ $message }}</strong>
-                                </span>
-                            @enderror
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">
-                                <i class="ti ti-photo me-2 fs-4"></i>Photo Barang
-                            </label>
-                            <input type="file" name="foto" class="form-control @error('foto') is-invalid @enderror"
-                                accept="image/*">
-                            @error('foto')
                                 <span class="invalid-feedback" role="alert">
                                     <strong>{{ $message }}</strong>
                                 </span>

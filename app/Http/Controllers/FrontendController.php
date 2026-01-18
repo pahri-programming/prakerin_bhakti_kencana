@@ -14,33 +14,42 @@ class FrontendController extends Controller
 {
     public function index()
     {
-        $booking = booking::with('ruangan')
+        // Ambil booking yang diterima/selesai
+        $bookings = booking::with('ruangan', 'user')
             ->whereIn('status', ['Diterima', 'Selesai'])
             ->get();
 
-        $jadwal = jadwal::with('ruangan')->get();
+        // Ambil semua jadwal
+        $jadwals = jadwal::with('ruangan')->get();
 
         $events = [];
 
-        foreach ($booking as $bookings) {
+        // Process Bookings
+        foreach ($bookings as $booking) {
             $events[] = [
-                'title'       => 'Booking - ' . ($bookings->ruangan->nama ?? 'Tanpa Ruangan'),
-                'start'       => $bookings->tanggal . 'T' . $bookings->jam_mulai,
-                'end'         => $bookings->tanggal . 'T' . $bookings->jam_selesai,
-                'color'       => '#f39c12',
-                'description' => 'Nama: ' . $bookings->user->name . '<br> Status: ' . $bookings->status,
-
+                'title'       => 'booking - ' . ($booking->ruangan->nama_ruangan ?? 'Tanpa ruangan'),
+                'start'       => $booking->tanggal . 'T' . $booking->waktu_mulai,
+                'end'         => $booking->tanggal . 'T' . $booking->waktu_selesai,
+                'color'       => '#f39c12', // Orange untuk booking
+                'description' => '<strong>booking</strong><br>Nama: ' . $booking->user->name . '<br>Status: ' . $booking->status,
+                'borderColor' => '#e67e22',
+                'textColor'   => '#ffffff',
             ];
-
         }
 
-        foreach ($jadwal as $jadwals) {
+        // Process Jadwals
+        foreach ($jadwals as $jadwal) {
             $events[] = [
-                'title' => 'Jadwal - ' . ($jadwals->ruangan->nama_ruangan ?? 'Tanpa Ruangan') . ' | Deskripsi : ' . $jadwals->kegiatan,
-                'start' => $jadwals->tanggal . 'T' . $jadwals->waktu_mulai,
-                'end'   => $jadwals->tanggal . 'T' . $jadwals->waktu_selesai,
-                'color' => '#3498db',
-
+                'title'       => $jadwal->kegiatan,
+                'start'       => $jadwal->tanggal . 'T' . $jadwal->waktu_mulai,
+                'end'         => $jadwal->tanggal . 'T' . $jadwal->waktu_selesai,
+                'color'       => '#3498db', // Blue untuk jadwal
+                'description' => '<strong>jadwal Tetap</strong><br>' .
+                'ruangan: ' . ($jadwal->ruangan->nama_ruangan ?? 'N/A') . '<br>' .
+                'Kegiatan: ' . $jadwal->kegiatan . '<br>' .
+                'Waktu: ' . substr($jadwal->waktu_mulai, 0, 5) . ' - ' . substr($jadwal->waktu_selesai, 0, 5),
+                'borderColor' => '#2980b9',
+                'textColor'   => '#ffffff',
             ];
         }
 
@@ -55,7 +64,7 @@ class FrontendController extends Controller
     public function riwayat(Request $request)
     {
         //booking
-        $bookingQuery = Booking::where('user_id', Auth::id())
+        $bookingQuery = booking::where('user_id', Auth::id())
             ->with('ruangan');
 
         if ($request->filled('ruang_id')) {
@@ -82,7 +91,6 @@ class FrontendController extends Controller
             $peminjamanQuery->where('status', $request->status_peminjaman);
         }
 
-        // FILTER TANGGAL BARU
         if ($request->filled('tanggal_pinjam')) {
             $peminjamanQuery->whereDate('tanggal_pinjam', $request->tanggal_pinjam);
         }
@@ -95,7 +103,7 @@ class FrontendController extends Controller
             ->orderBy('tanggal_pinjam', 'desc')
             ->get();
 
-        $ruangan = Ruangan::orderBy('nama_ruangan')->get();
+        $ruangan = ruangan::orderBy('nama_ruangan')->get();
         $barang  = Barang::orderBy('nama')->get();
 
         return view('riwayat', compact(
@@ -115,7 +123,6 @@ class FrontendController extends Controller
         confirmDelete($title, $text);
 
         return view('ruangan', compact('ruangans'));
-
     }
 
     public function ruanganShow(string $id)
@@ -124,7 +131,6 @@ class FrontendController extends Controller
         return view('ruangan_detail', compact('ruangan'));
     }
 
-    // Tambahkan di FrontendController
     public function barangIndex()
     {
         $barangs   = Barang::with('kategori')->orderBy('nama', 'asc')->get();
@@ -153,9 +159,8 @@ class FrontendController extends Controller
         if (request()->filled('tanggal')) {
             $query->whereDate('tanggal', request('tanggal'));
         }
-        
+
         $booking = $query->orderBy('tanggal', 'desc')->get();
-            
 
         $pdf = Pdf::loadView('riwayat_booking_pdf', compact('booking'));
 
@@ -191,5 +196,4 @@ class FrontendController extends Controller
             'riwayat-peminjaman-' . Auth::user()->name . '-' . now()->format('d-m-Y') . '.pdf'
         );
     }
-
 }

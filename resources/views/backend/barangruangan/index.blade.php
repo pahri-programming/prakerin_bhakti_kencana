@@ -113,7 +113,7 @@
                                         </div>
                                         <div>
                                             <div class="fw-semibold">{{ $item->barang->nama ?? '-' }}</div>
-                                            <small class="text-muted">{{ $item->barang->kode ?? '-' }}</small>
+                                            {{-- <small class="text-muted">{{ $item->barang->kode ?? '-' }}</small> --}}
                                         </div>
                                     </div>
                                 </td>

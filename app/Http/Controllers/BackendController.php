@@ -1,16 +1,14 @@
 <?php
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-
 class BackendController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-
     public function index()
     {
+        // Booking data
         $booking = \App\Models\Booking::with(['user', 'ruangan'])
             ->orderByDesc('tanggal')
             ->limit(6)
@@ -20,7 +18,12 @@ class BackendController extends Controller
                 return $b;
             });
 
-        $peminjamanBarang = \App\Models\PeminjamanBarang::with(['user', 'barang'])
+        // ✅ PERBAIKI INI - Pakai relasi yang benar
+        $peminjamanBarang = \App\Models\PeminjamanBarang::with([
+            'user',
+            'detailbarangs.barangRuangan.barang',
+            'detailbarangs.barangRuangan.ruangan',
+        ])
             ->orderByDesc('created_at')
             ->limit(6)
             ->get()
@@ -31,72 +34,25 @@ class BackendController extends Controller
             });
 
         $counts = [
-            'users'          => \App\Models\User::count(),
-            'barangs'        => \App\Models\Barang::count(),
-            'kategoris'      => \App\Models\Kategori::count(),
-            'peminjaman'     => \App\Models\PeminjamanBarang::count(),
-            'bookings'       => \App\Models\Booking::count(),
-            'ruangans'       => \App\Models\Ruangan::count(),
-            'jadwals'        => \App\Models\Jadwal::count(),
+            'users'             => \App\Models\User::count(),
+            'barangs'           => \App\Models\Barang::count(),
+            'kategoris'         => \App\Models\Kategori::count(),
+            'peminjaman'        => \App\Models\PeminjamanBarang::count(),
+            'bookings'          => \App\Models\Booking::count(),
+            'ruangans'          => \App\Models\Ruangan::count(),
+            'jadwals'           => \App\Models\Jadwal::count(),
 
-            'bookingHariIni' => \App\Models\Booking::whereDate('tanggal', now()->toDateString())
+            'bookingHariIni'    => \App\Models\Booking::whereDate('tanggal', now()->toDateString())
                 ->count(),
 
-            'bookingPending' => \App\Models\Booking::where('status', 'Pending')->count(),
+            'bookingPending'    => \App\Models\Booking::where('status', 'Pending')->count(),
 
             'peminjamanHariIni' => \App\Models\PeminjamanBarang::whereDate('tanggal_pinjam', now()->toDateString())->count(),
             'PeminjamanPending' => \App\Models\PeminjamanBarang::where('status', 'menunggu')->count(),
-
         ];
 
         return view('backend.index', compact('booking', 'peminjamanBarang', 'counts'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
-    {
-        //
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
-    }
+    // ... method lainnya tetap sama
 }

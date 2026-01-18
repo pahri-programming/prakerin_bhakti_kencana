@@ -1,107 +1,89 @@
 @extends('layouts.backend')
+@section('title', 'Edit Barang')
 
 @section('content')
-    <div class="container-fluid">
-        <div class="row">
-            <div class="card">
-                <div class="card-header bg-primary text-white fw-bold">
-                    Edit Data Barang
+    <div class="container-fluid px-4 py-4">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <!-- Header -->
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h2 class="fw-bold mb-1">Edit Barang</h2>
+                        <p class="text-muted mb-0">Perbarui informasi barang</p>
+                    </div>
+                    <a href="{{ route('backend.barang.index') }}" class="btn btn-secondary">
+                        <i class="ti ti-arrow-left me-2"></i>Kembali
+                    </a>
                 </div>
-                <div class="card-body">
-                    <form action="{{ route('backend.barang.update', $barang->id) }}" method="POST"
-                        enctype="multipart/form-data">
-                        @csrf
-                        @method('PUT')
-                        <div class="form-floating mb-3">
-                            <input type="text" name="kode" class="form-control @error('kode') is-invalid @enderror"
-                                placeholder="Kode Barang" value="{{ old('kode', $barang->kode) }}">
-                            <label>
-                                <i class="ti ti-barcode me-2 fs-4"></i>Kode Barang
-                            </label>
-                            @error('kode')
-                                <span class="invalid-feedback" role="alert">
-                                    <strong>{{ $message }}</strong>
-                                </span>
-                            @enderror
-                        </div>
-                        <div class="form-floating mb-3">
-                            <input type="text" name="nama" class="form-control @error('nama') is-invalid @enderror"
-                                placeholder="Nama Barang" value="{{ old('nama', $barang->nama) }}">
-                            <label>
-                                <i class="ti ti-box me-2 fs-4"></i>Nama Barang
-                            </label>
-                            @error('nama')
-                                <span class="invalid-feedback" role="alert">
-                                    <strong>{{ $message }}</strong>
-                                </span>
-                            @enderror
-                        </div>
-                        <div class="form-floating mb-3">
-                            <select name="kategori_id" class="form-select @error('kategori_id') is-invalid @enderror"
-                                id="kategori_id">
-                                <option value="" disabled>Pilih Kategori</option>
-                                @foreach ($kategoris as $kategori)
-                                    <option value="{{ $kategori->id }}"
-                                        {{ old('kategori_id', $barang->kategori_id) == $kategori->id ? 'selected' : '' }}>
-                                        {{ $kategori->nama }}
-                                    </option>
-                                @endforeach
-                            </select>
-                            <label for="kategori_id">
-                                <i class="ti ti-tags me-2 fs-4"></i>Kategori
-                            </label>
-                            @error('kategori_id')
-                                <span class="invalid-feedback" role="alert">
-                                    <strong>{{ $message }}</strong>
-                                </span>
-                            @enderror
-                        </div>
-                        <div class="form-floating mb-3">
-                            <input type="number" name="stok" class="form-control @error('stok') is-invalid @enderror"
-                                placeholder="Stok Barang" value="{{ old('stok', $barang->stok) }}">
-                            <label>
-                                <i class="ti ti-stack me-2 fs-4"></i>Stok Barang
-                            </label>
-                            @error('stok')
-                                <span class="invalid-feedback" role="alert">
-                                    <strong>{{ $message }}</strong>
-                                </span>
-                            @enderror
-                        </div>
-                        <div class="form-floating mb-3">
-                            <textarea name="keterangan" class="form-control @error('keterangan') is-invalid @enderror" placeholder="Deskripsi Barang"
-                                style="height: 100px">{{ old('keterangan', $barang->keterangan) }}</textarea>
-                            <label>
-                                <i class="ti ti-file-description me-2 fs-4"></i>Deskripsi Barang
-                            </label>
-                            @error('keterangan')
-                                <span class="invalid-feedback" role="alert">
-                                    <strong>{{ $message }}</strong>
-                                </span>
-                            @enderror
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">
-                                <i class="ti ti-photo me-2 fs-4"></i>Photo Barang
-                            </label>
-                            <input type="file" name="foto" class="form-control @error('foto') is-invalid @enderror"
-                                accept="image/*">
-                            @if ($barang->foto)
-                                <div class="mt-2">
-                                    <img src="{{ Storage::url($barang->foto) }}" alt="Foto Barang" width="120"
-                                        height="120" class="rounded">
-                                </div>
-                            @endif
-                            @error('foto')
-                                <span class="invalid-feedback" role="alert">
-                                    <strong>{{ $message }}</strong>
-                                </span>
-                            @enderror
-                        </div>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="ti ti-checks me-2"></i>Simpan Perubahan
-                        </button>
-                    </form>
+
+                <!-- Form Card -->
+                <div class="card border-0 shadow-sm rounded-3">
+                    <div class="card-body p-4">
+                        <form action="{{ route('backend.barang.update', $barang->id) }}" method="POST">
+                            @csrf
+                            @method('PUT')
+
+                            <!-- Nama Barang -->
+                            <div class="mb-4">
+                                <label class="form-label fw-semibold">
+                                    Nama Barang <span class="text-danger">*</span>
+                                </label>
+                                <input type="text" name="nama"
+                                    class="form-control @error('nama') is-invalid @enderror"
+                                    value="{{ old('nama', $barang->nama) }}" placeholder="Masukkan nama barang" required>
+                                @error('nama')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <!-- Kategori -->
+                            <div class="mb-4">
+                                <label class="form-label fw-semibold">Kategori</label>
+                                <select name="kategori_id" class="form-select @error('kategori_id') is-invalid @enderror">
+                                    <option value="">-- Pilih Kategori --</option>
+                                    @foreach ($kategoris as $kategori)
+                                        <option value="{{ $kategori->id }}"
+                                            {{ old('kategori_id', $barang->kategori_id) == $kategori->id ? 'selected' : '' }}>
+                                            {{ $kategori->nama }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                @error('kategori_id')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <!-- Keterangan -->
+                            <div class="mb-4">
+                                <label class="form-label fw-semibold">Keterangan</label>
+                                <textarea name="keterangan" rows="4" class="form-control @error('keterangan') is-invalid @enderror"
+                                    placeholder="Deskripsi barang (opsional)">{{ old('keterangan', $barang->keterangan) }}</textarea>
+                                @error('keterangan')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <!-- Info Update -->
+                            <div class="alert alert-info">
+                                <small>
+                                    <i class="ti ti-info-circle me-1"></i>
+                                    <strong>Terakhir diupdate:</strong>
+                                    {{ $barang->updated_at->format('d F Y, H:i') }}
+                                </small>
+                            </div>
+
+                            <!-- Buttons -->
+                            <hr class="my-4">
+                            <div class="d-flex justify-content-between">
+                                <a href="{{ route('backend.barang.index') }}" class="btn btn-secondary">
+                                    <i class="ti ti-x me-2"></i>Batal
+                                </a>
+                                <button type="submit" class="btn btn-warning px-4">
+                                    <i class="ti ti-device-floppy me-2"></i>Update Barang
+                                </button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>

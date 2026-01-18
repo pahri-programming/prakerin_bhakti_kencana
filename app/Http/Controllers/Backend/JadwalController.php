@@ -1,30 +1,84 @@
 <?php
-
 namespace App\Http\Controllers\Backend;
 
 use App\Http\Controllers\Controller;
-use App\Models\jadwal;
-use App\Models\ruangan;
+use App\Models\Jadwal;
+use App\Models\Ruangan;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class JadwalController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
+
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $jadwal = jadwal::orderBy('tanggal', 'DESC')->get()->map(function ($jadwal) {
-            $jadwal->tanggal_format = Carbon::parse($jadwal->tanggal)->translatedFormat('d F Y');
-            return $jadwal;
-        });
+        $query = Jadwal::with('ruangan');
 
-        $title = 'Data Jadwal';
-        $text  = "Apakah anda yakin ingin menghapus data jadwal ini?";
+        // Filter by search
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('kegiatan', 'like', "%{$search}%")
+                    ->orWhereHas('ruangan', function ($q2) use ($search) {
+                        $q2->where('nama_ruangan', 'like', "%{$search}%");
+                    });
+            });
+        }
+
+        // Filter by ruangan
+        if ($request->filled('ruangan_id')) {
+            $query->where('ruang_id', $request->ruangan_id);
+        }
+
+        // Filter by tanggal
+        if ($request->filled('tanggal')) {
+            $query->whereDate('tanggal', $request->tanggal);
+        }
+
+        // Filter by bulan
+        if ($request->filled('bulan')) {
+            $query->whereMonth('tanggal', $request->bulan);
+        }
+
+        // Filter by tahun
+        if ($request->filled('tahun')) {
+            $query->whereYear('tanggal', $request->tahun);
+        }
+
+        $jadwal = $query->orderBy('tanggal', 'DESC')
+            ->orderBy('waktu_mulai', 'ASC')
+            ->paginate(10)
+            ->through(function ($item) {
+                $item->tanggal_format = Carbon::parse($item->tanggal)->translatedFormat('d F Y');
+                $item->hari           = Carbon::parse($item->tanggal)->translatedFormat('l');
+                $item->status_waktu   = $this->getStatusWaktu($item);
+                return $item;
+            });
+
+        // Data untuk filter
+        $ruangans = Ruangan::orderBy('nama_ruangan')->get();
+        $bulan    = [
+            1 => 'Januari', 2    => 'Februari', 3 => 'Maret', 4     => 'April',
+            5 => 'Mei', 6        => 'Juni', 7     => 'Juli', 8      => 'Agustus',
+            9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember',
+        ];
+        $tahun = range(date('Y') - 2, date('Y') + 1);
+
+        // Confirm delete
+        $title = 'Hapus Data Jadwal';
+        $text  = "Apakah Anda yakin ingin menghapus data jadwal ini?";
         confirmDelete($title, $text);
 
-        return view('backend.jadwal.index', compact('jadwal'));
+        return view('backend.jadwal.index', compact('jadwal', 'ruangans', 'bulan', 'tahun'));
     }
 
     /**
@@ -32,8 +86,8 @@ class JadwalController extends Controller
      */
     public function create()
     {
-        $ruangan = ruangan::all();
-        return view('backend.jadwal.create', compact('ruangan'));
+        $ruangans = Ruangan::where('status', 'tersedia')->orderBy('nama_ruangan')->get();
+        return view('backend.jadwal.create', compact('ruangans'));
     }
 
     /**
@@ -41,24 +95,69 @@ class JadwalController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'ruang_id'      => 'required|exists:ruangans,id',
-            'tanggal'       => 'required|date',
-            'waktu_mulai'   => 'required',
-            'waktu_selesai' => 'required|after:waktu_mulai',
+            'tanggal'       => 'required|date|after_or_equal:today',
+            'waktu_mulai'   => 'required|date_format:H:i',
+            'waktu_selesai' => 'required|date_format:H:i|after:waktu_mulai',
             'kegiatan'      => 'required|string|max:255',
+        ], [
+            'required'       => ':attribute harus diisi',
+            'exists'         => ':attribute tidak valid',
+            'date'           => ':attribute harus berupa tanggal',
+            'after_or_equal' => ':attribute tidak boleh sebelum hari ini',
+            'date_format'    => 'Format :attribute tidak valid (HH:MM)',
+            'after'          => ':attribute harus setelah waktu mulai',
+            'max'            => ':attribute maksimal :max karakter',
         ]);
 
-        $jadwal = new jadwal();
-        $jadwal->ruang_id      = $request->ruang_id;
-        $jadwal->tanggal       = $request->tanggal;
-        $jadwal->waktu_mulai   = $request->waktu_mulai;
-        $jadwal->waktu_selesai = $request->waktu_selesai;
-        $jadwal->kegiatan      = $request->kegiatan;
-        $jadwal->save();
+        try {
+            // Check konflik jadwal
+            $konflik = Jadwal::where('ruang_id', $validated['ruang_id'])
+                ->where('tanggal', $validated['tanggal'])
+                ->where(function ($query) use ($validated) {
+                    $query->whereBetween('waktu_mulai', [$validated['waktu_mulai'], $validated['waktu_selesai']])
+                        ->orWhereBetween('waktu_selesai', [$validated['waktu_mulai'], $validated['waktu_selesai']])
+                        ->orWhere(function ($q) use ($validated) {
+                            $q->where('waktu_mulai', '<=', $validated['waktu_mulai'])
+                                ->where('waktu_selesai', '>=', $validated['waktu_selesai']);
+                        });
+                })
+                ->exists();
 
-        toast('Jadwal Berhasil Ditambahkan!', 'success');
-        return redirect()->route('backend.jadwal.index')->with('success', 'Jadwal created successfully.');
+            if ($konflik) {
+                toast('Jadwal bentrok! Ruangan sudah terpakai pada waktu tersebut.', 'error');
+                return back()->withInput();
+            }
+
+            DB::beginTransaction();
+
+            $jadwal = Jadwal::create($validated);
+
+            DB::commit();
+
+            Log::info('Jadwal berhasil dibuat', [
+                'id'       => $jadwal->id,
+                'ruangan'  => $jadwal->ruangan->nama_ruangan ?? 'N/A',
+                'tanggal'  => $jadwal->tanggal,
+                'kegiatan' => $jadwal->kegiatan,
+            ]);
+
+            toast('Jadwal berhasil ditambahkan!', 'success');
+            return redirect()->route('backend.jadwal.index');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            Log::error('Error saat membuat jadwal', [
+                'message' => $e->getMessage(),
+                'file'    => $e->getFile(),
+                'line'    => $e->getLine(),
+            ]);
+
+            toast('Gagal menambahkan jadwal: ' . $e->getMessage(), 'error');
+            return back()->withInput();
+        }
     }
 
     /**
@@ -66,9 +165,12 @@ class JadwalController extends Controller
      */
     public function show(string $id)
     {
-        $jadwal = jadwal::findOrFail($id);
+        $jadwal                 = Jadwal::with('ruangan')->findOrFail($id);
         $jadwal->tanggal_format = Carbon::parse($jadwal->tanggal)->translatedFormat('d F Y');
-        return view('backend.jadwal.show', compact('jadwal')); 
+        $jadwal->hari           = Carbon::parse($jadwal->tanggal)->translatedFormat('l');
+        $jadwal->status_waktu   = $this->getStatusWaktu($jadwal);
+
+        return view('backend.jadwal.show', compact('jadwal'));
     }
 
     /**
@@ -76,10 +178,10 @@ class JadwalController extends Controller
      */
     public function edit(string $id)
     {
-        $jadwal  = jadwal::findOrFail($id);
-        $ruangan = ruangan::all();
+        $jadwal   = Jadwal::findOrFail($id);
+        $ruangans = Ruangan::orderBy('nama_ruangan')->get();
 
-        return view('backend.jadwal.edit', compact('jadwal', 'ruangan'));
+        return view('backend.jadwal.edit', compact('jadwal', 'ruangans'));
     }
 
     /**
@@ -87,24 +189,71 @@ class JadwalController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        $request->validate([
+        $validated = $request->validate([
             'ruang_id'      => 'required|exists:ruangans,id',
             'tanggal'       => 'required|date',
-            'waktu_mulai'   => 'required',
-            'waktu_selesai' => 'required|after:waktu_mulai',
+            'waktu_mulai'   => 'required|date_format:H:i',
+            'waktu_selesai' => 'required|date_format:H:i|after:waktu_mulai',
             'kegiatan'      => 'required|string|max:255',
+        ], [
+            'required'    => ':attribute harus diisi',
+            'exists'      => ':attribute tidak valid',
+            'date'        => ':attribute harus berupa tanggal',
+            'date_format' => 'Format :attribute tidak valid (HH:MM)',
+            'after'       => ':attribute harus setelah waktu mulai',
+            'max'         => ':attribute maksimal :max karakter',
         ]);
 
-        $jadwal = jadwal::findOrFail($id);
-        $jadwal->ruang_id      = $request->ruang_id;
-        $jadwal->tanggal       = $request->tanggal;
-        $jadwal->waktu_mulai   = $request->waktu_mulai;
-        $jadwal->waktu_selesai = $request->waktu_selesai;
-        $jadwal->kegiatan      = $request->kegiatan;
-        $jadwal->save();
+        try {
+            $jadwal = Jadwal::findOrFail($id);
 
-        toast('Jadwal Berhasil Diperbarui!', 'success');
-        return redirect()->route('backend.jadwal.index')->with('success', 'Jadwal updated successfully.');
+            // Check konflik jadwal (kecuali jadwal ini sendiri)
+            $konflik = Jadwal::where('ruang_id', $validated['ruang_id'])
+                ->where('tanggal', $validated['tanggal'])
+                ->where('id', '!=', $id)
+                ->where(function ($query) use ($validated) {
+                    $query->whereBetween('waktu_mulai', [$validated['waktu_mulai'], $validated['waktu_selesai']])
+                        ->orWhereBetween('waktu_selesai', [$validated['waktu_mulai'], $validated['waktu_selesai']])
+                        ->orWhere(function ($q) use ($validated) {
+                            $q->where('waktu_mulai', '<=', $validated['waktu_mulai'])
+                                ->where('waktu_selesai', '>=', $validated['waktu_selesai']);
+                        });
+                })
+                ->exists();
+
+            if ($konflik) {
+                toast('Jadwal bentrok! Ruangan sudah terpakai pada waktu tersebut.', 'error');
+                return back()->withInput();
+            }
+
+            DB::beginTransaction();
+
+            $jadwal->update($validated);
+
+            DB::commit();
+
+            Log::info('Jadwal berhasil diupdate', [
+                'id'       => $jadwal->id,
+                'ruangan'  => $jadwal->ruangan->nama_ruangan ?? 'N/A',
+                'tanggal'  => $jadwal->tanggal,
+                'kegiatan' => $jadwal->kegiatan,
+            ]);
+
+            toast('Jadwal berhasil diperbarui!', 'success');
+            return redirect()->route('backend.jadwal.index');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            Log::error('Error saat update jadwal', [
+                'message' => $e->getMessage(),
+                'file'    => $e->getFile(),
+                'line'    => $e->getLine(),
+            ]);
+
+            toast('Gagal memperbarui jadwal: ' . $e->getMessage(), 'error');
+            return back()->withInput();
+        }
     }
 
     /**
@@ -112,10 +261,53 @@ class JadwalController extends Controller
      */
     public function destroy(string $id)
     {
-        $jadwal = jadwal::findOrFail($id);
-        $jadwal->delete();
+        try {
+            $jadwal = Jadwal::findOrFail($id);
 
-        toast('Jadwal Berhasil Dihapus!', 'success');
-        return redirect()->route('backend.jadwal.index')->with('success', 'Jadwal deleted successfully.');
+            // Cek apakah jadwal sudah lewat (opsional: tidak bisa dihapus jika sudah lewat)
+            // if (Carbon::parse($jadwal->tanggal)->isPast()) {
+            //     toast('Jadwal yang sudah lewat tidak dapat dihapus!', 'error');
+            //     return back();
+            // }
+
+            $jadwal->delete();
+
+            Log::info('Jadwal berhasil dihapus', ['id' => $id]);
+
+            toast('Jadwal berhasil dihapus!', 'success');
+            return redirect()->route('backend.jadwal.index');
+
+        } catch (\Exception $e) {
+            Log::error('Error saat hapus jadwal', [
+                'id'      => $id,
+                'message' => $e->getMessage(),
+            ]);
+
+            toast('Gagal menghapus jadwal!', 'error');
+            return back();
+        }
+    }
+
+    /**
+     * Get status waktu jadwal
+     */
+    private function getStatusWaktu($jadwal)
+    {
+        $now = Carbon::now();
+
+        // Convert tanggal to string format if it's Carbon object
+        $tanggalString = $jadwal->tanggal instanceof Carbon
+            ? $jadwal->tanggal->format('Y-m-d')
+            : $jadwal->tanggal;
+
+        $tanggalJadwal = Carbon::parse($tanggalString . ' ' . $jadwal->waktu_selesai);
+
+        if ($tanggalJadwal->isPast()) {
+            return 'selesai';
+        } elseif (Carbon::parse($tanggalString)->isToday()) {
+            return 'berlangsung';
+        } else {
+            return 'akan-datang';
+        }
     }
 }

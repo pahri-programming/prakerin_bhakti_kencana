@@ -10,7 +10,6 @@
                     opacity: 0;
                     transform: translateY(10px);
                 }
-
                 to {
                     opacity: 1;
                     transform: translateY(0);
@@ -33,19 +32,37 @@
             <div class="collapse navbar-collapse" id="navbarContent">
                 <!-- Menu Tengah -->
                 <ul class="navbar-nav mx-auto gap-lg-4">
-                    <li class="nav-item"><a class="nav-link text-dark fw-semibold"
-                            href="{{ url('/') }}">Beranda</a></li>
-                    <li class="nav-item"><a class="nav-link text-dark fw-semibold"
-                            href="{{ route('bookings.create') }}">Booking</a></li>
-                    <li class="nav-item"><a class="nav-link text-dark fw-semibold"
-                            href="{{ route('ruangan') }}">Ruangan</a></li>
-                    <li class="nav-item"><a class="nav-link text-dark fw-semibold"
-                            href="{{ route('peminjaman.create') }}">Pinjam</a></li>
-                    <li class="nav-item"><a class="nav-link text-dark fw-semibold"
-                            href="{{ route('barang') }}">Barang</a></li>
+                    <li class="nav-item">
+                        <a class="nav-link text-dark fw-semibold" href="{{ url('/') }}">
+                            Beranda
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-dark fw-semibold" href="{{ route('bookings.create') }}">
+                            Booking
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-dark fw-semibold" href="{{ route('ruangan') }}">
+                            Ruangan
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-dark fw-semibold" href="{{ route('peminjaman.create') }}">
+                            Pinjam
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-dark fw-semibold" href="{{ route('barang') }}">
+                            Barang
+                        </a>
+                    </li>
                     @auth
-                        <li class="nav-item"><a class="nav-link text-dark fw-semibold"
-                                href="{{ route('riwayat') }}">Riwayat</a></li>
+                        <li class="nav-item">
+                            <a class="nav-link text-dark fw-semibold" href="{{ route('riwayat.index') }}">
+                                Riwayat
+                            </a>
+                        </li>
                     @endauth
                 </ul>
 
@@ -54,125 +71,20 @@
                     @guest
                         <li class="nav-item">
                             <a href="{{ route('login') }}"
-                                class="btn btn-outline-primary rounded-pill px-4 fw-semibold">Login</a>
+                                class="btn btn-outline-primary rounded-pill px-4 fw-semibold">
+                                Login
+                            </a>
                         </li>
                     @else
-                        @auth
-                            @php
-                                // === NOTIFIKASI BOOKING ===
-                                $bookingNotifications = \App\Models\Booking::where('user_id', Auth::id())
-                                    ->where('is_read', false)
-                                    ->whereIn('status', ['Diterima', 'Ditolak'])
-                                    ->latest()
-                                    ->get();
-
-                                // === NOTIFIKASI PEMINJAMAN BARANG ===
-                                $peminjamanNotifications = \App\Models\PeminjamanBarang::where('user_id', Auth::id())
-                                    ->where('is_read', false)
-                                    ->whereIn('status', ['disetujui', 'ditolak'])
-                                    ->with('barang')
-                                    ->latest()
-                                    ->get();
-
-                                $totalNotifications =
-                                    $bookingNotifications->count() + $peminjamanNotifications->count();
-                            @endphp
-                        @endauth
-
-                        <!-- Notifikasi -->
-                        <li class="nav-item dropdown me-3">
-                            <a class="nav-link position-relative" href="#" id="notifDropdown" role="button"
-                                data-bs-toggle="dropdown" aria-expanded="false">
-                                <i class="bi bi-bell-fill fs-5 text-dark"></i>
-                                @if ($totalNotifications > 0)
-                                    <span
-                                        class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                                        {{ $totalNotifications }}
-                                    </span>
-                                @endif
-                            </a>
-
-                            <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 mt-2 rounded-4"
-                                aria-labelledby="notifDropdown" style="min-width: 320px;">
-
-                                <li class="dropdown-header fw-semibold px-3 pt-2">Notifikasi</li>
-
-                                <!-- Booking Notifications -->
-                                @forelse ($bookingNotifications as $notif)
-                                    <li>
-                                        <a class="dropdown-item small py-2 px-3 d-flex align-items-start"
-                                            href="{{ route('riwayat') }}">
-                                            <div class="me-2">
-                                                @if ($notif->status === 'Diterima')
-                                                    Success
-                                                @else
-                                                    Cross
-                                                @endif
-                                            </div>
-                                            <div>
-                                                Booking <strong>{{ $notif->ruangan->nama_ruangan }}</strong>
-                                                <span
-                                                    class="{{ $notif->status === 'Diterima' ? 'text-success' : 'text-danger' }}">
-                                                    {{ $notif->status === 'Diterima' ? 'DITERIMA' : 'DITOLAK' }}
-                                                </span>
-                                                <div class="text-muted small">{{ $notif->created_at->diffForHumans() }}
-                                                </div>
-                                            </div>
-                                        </a>
-                                    </li>
-                                @empty
-                                    <!-- Hanya tampilkan jika tidak ada booking notif -->
-                                @endforelse
-
-                                <!-- Peminjaman Barang Notifications -->
-                                @forelse ($peminjamanNotifications as $notif)
-                                    <li>
-                                        <a class="dropdown-item small py-2 px-3 d-flex align-items-start"
-                                            href="{{ route('riwayat') }}">
-                                            <div class="me-2">
-                                                @if ($notif->status === 'disetujui')
-                                                    Success
-                                                @else
-                                                    Cross
-                                                @endif
-                                            </div>
-                                            <div>
-                                                Peminjaman <strong>{{ $notif->barang->nama }}</strong>
-                                                <span
-                                                    class="{{ $notif->status === 'disetujui' ? 'text-success' : 'text-danger' }}">
-                                                    {{ $notif->status === 'disetujui' ? 'DISETUJUI' : 'DITOLAK' }}
-                                                </span>
-                                                <div class="text-muted small">{{ $notif->created_at->diffForHumans() }}
-                                                </div>
-                                            </div>
-                                        </a>
-                                    </li>
-                                @empty
-                                    @if ($bookingNotifications->isEmpty())
-                                        <li><span class="dropdown-item text-muted small">Tidak ada notifikasi.</span></li>
-                                    @endif
-                                @endforelse
-
-                                @if ($totalNotifications > 0)
-                                    <li>
-                                        <hr class="dropdown-divider">
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item text-center text-primary small fw-semibold"
-                                            href="{{ route('riwayat') }}">
-                                            <i class="bi bi-eye me-1"></i> Lihat Semua Notifikasi
-                                        </a>
-                                    </li>
-                                @endif
-                            </ul>
-                        </li>
-
                         <!-- 👤 User Dropdown -->
                         <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle d-flex align-items-center gap-2" href="#"
-                                id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-
-                                <!-- Avatar abu2 -->
+                            <a class="nav-link dropdown-toggle d-flex align-items-center gap-2" 
+                               href="#"
+                               id="userDropdown" 
+                               role="button" 
+                               data-bs-toggle="dropdown" 
+                               aria-expanded="false">
+                                <!-- Avatar -->
                                 <div class="rounded-circle bg-light border d-flex justify-content-center align-items-center"
                                     style="width:45px;height:45px;">
                                     <i class="bi bi-person-fill text-secondary fs-4"></i>
@@ -201,10 +113,17 @@
                                     <i class="bi bi-person text-primary"></i> Profile Saya
                                 </a>
 
+                                <a href="{{ route('riwayat.index') }}"
+                                    class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-3">
+                                    <i class="bi bi-clock-history text-info"></i> Riwayat
+                                </a>
+
+                                <hr class="my-2">
+
                                 <form action="{{ route('logout') }}" method="POST" class="mt-2">
                                     @csrf
-                                    <button type="submit" class="btn btn-outline-primary w-100 rounded-pill">
-                                        Logout
+                                    <button type="submit" class="btn btn-outline-danger w-100 rounded-pill">
+                                        <i class="bi bi-box-arrow-right me-2"></i>Logout
                                     </button>
                                 </form>
                             </div>
@@ -215,33 +134,3 @@
         </div>
     </nav>
 </header>
-
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const notifBtn = document.getElementById('notifDropdown');
-        if (!notifBtn) return;
-
-        notifBtn.addEventListener('click', function() {
-            // Tandai Booking
-            fetch("{{ route('booking.notifications.read') }}", {
-                method: "POST",
-                headers: {
-                    "X-CSRF-TOKEN": "{{ csrf_token() }}",
-                    "Accept": "application/json",
-                }
-            });
-
-            // Tandai Peminjaman
-            fetch("{{ route('peminjaman.notifications.read') }}", {
-                method: "POST",
-                headers: {
-                    "X-CSRF-TOKEN": "{{ csrf_token() }}",
-                    "Accept": "application/json",
-                }
-            }).then(() => {
-                const badge = notifBtn.querySelector('.badge');
-                if (badge) badge.remove();
-            });
-        });
-    });
-</script>

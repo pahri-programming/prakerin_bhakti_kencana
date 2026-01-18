@@ -98,7 +98,6 @@
                 </div>
             </div>
 
-
             <div class="col-md-3 col-sm-6">
                 <div class="card dash-card shadow-sm border-0 bg-warning text-white d-flex align-items-center">
                     <div class="w-100 d-flex justify-content-between align-items-center">
@@ -111,7 +110,6 @@
                     </div>
                 </div>
             </div>
-
 
             <div class="col-md-3 col-sm-6">
                 <a href="{{ route('backend.booking.index') }}" class="text-decoration-none">
@@ -168,18 +166,17 @@
                     </div>
                 </div>
             </div>
-
-
         </div>
 
         <!-- main tables section -->
         <div class="row">
             <div class="col-12">
+                <!-- Booking Table -->
                 <div class="card card-section shadow-sm mb-4">
                     <div class="card-header table-card-header d-flex justify-content-between align-items-center">
                         <div>
                             <h5 class="mb-0">Booking</h5>
-                            <small class="small-note"> booking terbaru</small>
+                            <small class="small-note">Booking terbaru</small>
                         </div>
                         <div>
                             <a href="{{ route('backend.booking.index') }}" class="btn btn-light btn-sm">Lihat Semua</a>
@@ -205,9 +202,7 @@
                                 <tbody>
                                     @forelse($booking as $b)
                                         <tr>
-                                            <td>
-                                                <strong>{{ $b->kode }}</strong>
-                                            </td>
+                                            <td><strong>{{ $b->kode }}</strong></td>
                                             <td>
                                                 <div class="d-flex flex-column">
                                                     <strong>{{ $b->user->name }}</strong>
@@ -228,16 +223,15 @@
                                                         'Ditolak' => 'danger',
                                                         'Selesai' => 'success',
                                                     ];
-
                                                     $cls = $map[$b->status] ?? 'primary';
-
                                                 @endphp
                                                 <span class="badge bg-{{ $cls }}">{{ $b->status }}</span>
                                             </td>
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td colspan="9" class="text-center text-muted py-3">Belum ada booking terbaru
+                                            <td colspan="9" class="text-center text-muted py-3">
+                                                Belum ada booking terbaru
                                             </td>
                                         </tr>
                                     @endforelse
@@ -247,15 +241,17 @@
                     </div>
                 </div>
 
+                <!-- Peminjaman Barang Table -->
                 <div class="card card-section shadow-sm">
                     <div class="card-header table-card-header d-flex justify-content-between align-items-center">
                         <div>
                             <h5 class="mb-0">Peminjaman Barang</h5>
-                            <small class="small-note"> peminjaman terbaru</small>
+                            <small class="small-note">Peminjaman terbaru</small>
                         </div>
                         <div>
-                            <a href="{{ route('backend.peminjaman.index') }}" class="btn btn-light btn-sm">Lihat
-                                Semua</a>
+                            <a href="{{ route('backend.peminjaman.index') }}" class="btn btn-light btn-sm">
+                                Lihat Semua
+                            </a>
                         </div>
                     </div>
 
@@ -264,66 +260,66 @@
                             <table class="table table-borderless align-middle mb-0">
                                 <thead>
                                     <tr class="text-muted small">
-                                        <th>Kode Peminjam</th>
+                                        <th>Kode</th>
                                         <th>Peminjam</th>
                                         <th>Barang</th>
-                                        <th>Jumlah</th>
+                                        <th>Total Qty</th>
                                         <th>Tanggal Pinjam</th>
                                         <th>Tanggal Kembali</th>
-                                        <th>Waktu</th>
                                         <th>Status</th>
                                         <th>Keterangan</th>
                                     </tr>
                                 </thead>
-
                                 <tbody>
                                     @forelse($peminjamanBarang as $p)
                                         <tr>
+                                            <td><strong>{{ $p->kode }}</strong></td>
                                             <td>
-                                                <strong>{{ $p->kode }}</strong>
-                                            <td>
-                                                <strong>{{ $p->user->name }}</strong>
-                                                <div class="text-muted small">{{ $p->user->email }}</div>
+                                                <div class="d-flex flex-column">
+                                                    <strong>{{ $p->user->name }}</strong>
+                                                    <small class="text-muted">{{ $p->user->email }}</small>
+                                                </div>
                                             </td>
-                                            <td>{{ $p->barang->nama ?? '-' }}</td>
-                                            <td><span class="badge bg-info text-dark">{{ $p->jumlah }}</span></td>
+                                            <td>
+                                                {{-- ✅ Pakai accessor helper --}}
+                                                {{ $p->barang_summary }}
+                                            </td>
+                                            <td>
+                                                {{-- ✅ Total jumlah semua barang --}}
+                                                <span class="badge bg-info text-dark">
+                                                    {{ $p->total_jumlah }} unit
+                                                </span>
+                                            </td>
                                             <td>{{ $p->tanggal_pinjam_format }}</td>
                                             <td>{{ $p->tanggal_kembali_format }}</td>
-                                            <td>{{ substr($p->waktu_mulai, 0, 5) }} -
-                                                {{ substr($p->waktu_selesai, 0, 5) }}
-                                            </td>
                                             <td>
                                                 @php
                                                     $map2 = [
                                                         'menunggu' => 'warning',
                                                         'disetujui' => 'primary',
-                                                        'dipinjam' => 'info',
-                                                        'dikembalikan' => 'success',
-                                                        'selesai' => 'success',
                                                         'ditolak' => 'danger',
+                                                        'dikembalikan' => 'success',
                                                     ];
-
-                                                    $cls2 = $map2[$p->status] ?? 'primary';
+                                                    $cls2 = $map2[$p->status] ?? 'secondary';
                                                 @endphp
-
-                                                <span class="badge bg-{{ $cls2 }}">{{ ucfirst($p->status) }}
+                                                <span class="badge bg-{{ $cls2 }}">
+                                                    {{ ucfirst($p->status) }}
                                                 </span>
                                             </td>
-                                            <td>{{ $p->keterangan ?? '-' }}</td>
+                                            <td>{{ Str::limit($p->keterangan ?? '-', 30) }}</td>
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td colspan="7" class="text-center text-muted py-3">Belum ada peminjaman
-                                                terbaru</td>
+                                            <td colspan="8" class="text-center text-muted py-3">
+                                                Belum ada peminjaman terbaru
+                                            </td>
                                         </tr>
                                     @endforelse
                                 </tbody>
-
                             </table>
                         </div>
                     </div>
                 </div>
-
             </div>
         </div>
     </div>

@@ -34,4 +34,28 @@ class Barang extends Model
     {
         return $this->belongsTo(Kategori::class);
     }
+
+    public function detailPengembalians()
+    {
+        return $this->hasMany(DetailPengembalianBarang::class, 'barang_id');
+    }
+
+    public function getTotalReturnedAttribute()
+    {
+        return $this->detailPengembalians()->sum('jumlah');
+    }
+
+    public function getTotalDamagedAttribute()
+    {
+        return $this->detailPengembalians()
+            ->where('kondisi', 'rusak')
+            ->sum('jumlah');
+    }
+
+    public function getTotalLostAttribute()
+    {
+        return $this->detailPengembalians()
+            ->where('kondisi', 'hilang')
+            ->sum('jumlah');
+    }
 }

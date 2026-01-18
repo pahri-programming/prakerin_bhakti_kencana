@@ -12,7 +12,7 @@ class UsersTableSeeder extends Seeder
         User::firstOrCreate(
             ['email' => 'admin@gmail.com'],
             [
-                'name'     => 'Pahri',
+                'name'     => 'AdminBKU',
                 'password' => Hash::make('rahasia'),
                 'isAdmin'  => 1,
             ]
@@ -27,13 +27,6 @@ class UsersTableSeeder extends Seeder
             ]
         );
 
-        User::firstOrCreate(
-            ['email' => 'teknisi@gmail.com'],
-            [
-                'name'     => 'Teknisi',
-                'password' => Hash::make('12345678'),
-                'role'     => 'teknisi',
-            ]
-        );
+        
     }
 }

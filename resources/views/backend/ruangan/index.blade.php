@@ -28,7 +28,7 @@
                                         <th>Kapasitas</th>
                                         <th>Lokasi</th>
                                         <th>Status</th>
-=                                        <th class="text-center">Aksi</th>
+                                       <th class="text-center">Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody>

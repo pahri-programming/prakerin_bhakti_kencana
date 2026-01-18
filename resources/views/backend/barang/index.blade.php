@@ -17,7 +17,6 @@
                     <i class="ti ti-plus fs-5"></i> Tambah Barang
                 </a>
             </div>
-
         </div>
 
         <div class="card-body bg-light">
@@ -25,7 +24,7 @@
                 <div class="col-md-4">
                     <div class="input-group">
                         <span class="input-group-text bg-white"><i class="ti ti-search text-primary"></i></span>
-                        <input type="text" name="search" class="form-control" placeholder="Cari nama / kode..."
+                        <input type="text" name="search" class="form-control" placeholder="Cari nama barang..."
                             value="{{ request('search') }}">
                     </div>
                 </div>
@@ -74,20 +73,21 @@
                                 <td>{{ $barang->created_at_format }}</td>
                                 <td class="text-center">
                                     <div class="d-flex justify-content-center align-items-center gap-2">
-                                        <a href="{{ route('backend.barang.edit', $barang->id) }}"
-                                            class="btn btn-sm btn-warning d-flex align-items-center px-2">
-                                            <i class="ti ti-edit"></i>
-                                            <span class="ms-1 d-none d-md-inline">Edit</span>
-                                        </a>
-
                                         <a href="{{ route('backend.barang.show', $barang->id) }}"
                                             class="btn btn-sm btn-info text-white d-flex align-items-center px-2">
                                             <i class="ti ti-eye"></i>
                                             <span class="ms-1 d-none d-md-inline">Show</span>
                                         </a>
 
+                                        <a href="{{ route('backend.barang.edit', $barang->id) }}"
+                                            class="btn btn-sm btn-warning d-flex align-items-center px-2">
+                                            <i class="ti ti-edit"></i>
+                                            <span class="ms-1 d-none d-md-inline">Edit</span>
+                                        </a>
+
+                                        {{-- ✅ PERBAIKAN: Tambah ID pada form --}}
                                         <form action="{{ route('backend.barang.destroy', $barang->id) }}" method="POST"
-                                            class="d-inline">
+                                            id="delete-form-{{ $barang->id }}" class="d-inline">
                                             @csrf
                                             @method('DELETE')
                                             <button type="button"
@@ -102,7 +102,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="8" class="text-center text-muted py-4">
+                                <td colspan="6" class="text-center text-muted py-4">
                                     <i class="ti ti-box fs-1 d-block mb-2 text-secondary"></i>
                                     Belum ada data barang.
                                 </td>
@@ -114,11 +114,10 @@
         </div>
     </div>
 
-    {{-- SCRIPT SWEETALERT YANG BENAR & AMAN --}}
+    {{-- SCRIPT SWEETALERT --}}
     @push('scripts')
         <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
         <script>
-            // Fungsi global biar gak bentrok sama halaman lain
             window.confirmDelete = function(id) {
                 Swal.fire({
                     title: 'Yakin ingin menghapus barang ini?',

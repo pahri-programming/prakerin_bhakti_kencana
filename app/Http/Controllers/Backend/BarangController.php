@@ -67,47 +67,47 @@ class BarangController extends Controller
         $this->middleware('auth');
     }
 
-    public function index(Request $request)
-    {
-        $query = Barang::with('kategori')->orderByDesc('created_at');
+        public function index(Request $request)
+        {
+            $query = Barang::with('kategori')->orderByDesc('created_at');
 
-        // Filter pencarian nama / kode
-        if ($request->filled('search')) {
-            $keyword = trim($request->search);
-            $query->where(function ($q) use ($keyword) {
-                $q->where('nama', 'like', "%{$keyword}%")
-                    ->orWhere('kode', 'like', "%{$keyword}%");
-            })
-            // juga cari di nama kategori jika user mengetik nama kategori
-                ->orWhereHas('kategori', function ($q2) use ($keyword) {
-                    $q2->where('nama', 'like', "%{$keyword}%");
-                });
-        }
+            // Filter pencarian nama / kode
+            if ($request->filled('search')) {
+                $keyword = trim($request->search);
+                $query->where(function ($q) use ($keyword) {
+                    $q->where('nama', 'like', "%{$keyword}%");
 
-        // Filter berdasarkan kategori id (select dropdown mengirim param name="kategori")
-        if ($request->filled('kategori')) {
-            $query->where('kategori_id', $request->kategori);
-        }
-
-        // filter stok (opsional)
-        if ($request->filled('stok')) {
-            if ($request->stok === 'habis') {
-                $query->where('stok', 0);
-            } elseif ($request->stok === 'rendah') {
-                $query->whereBetween('stok', [1, 5]);
+                })
+                // juga cari di nama kategori jika user mengetik nama kategori
+                    ->orWhereHas('kategori', function ($q2) use ($keyword) {
+                        $q2->where('nama', 'like', "%{$keyword}%");
+                    });
             }
+
+            // Filter berdasarkan kategori id (select dropdown mengirim param name="kategori")
+            if ($request->filled('kategori')) {
+                $query->where('kategori_id', $request->kategori);
+            }
+
+            // filter stok (opsional)
+            if ($request->filled('stok')) {
+                if ($request->stok === 'habis') {
+                    $query->where('stok', 0);
+                } elseif ($request->stok === 'rendah') {
+                    $query->whereBetween('stok', [1, 5]);
+                }
+            }
+
+            $barangs = $query->get()->map(function ($b) {
+                $b->created_at_format = Carbon::parse($b->created_at)->translatedFormat('d F Y');
+                return $b;
+            });
+
+            $kategoris = Kategori::orderBy('nama')->get();
+
+            confirmDelete('Data Barang', 'Yakin ingin menghapus barang ini?');
+            return view('backend.barang.index', compact('barangs', 'kategoris'));
         }
-
-        $barangs = $query->get()->map(function ($b) {
-            $b->created_at_format = Carbon::parse($b->created_at)->translatedFormat('d F Y');
-            return $b;
-        });
-
-        $kategoris = Kategori::orderBy('nama')->get();
-
-        confirmDelete('Data Barang', 'Yakin ingin menghapus barang ini?');
-        return view('backend.barang.index', compact('barangs', 'kategoris'));
-    }
 
     public function create()
     {

@@ -1,231 +1,274 @@
 @extends('layouts.backend')
-
-@section('title', 'Data Peminjaman')
-
-@section('styles')
-    <style>
-        .table-responsive {
-            position: relative;
-            z-index: 1;
-        }
-        .table-responsive table {
-            position: relative;
-            z-index: 5;
-        }
-        .table-responsive thead {
-            position: relative;
-            z-index: 10;
-            background: white;
-        }
-    </style>
-@endsection
+@section('title', 'Data Peminjaman Barang')
 
 @section('content')
-    <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
-        <div class="card-header d-flex justify-content-between align-items-center py-3"
-            style="background: linear-gradient(90deg, #007bff, #00b4d8); color: #fff;">
-            <h5 class="mb-0 d-flex align-items-center">
-                <i class="ti ti-clipboard fs-4 me-2"></i> <span>Data Peminjaman</span>
-            </h5>
-            <div class="d-flex gap-2 ms-auto">
-                <a href="{{ route('backend.peminjaman.pinjampdf') }}" class="btn btn-sm btn-danger">
-                    <i class="fa fa-file-pdf me-1"></i> Export PDF
+    <div class="container-fluid px-4 py-4">
+        <!-- Header Section -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2 class="fw-bold mb-1">Peminjaman Barang</h2>
+                <p class="text-muted mb-0">Kelola data peminjaman barang</p>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="{{ route('backend.peminjaman.pinjampdf') }}" class="btn btn-danger">
+                    <i class="fas fa-file-pdf me-2"></i>Export PDF
                 </a>
-                <a href="{{ route('backend.peminjaman.create') }}" class="btn btn-success btn-sm">
-                    <i class="ti ti-plus fs-5"></i> Tambah Peminjaman
+                <a href="{{ route('backend.peminjaman.create') }}" class="btn btn-primary px-4">
+                    <i class="fas fa-plus me-2"></i>Tambah Peminjaman
                 </a>
             </div>
         </div>
 
-        <div class="card-body bg-light">
-            <form method="GET" class="row g-2 mb-4">
-                <div class="col-md-3">
-                    <select name="barang_id" class="form-select">
-                        <option value="">Semua Barang</option>
-                        @foreach ($barangs as $barang)
-                            <option value="{{ $barang->id }}" {{ request('barang_id') == $barang->id ? 'selected' : '' }}>
-                                {{ $barang->nama }}
-                            </option>
-                        @endforeach
-                    </select>
+        <!-- Alert Success -->
+        @if (session('success'))
+            <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm mb-4" role="alert">
+                <i class="fas fa-check-circle me-2"></i>{{ session('success') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        @endif
+
+        <!-- Main Card -->
+        <div class="card border-0 shadow-sm rounded-3">
+            <div class="card-body p-0">
+                <!-- Search & Filter Section -->
+                <div class="p-4 border-bottom bg-light">
+                    <form action="{{ route('backend.peminjaman.index') }}" method="GET">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white border-end-0">
+                                        <i class="fas fa-search text-muted"></i>
+                                    </span>
+                                    <input type="text" name="search" class="form-control border-start-0 ps-0"
+                                        placeholder="Cari peminjam, instansi, atau kode..." value="{{ request('search') }}">
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <input type="date" name="tanggal_pinjam" class="form-control" placeholder="Tgl Pinjam"
+                                    value="{{ request('tanggal_pinjam') }}">
+                            </div>
+                            <div class="col-md-2">
+                                <input type="date" name="tanggal_kembali" class="form-control" placeholder="Tgl Kembali"
+                                    value="{{ request('tanggal_kembali') }}">
+                            </div>
+                            <div class="col-md-2">
+                                <select name="status" class="form-select">
+                                    <option value="">Semua Status</option>
+                                    <option value="menunggu" {{ request('status') == 'menunggu' ? 'selected' : '' }}>
+                                        Menunggu</option>
+                                    <option value="disetujui" {{ request('status') == 'disetujui' ? 'selected' : '' }}>
+                                        Disetujui</option>
+                                    <option value="ditolak" {{ request('status') == 'ditolak' ? 'selected' : '' }}>Ditolak
+                                    </option>
+                                    <option value="dikembalikan"
+                                        {{ request('status') == 'dikembalikan' ? 'selected' : '' }}>Dikembalikan</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <button type="submit" class="btn btn-primary w-100">
+                                    <i class="fas fa-filter me-1"></i>Filter
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+
+                    @if (request()->hasAny(['search', 'tanggal_pinjam', 'tanggal_kembali', 'status']))
+                        <div class="mt-3">
+                            <a href="{{ route('backend.peminjaman.index') }}" class="btn btn-sm btn-outline-secondary">
+                                <i class="fas fa-times me-1"></i>Reset Filter
+                            </a>
+                        </div>
+                    @endif
                 </div>
-                <div class="col-md-3">
-                    <input type="date" name="tanggal" class="form-control" value="{{ request('tanggal') }}">
-                </div>
-                <div class="col-md-2">
-                    <select name="status" class="form-select">
-                        <option value="">Semua Status</option>
-                        <option value="menunggu" {{ request('status') == 'menunggu' ? 'selected' : '' }}>Menunggu</option>
-                        <option value="disetujui" {{ request('status') == 'disetujui' ? 'selected' : '' }}>Disetujui</option>
-                        <option value="ditolak" {{ request('status') == 'ditolak' ? 'selected' : '' }}>Ditolak</option>
-                        <option value="dipinjam" {{ request('status') == 'dipinjam' ? 'selected' : '' }}>Dipinjam</option>
-                        <option value="dikembalikan" {{ request('status') == 'dikembalikan' ? 'selected' : '' }}>Dikembalikan</option>
-                        <option value="selesai" {{ request('status') == 'selesai' ? 'selected' : '' }}>Selesai</option>
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <button class="btn btn-primary w-100">
-                        <i class="ti ti-filter"></i> Filter
-                    </button>
-                </div>
-                <div class="col-md-2">
-                    <a href="{{ route('backend.peminjaman.index') }}" class="btn btn-outline-secondary w-100">
-                        <i class="ti ti-refresh"></i> Reset
-                    </a>
-                </div>
-            </form>
 
-            <div class="table-responsive shadow-sm rounded-3">
-                <table class="table table-hover align-middle mb-0 bg-white rounded">
-                    <thead class="table-primary">
-                        <tr>
-                            <th>#</th>
-                            <th>Kode Peminjaman</th>
-                            <th>Nama Peminjam</th>
-                            <th>Barang</th>
-                            <th>Jumlah</th>
-                            <th>Tanggal Pinjam</th>
-                            <th>Tanggal Kembali</th>
-                            <th>Waktu</th>
-                            <th>Status</th>
-                            <th>Keterangan</th>
-                            <th class="text-center">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($peminjaman as $p)
-                            <tr data-peminjaman-id="{{ $p->id }}">
-                                <td>{{ $loop->iteration + ($peminjaman->currentPage() - 1) * $peminjaman->perPage() }}</td>
-                                <td><strong>{{ $p->kode }}</strong></td>
-                                <td>{{ $p->user->name }}</td>
-
-                                <td>
-                                    @foreach($p->details as $detail)
-                                        <div>{{ $detail->barang->nama }}</div>
-                                    @endforeach
-                                </td>
-
-                                <td>
-                                    @foreach($p->details as $detail)
-                                        <div>{{ $detail->jumlah }}</div>
-                                    @endforeach
-                                </td>
-
-                                <td>{{ \Carbon\Carbon::parse($p->tanggal_pinjam)->format('d/m/Y') }}</td>
-                                <td>{{ \Carbon\Carbon::parse($p->tanggal_kembali)->format('d/m/Y') }}</td>
-                                <td>{{ substr($p->waktu_mulai, 0, 5) }} - {{ substr($p->waktu_selesai, 0, 5) }}</td>
-
-                                <td>
-                                    @if ($p->status == 'menunggu')
-                                        <span class="badge bg-warning">Menunggu</span>
-                                    @elseif($p->status == 'disetujui')
-                                        <span class="badge bg-info">Disetujui</span>
-                                    @elseif($p->status == 'ditolak')
-                                        <span class="badge bg-danger">Ditolak</span>
-                                    @else
-                                        <span class="badge bg-success">Dikembalikan</span>
-                                    @endif
-                                </td>
-
-                                <td>{{ Str::limit($p->keterangan, 30) }}</td>
-
-                                <td class="text-center">
-                                    <div class="d-flex justify-content-center align-items-center gap-2">
-                                        <a href="{{ route('backend.peminjaman.edit', $p->id) }}"
-                                            class="btn btn-sm btn-warning d-flex align-items-center px-2">
-                                            <i class="ti ti-edit"></i> Edit
-                                        </a>
-                                        <a href="{{ route('backend.peminjaman.show', $p->id) }}"
-                                            class="btn btn-sm btn-info text-white d-flex align-items-center px-2">
-                                            <i class="ti ti-eye"></i> Show
-                                        </a>
-                                        <form action="{{ route('backend.peminjaman.destroy', $p->id) }}" method="POST"
-                                            class="d-inline" id="delete-form-{{ $p->id }}">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="button"
-                                                class="btn btn-sm btn-danger d-flex align-items-center gap-1 px-2"
-                                                onclick="confirmDelete({{ $p->id }})">
-                                                <i class="ti ti-trash"></i> Delete
-                                            </button>
-                                        </form>
-                                    </div>
-                                </td>
-                            </tr>
-                        @empty
+                <!-- Table Section -->
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light">
                             <tr>
-                                <td colspan="11" class="text-center text-muted py-4">
-                                    <i class="ti ti-clipboard-x fs-1 d-block mb-2 text-secondary"></i>
-                                    Belum ada data peminjaman.
-                                </td>
+                                <th class="px-4 py-3 text-muted fw-semibold" width="5%">No</th>
+                                <th class="py-3 text-muted fw-semibold" width="10%">Kode</th>
+                                <th class="py-3 text-muted fw-semibold" width="12%">Peminjam</th>
+                                <th class="py-3 text-muted fw-semibold" width="18%">Barang</th>
+                                <th class="py-3 text-muted fw-semibold" width="12%">Tanggal</th>
+                                <th class="py-3 text-muted fw-semibold" width="15%">Keterangan</th>
+                                <th class="py-3 text-muted fw-semibold" width="10%">Status</th>
+                                <th class="py-3 text-muted fw-semibold text-center" width="13%">Aksi</th>
                             </tr>
-                        @endforelse
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            @forelse($peminjaman as $index => $item)
+                                <tr class="border-bottom">
+                                    <td class="px-4">
+                                        <span class="text-muted">{{ $peminjaman->firstItem() + $index }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-primary bg-opacity-10 text-primary px-3 py-2">
+                                            {{ $item->kode }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div>
+                                            <div class="fw-semibold">{{ $item->nama_peminjam ?? $item->user->name }}</div>
+                                            @if ($item->instansi)
+                                                <small class="text-muted">{{ $item->instansi }}</small>
+                                            @endif
+                                        </div>
+                                    </td>
+                                    <td>
+                                        @foreach ($item->detailbarangs as $detail)
+                                            <div class="mb-1">
+                                                <span class="badge bg-success bg-opacity-10 text-success">
+                                                    {{ $detail->barangRuangan->barang->nama ?? '-' }}
+                                                </span>
+                                                <small class="text-muted">({{ $detail->jumlah }} unit)</small>
+                                                <br>
+                                                <small class="text-muted">
+                                                    <i class="fas fa-map-marker-alt me-1"></i>
+                                                    {{ $detail->barangRuangan->ruangan->nama_ruangan ?? '-' }}
+                                                </small>
+                                            </div>
+                                        @endforeach
+                                    </td>
+                                    <td>
+                                        <div class="small">
+                                            <div><i
+                                                    class="far fa-calendar me-1"></i>{{ Carbon\Carbon::parse($item->tanggal_pinjam)->format('d M Y') }}
+                                            </div>
+                                            <div class="text-muted">s/d
+                                                {{ Carbon\Carbon::parse($item->tanggal_kembali)->format('d M Y') }}</div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        @if ($item->keterangan)
+                                            <div class="small text-muted" data-bs-toggle="tooltip" data-bs-placement="top"
+                                                title="{{ $item->keterangan }}"
+                                                style="max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: help;">
+                                                <i
+                                                    class="fas fa-info-circle me-1"></i>{{ Str::limit($item->keterangan, 20) }}
+                                            </div>
+                                        @else
+                                            <span class="text-muted">-</span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        @if ($item->status == 'menunggu')
+                                            <span class="badge bg-warning px-3 py-2">
+                                                <i class="fas fa-clock me-1"></i>Menunggu
+                                            </span>
+                                        @elseif($item->status == 'disetujui')
+                                            <span class="badge bg-info px-3 py-2">
+                                                <i class="fas fa-check-circle me-1"></i>Disetujui
+                                            </span>
+                                        @elseif($item->status == 'ditolak')
+                                            <span class="badge bg-danger px-3 py-2">
+                                                <i class="fas fa-times-circle me-1"></i>Ditolak
+                                            </span>
+                                        @else
+                                            <span class="badge bg-success px-3 py-2">
+                                                <i class="fas fa-check-double me-1"></i>Dikembalikan
+                                            </span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        <div class="d-flex justify-content-center gap-1">
+                                            <a href="{{ route('backend.peminjaman.show', $item->id) }}"
+                                                class="btn btn-sm btn-light border" data-bs-toggle="tooltip"
+                                                title="Detail">
+                                                <i class="fas fa-eye text-info"></i>
+                                            </a>
+                                            <a href="{{ route('backend.peminjaman.edit', $item->id) }}"
+                                                class="btn btn-sm btn-light border" data-bs-toggle="tooltip"
+                                                title="Edit">
+                                                <i class="fas fa-edit text-warning"></i>
+                                            </a>
+                                            <form action="{{ route('backend.peminjaman.destroy', $item->id) }}"
+                                                method="POST" class="d-inline"
+                                                onsubmit="return confirm('Yakin ingin menghapus data ini?')">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="btn btn-sm btn-light border"
+                                                    data-bs-toggle="tooltip" title="Hapus">
+                                                    <i class="fas fa-trash text-danger"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="8" class="text-center py-5">
+                                        <div class="empty-state">
+                                            <div class="mb-3">
+                                                <i class="fas fa-clipboard-list fa-4x text-muted opacity-50"></i>
+                                            </div>
+                                            <h5 class="text-muted">Belum Ada Data</h5>
+                                            <p class="text-muted mb-4">
+                                                @if (request()->hasAny(['search', 'tanggal_pinjam', 'tanggal_kembali', 'status']))
+                                                    Data tidak ditemukan dengan filter yang dipilih
+                                                @else
+                                                    Data peminjaman belum tersedia
+                                                @endif
+                                            </p>
+                                            @if (!request()->hasAny(['search', 'tanggal_pinjam', 'tanggal_kembali', 'status']))
+                                                <a href="{{ route('backend.peminjaman.create') }}"
+                                                    class="btn btn-primary">
+                                                    <i class="fas fa-plus me-2"></i>Tambah Peminjaman Pertama
+                                                </a>
+                                            @endif
+                                        </div>
+                                    </td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination Section -->
+                @if ($peminjaman->hasPages())
+                    <div class="d-flex justify-content-between align-items-center p-4 border-top bg-light">
+                        <div class="text-muted small">
+                            Menampilkan <strong>{{ $peminjaman->firstItem() ?? 0 }}</strong> -
+                            <strong>{{ $peminjaman->lastItem() ?? 0 }}</strong> dari
+                            <strong>{{ $peminjaman->total() }}</strong> data
+                        </div>
+                        <div>
+                            {{ $peminjaman->appends(request()->query())->links() }}
+                        </div>
+                    </div>
+                @endif
             </div>
         </div>
     </div>
 
-    @push('scripts')
-        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-        <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+    <style>
+        .btn-light.border:hover {
+            background-color: #f8f9fa;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            transition: all 0.2s;
+        }
 
-        <script>
-            document.addEventListener('DOMContentLoaded', function() {
-                window.confirmDelete = function(id) {
-                    Swal.fire({
-                        title: 'Yakin hapus data ini?',
-                        text: 'Data peminjaman barang akan dihapus secara permanen!',
-                        icon: 'warning',
-                        showCancelButton: true,
-                        confirmButtonColor: '#d33',
-                        cancelButtonText: 'Batal',
-                        confirmButtonText: 'Ya, hapus!',
-                        reverseButtons: true
-                    }).then((result) => {
-                        if (result.isConfirmed) {
-                            document.getElementById('delete-form-' + id).submit();
-                        }
-                    });
-                };
+        .table tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        .empty-state {
+            padding: 40px 20px;
+        }
+
+        .badge {
+            font-weight: 500;
+            font-size: 0.813rem;
+        }
+    </style>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            var tooltipList = tooltipTriggerList.map(function(tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
             });
-
-            // Cek otomatis setiap 30 detik
-            setInterval(async () => {
-                try {
-                    await fetch("{{ route('api.peminjaman.check') }}", {
-                        headers: {
-                            "X-CSRF-TOKEN": "{{ csrf_token() }}"
-                        }
-                    });
-                } catch (e) {
-                    console.error(e);
-                }
-            }, 30000);
-
-            // Real-time update ketika peminjaman selesai otomatis
-            window.Echo?.channel('peminjaman')
-                .listen('PeminjamanExpired', (e) => {
-                    const row = document.querySelector(`[data-peminjaman-id="${e.peminjaman.id}"]`);
-                    if (row) {
-                        const badge = row.querySelector('.badge');
-                        if (badge) {
-                            badge.className = 'badge bg-secondary';
-                            badge.textContent = 'Selesai';
-                        }
-                    }
-
-                    // Tampilkan semua barang yang kembali
-                    let barangText = e.peminjaman.details.map(d => `${d.barang.nama} (${d.jumlah})`).join(', ');
-
-                    Toastify({
-                        text: `Peminjaman ${e.peminjaman.kode} selesai! Stok kembali: ${barangText}`,
-                        backgroundColor: "linear-gradient(to right, #00b09b, #96c93d)",
-                        duration: 6000
-                    }).showToast();
-                });
-        </script>
-    @endpush
-    @stack('scripts')
+        });
+    </script>
 @endsection

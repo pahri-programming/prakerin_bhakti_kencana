@@ -34,7 +34,7 @@
                 </div>
 
                 <div class="card-body">
-                    <form action="{{ route('riwayat') }}" method="GET" class="row g-3 mb-4 bg-light p-3 rounded shadow-sm">
+                    <form action="{{ route('riwayat.index') }}" method="GET" class="row g-3 mb-4 bg-light p-3 rounded shadow-sm">
 
                         <div class="col-md-4">
                             <div class="form-floating">
@@ -84,7 +84,7 @@
                             <button type="submit" class="btn btn-primary w-100">
                                 <i class="bi bi-funnel-fill me-1"></i> Filter
                             </button>
-                            <a href="{{ route('riwayat') }}"
+                            <a href="{{ route('riwayat.index') }}"
                                 class="btn btn-outline-secondary w-100 d-flex justify-content-center align-items-center">
                                 <i class="bi bi-arrow-repeat me-1"></i> Reset
                             </a>
@@ -176,7 +176,7 @@
                     </div>
 
                     <div class="card-body">
-                        <form action="{{ route('riwayat') }}" method="GET" class="mb-4 bg-light p-3 rounded shadow-sm">
+                        <form action="{{ route('riwayat.index') }}" method="GET" class="mb-4 bg-light p-3 rounded shadow-sm">
 
                             <!-- BARIS PERTAMA: Input -->
                             <div class="row g-3">
@@ -242,7 +242,7 @@
                                     <button type="submit" class="btn btn-success w-100">
                                         <i class="bi bi-funnel-fill me-1"></i> Filter
                                     </button>
-                                    <a href="{{ route('riwayat') }}"
+                                    <a href="{{ route('riwayat.index') }}"
                                         class="btn btn-outline-secondary w-100 d-flex justify-content-center align-items-center">
                                         <i class="bi bi-arrow-repeat me-1"></i> Reset
                                     </a>

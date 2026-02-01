@@ -19,7 +19,7 @@
     <title>Bhakti Kencana University</title>
     <!-- Owl Carousel  -->
     <link rel="stylesheet" href="{{ asset('assets/backend/libs/owl.carousel/dist/assets/owl.carousel.min.css') }}" />
-    @yield('styles')
+    @stack('styles')
 </head>
 
 <body>
@@ -821,12 +821,12 @@
                     document.documentElement.setAttribute("data-color-theme", e);
                 }
             </script>
-            <button
+            {{-- <button
                 class="btn btn-primary p-3 rounded-circle d-flex align-items-center justify-content-center customizer-btn"
                 type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasExample"
                 aria-controls="offcanvasExample">
                 <i class="icon ti ti-settings fs-7"></i>
-            </button>
+            </button> --}}
 
             <div class="offcanvas customizer offcanvas-end" tabindex="-1" id="offcanvasExample"
                 aria-labelledby="offcanvasExampleLabel">

@@ -43,18 +43,8 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link text-dark fw-semibold" href="{{ route('ruangan') }}">
-                            Ruangan
-                        </a>
-                    </li>
-                    <li class="nav-item">
                         <a class="nav-link text-dark fw-semibold" href="{{ route('peminjaman.create') }}">
                             Pinjam
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link text-dark fw-semibold" href="{{ route('barang') }}">
-                            Barang
                         </a>
                     </li>
                     @auth

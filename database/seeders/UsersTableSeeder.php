@@ -9,24 +9,28 @@ class UsersTableSeeder extends Seeder
 {
     public function run(): void
     {
+        // Admin
         User::firstOrCreate(
-            ['email' => 'admin@gmail.com'],
+            ['email' => 'admin@bku.ac.id'],
             [
-                'name'     => 'AdminBKU',
-                'password' => Hash::make('rahasia'),
-                'isAdmin'  => 1,
+                'name'     => 'Admin BKU',
+                'password' => Hash::make('bhaktikencana202612'),
+                'isAdmin'  => 1, // Admin
+                'role'     => 'admin',
+                'instansi' => 'Universitas Bhakti Kencana',
             ]
         );
 
+        // User biasa
         User::firstOrCreate(
-            ['email' => 'member@gmail.com'],
+            ['email' => 'user@bku.ac.id'],
             [
-                'name'     => 'Member',
-                'password' => Hash::make('member123'),
-                'isAdmin'  => 0,
+                'name'     => 'User Demo',
+                'password' => Hash::make('password123'),
+                'isAdmin'  => 0, // User biasa
+                'role'     => 'user',
+                'instansi' => 'Karyawan Universitas Bhakti Kencana',
             ]
         );
-
-        
     }
 }

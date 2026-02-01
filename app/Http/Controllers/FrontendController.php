@@ -14,46 +14,89 @@ class FrontendController extends Controller
 {
     public function index()
     {
-        // Ambil booking yang diterima/selesai
+        // Ambil booking yang diterima/selesai untuk kalender
         $bookings = booking::with('ruangan', 'user')
             ->whereIn('status', ['Diterima', 'Selesai'])
             ->get();
 
-        // Ambil semua jadwal
+        // Ambil SEMUA jadwal yang diinput admin (tanpa filter)
         $jadwals = jadwal::with('ruangan')->get();
 
         $events = [];
 
-        // Process Bookings
+        // DEBUG: Log raw data dari database
+        \Log::info('=== RAW DATABASE DATA ===', [
+            'bookings_raw' => $bookings->toArray(),
+            'jadwals_raw'  => $jadwals->toArray(),
+        ]);
+
+        // Process Bookings untuk kalender (warna orange)
         foreach ($bookings as $booking) {
+            // FIX: Convert Carbon date to Y-m-d string format
+            $tanggalString = \Carbon\Carbon::parse($booking->tanggal)->format('Y-m-d');
+
             $events[] = [
-                'title'       => 'booking - ' . ($booking->ruangan->nama_ruangan ?? 'Tanpa ruangan'),
-                'start'       => $booking->tanggal . 'T' . $booking->waktu_mulai,
-                'end'         => $booking->tanggal . 'T' . $booking->waktu_selesai,
-                'color'       => '#f39c12', // Orange untuk booking
-                'description' => '<strong>booking</strong><br>Nama: ' . $booking->user->name . '<br>Status: ' . $booking->status,
-                'borderColor' => '#e67e22',
+                'title'       => 'Booking - ' . ($booking->ruangan->nama_ruangan ?? 'Tanpa ruangan'),
+                'start'       => $tanggalString . 'T' . $booking->waktu_mulai,
+                'end'         => $tanggalString . 'T' . $booking->waktu_selesai,
+                'color'       => '#ff9800',
+                'description' => '<strong>📅 Booking Ruangan</strong><br>' .
+                'Peminjam: ' . $booking->user->name . '<br>' .
+                'Ruangan: ' . ($booking->ruangan->nama_ruangan ?? 'N/A') . '<br>' .
+                'Waktu: ' . substr($booking->waktu_mulai, 0, 5) . ' - ' . substr($booking->waktu_selesai, 0, 5) . '<br>' .
+                'Status: ' . $booking->status,
+                'borderColor' => '#f57c00',
                 'textColor'   => '#ffffff',
             ];
         }
 
-        // Process Jadwals
+        // Process SEMUA Jadwal admin untuk kalender (warna biru)
         foreach ($jadwals as $jadwal) {
-            $events[] = [
-                'title'       => $jadwal->kegiatan,
-                'start'       => $jadwal->tanggal . 'T' . $jadwal->waktu_mulai,
-                'end'         => $jadwal->tanggal . 'T' . $jadwal->waktu_selesai,
-                'color'       => '#3498db', // Blue untuk jadwal
-                'description' => '<strong>jadwal Tetap</strong><br>' .
-                'ruangan: ' . ($jadwal->ruangan->nama_ruangan ?? 'N/A') . '<br>' .
+            // FIX: Convert Carbon date to Y-m-d string format
+            $tanggalString = \Carbon\Carbon::parse($jadwal->tanggal)->format('Y-m-d');
+
+            $eventData = [
+                'title'       => '📌 ' . $jadwal->kegiatan,
+                'start'       => $tanggalString . 'T' . $jadwal->waktu_mulai,
+                'end'         => $tanggalString . 'T' . $jadwal->waktu_selesai,
+                'color'       => '#3498db',
+                'description' => '<strong>📌 Jadwal Admin</strong><br>' .
                 'Kegiatan: ' . $jadwal->kegiatan . '<br>' .
+                'Ruangan: ' . ($jadwal->ruangan->nama_ruangan ?? 'N/A') . '<br>' .
+                'Tanggal: ' . \Carbon\Carbon::parse($jadwal->tanggal)->format('d/m/Y') . '<br>' .
                 'Waktu: ' . substr($jadwal->waktu_mulai, 0, 5) . ' - ' . substr($jadwal->waktu_selesai, 0, 5),
                 'borderColor' => '#2980b9',
                 'textColor'   => '#ffffff',
             ];
+
+            $events[] = $eventData;
+
+            // DEBUG: Log setiap jadwal yang diproses
+            \Log::info('Jadwal Event Created', [
+                'original_date'  => $jadwal->tanggal,
+                'formatted_date' => $tanggalString,
+                'start'          => $tanggalString . 'T' . $jadwal->waktu_mulai,
+                'event'          => $eventData,
+            ]);
         }
 
-        return view('welcome', ['jadwals' => $events]);
+        // Data untuk tampilan beranda
+        $ruangans = ruangan::orderBy('nama_ruangan')->get();
+        $barangs  = Barang::with('kategori')->orderBy('nama')->get();
+
+        // DEBUG: Log final events array
+        \Log::info('=== FINAL CALENDAR EVENTS ===', [
+            'total_events'   => count($events),
+            'bookings_count' => $bookings->count(),
+            'jadwals_count'  => $jadwals->count(),
+            'events_array'   => $events,
+        ]);
+
+        return view('welcome', [
+            'jadwals'  => $events, // Kirim SEMUA events (booking + jadwal admin)
+            'ruangans' => $ruangans,
+            'barangs'  => $barangs,
+        ]);
     }
 
     public function booking()

@@ -20,7 +20,6 @@
                         <tr>
                             <th>#</th>
                             <th>Nama Kategori</th>
-                            <th>Deskripsi</th>
                             <th class="text-center">Aksi</th>
                         </tr>
                     </thead>
@@ -29,7 +28,6 @@
                             <tr>
                                 <td>{{ $loop->iteration }}</td>
                                 <td>{{ $kategori->nama }}</td>
-                                <td>{{ $kategori->deskripsi }}</td>
                                 <td class="text-center">
                                     <div class="d-flex justify-content-center gap-2">
                                         <a href="{{ route('backend.kategori.edit', $kategori->id) }}"

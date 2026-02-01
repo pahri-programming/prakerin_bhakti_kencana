@@ -57,7 +57,7 @@
             margin-bottom: 1.8rem;
         }
 
-        /* Tag biru muda memanjang — PERSIS GAMBAR */
+        /* Tag biru muda memanjang */
         .info-tag-modern {
             background: #eff6ff;
             border-radius: 50px;
@@ -201,10 +201,9 @@
             color: var(--text-gray);
         }
 
-        /* KHUSUS UNTUK PERAN — SUPAYA TIDAK GEDE */
+        /* KHUSUS UNTUK PERAN */
         .activity-item .role-text {
             font-size: 1.65rem;
-            /* Lebih kecil dari angka lain */
             font-weight: 700;
             color: var(--primary);
             text-transform: uppercase;
@@ -212,8 +211,18 @@
             margin: 0.4rem 0;
         }
 
-        @media (max-width: 768px) {
+        /* Badge untuk role admin */
+        .role-badge-admin {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+        }
 
+        .role-badge-user {
+            background: linear-gradient(135deg, #3b82f6, #1e40af);
+            color: white;
+        }
+
+        @media (max-width: 768px) {
             .stat-cards,
             .activity-grid {
                 grid-template-columns: 1fr;
@@ -245,20 +254,32 @@
                     <h5 class="user-name-modern">{{ $user->name }}</h5>
                     <p class="user-email-modern">{{ $user->email }}</p>
 
+                    <!-- Instansi -->
+                    @if($user->instansi)
+                    <div class="info-tag-modern">
+                        <i class="bi bi-building"></i>
+                        <div class="text-start">
+                            <span class="tag-label">Instansi</span><br>
+                            <strong class="tag-value">{{ $user->instansi }}</strong>
+                        </div>
+                    </div>
+                    @endif
+
+                    <!-- Bergabung Sejak -->
                     <div class="info-tag-modern">
                         <i class="bi bi-calendar-check"></i>
-                        <div>
+                        <div class="text-start">
                             <span class="tag-label">Bergabung Sejak</span><br>
                             <strong class="tag-value">{{ $user->created_at->translatedFormat('d F Y') }}</strong>
                         </div>
                     </div>
 
-
-                    <div class="info-tag-modern">
+                    <!-- Role dengan Badge -->
+                    <div class="info-tag-modern {{ $user->role === 'admin' ? 'role-badge-admin' : 'role-badge-user' }}">
                         <i class="bi bi-person-badge"></i>
-                        <div>
-                            <span class="tag-label">Role</span><br>
-                            <strong class="tag-value text-uppercase">{{ $user->role ?? 'User' }}</strong>
+                        <div class="text-start">
+                            <span class="tag-label" style="color: rgba(255,255,255,0.9);">Role</span><br>
+                            <strong class="tag-value" style="color: white;">{{ $roleDisplay }}</strong>
                         </div>
                     </div>
                 </div>
@@ -307,6 +328,7 @@
 
                 <div class="activity-summary">
                     <div class="activity-header">
+                        <i class="bi bi-graph-up"></i>
                         Ringkasan Aktivitas
                     </div>
                     <div class="activity-grid">
@@ -327,7 +349,7 @@
                         </div>
                         <div class="activity-item">
                             <div class="icon"><i class="bi bi-person-circle"></i></div>
-                            <h2 class="role-text">{{ strtoupper($user->role ?? 'user') }}</h2>
+                            <h2 class="role-text">{{ strtoupper($roleDisplay) }}</h2>
                             <small>Peran</small>
                         </div>
                     </div>

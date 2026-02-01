@@ -4,405 +4,651 @@
 
 @push('styles')
 <style>
+    .content-wrapper {
+        padding: 1.5rem;
+        background: #f8f9fa;
+        min-height: 100vh;
+    }
+
+    .page-header {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 12px;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    .page-header h4 {
+        margin: 0;
+        font-weight: 700;
+        color: #2d3748;
+        font-size: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .page-header h4 i {
+        color: #9c27b0;
+        background: #f3e5f5;
+        width: 45px;
+        height: 45px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 10px;
+    }
+
+    .page-header p {
+        margin: 0.5rem 0 0;
+        color: #718096;
+        font-size: 0.95rem;
+    }
+
     .form-card {
-        border: none;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-        border-radius: 15px;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
         overflow: hidden;
     }
 
-    .form-header {
-        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-        color: white;
-        padding: 30px;
-        position: relative;
+    .form-card-body {
+        padding: 2rem;
     }
 
-    .form-header::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
-        opacity: 0.1;
+    .alert-warning {
+        background: #fff8e1;
+        border: none;
+        border-left: 4px solid #ffa726;
+        border-radius: 8px;
+        padding: 1rem 1.25rem;
+        margin-bottom: 2rem;
+        display: flex;
+        gap: 1rem;
     }
 
-    .form-header h2 {
-        position: relative;
-        z-index: 1;
-        font-weight: bold;
+    .alert-warning i {
+        color: #f57c00;
+        font-size: 1.5rem;
+        flex-shrink: 0;
+    }
+
+    .alert-warning-content strong {
+        display: block;
+        color: #e65100;
+        margin-bottom: 0.25rem;
+        font-size: 0.95rem;
+    }
+
+    .alert-warning-content p {
         margin: 0;
+        color: #5d4037;
+        font-size: 0.875rem;
+        line-height: 1.5;
     }
 
-    .form-body {
-        padding: 40px;
+    .current-data-box {
+        background: #e3f2fd;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        border: 2px solid #90caf9;
+    }
+
+    .current-data-title {
+        font-weight: 700;
+        color: #1565c0;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 1rem;
+    }
+
+    .current-data-title i {
+        font-size: 1.2rem;
+    }
+
+    .current-data-grid {
+        display: grid;
+        gap: 0.75rem;
+    }
+
+    .current-data-item {
+        background: rgba(255,255,255,0.7);
+        padding: 0.75rem 1rem;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .current-data-item i {
+        color: #1976d2;
+        font-size: 1.1rem;
+    }
+
+    .current-data-content {
+        flex: 1;
+    }
+
+    .current-data-label {
+        font-size: 0.8rem;
+        color: #0d47a1;
+        font-weight: 500;
+    }
+
+    .current-data-value {
+        font-size: 0.9rem;
+        color: #01579b;
+        font-weight: 700;
+    }
+
+    .form-section {
+        margin-bottom: 2rem;
+    }
+
+    .form-section-title {
+        font-size: 1rem;
+        font-weight: 700;
+        color: #2d3748;
+        margin-bottom: 1.25rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 2px solid #e2e8f0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .form-section-title i {
+        color: #9c27b0;
+    }
+
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-group:last-child {
+        margin-bottom: 0;
     }
 
     .form-label {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
         font-weight: 600;
-        color: #333;
-        margin-bottom: 8px;
+        color: #2d3748;
+        margin-bottom: 0.5rem;
+        font-size: 0.9rem;
     }
 
-    .form-label .required {
+    .form-label .text-danger {
         color: #e74c3c;
-        margin-left: 3px;
     }
 
-    .form-control, .form-select {
-        border: 2px solid #e0e0e0;
-        border-radius: 10px;
-        padding: 12px 15px;
-        transition: all 0.3s ease;
+    .badge-changed {
+        background: linear-gradient(135deg, #9c27b0 0%, #e91e63 100%);
+        color: white;
+        padding: 0.25rem 0.625rem;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        margin-left: 0.5rem;
     }
 
-    .form-control:focus, .form-select:focus {
-        border-color: #f5576c;
-        box-shadow: 0 0 0 0.2rem rgba(245, 87, 108, 0.15);
+    .form-control,
+    .form-select {
+        width: 100%;
+        padding: 0.675rem 1rem;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        transition: all 0.2s;
+        background: white;
     }
 
-    .form-control.is-invalid, .form-select.is-invalid {
-        border-color: #e74c3c;
+    .form-control:focus,
+    .form-select:focus {
+        outline: none;
+        border-color: #9c27b0;
+        box-shadow: 0 0 0 3px rgba(156, 39, 176, 0.1);
+    }
+
+    .form-control.changed {
+        border-color: #9c27b0;
+        background: #f3e5f5;
+    }
+
+    .form-control::placeholder {
+        color: #a0aec0;
+    }
+
+    .form-text {
+        display: block;
+        margin-top: 0.5rem;
+        font-size: 0.85rem;
+        color: #718096;
+    }
+
+    .time-group {
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
+        gap: 1rem;
+        align-items: end;
+    }
+
+    .time-item label {
+        display: block;
+        font-size: 0.85rem;
+        color: #718096;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+    }
+
+    .time-separator {
+        padding-bottom: 0.675rem;
+        text-align: center;
+        color: #cbd5e0;
+        font-size: 1.25rem;
+    }
+
+    .duration-info {
+        margin-top: 1rem;
+        padding: 0.75rem 1rem;
+        background: #e8f5e9;
+        border-radius: 8px;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.9rem;
+    }
+
+    .duration-info i {
+        color: #4caf50;
+    }
+
+    .duration-info strong {
+        color: #2e7d32;
+    }
+
+    .preview-box {
+        background: #f3e5f5;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-top: 2rem;
+    }
+
+    .preview-title {
+        font-weight: 700;
+        color: #6a1b9a;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .preview-grid {
+        display: grid;
+        gap: 0.75rem;
+    }
+
+    .preview-item {
+        background: rgba(255,255,255,0.7);
+        padding: 0.75rem 1rem;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .preview-item i {
+        color: #9c27b0;
+        font-size: 1.1rem;
+    }
+
+    .preview-item-content {
+        flex: 1;
+    }
+
+    .preview-label {
+        font-size: 0.8rem;
+        color: #6a1b9a;
+        font-weight: 500;
+    }
+
+    .preview-value {
+        font-size: 0.9rem;
+        color: #4a148c;
+        font-weight: 700;
+    }
+
+    .form-footer {
+        padding: 1.5rem 2rem;
+        background: #f8f9fa;
+        border-top: 1px solid #e2e8f0;
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+    }
+
+    .btn {
+        padding: 0.625rem 1.75rem;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        border: none;
+        cursor: pointer;
+    }
+
+    .btn-secondary {
+        background: white;
+        color: #4a5568;
+        border: 1px solid #e2e8f0;
+    }
+
+    .btn-secondary:hover {
+        background: #f7fafc;
+        border-color: #cbd5e0;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #9c27b0 0%, #e91e63 100%);
+        color: white;
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(156, 39, 176, 0.3);
     }
 
     .invalid-feedback {
         display: block;
         color: #e74c3c;
-        font-size: 0.875rem;
-        margin-top: 5px;
+        font-size: 0.85rem;
+        margin-top: 0.375rem;
     }
 
-    .input-group-text {
-        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-        color: white;
-        border: none;
-        border-radius: 10px 0 0 10px;
+    .is-invalid {
+        border-color: #e74c3c !important;
     }
 
-    .btn-submit {
-        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-        border: none;
-        padding: 12px 40px;
-        border-radius: 10px;
-        font-weight: 600;
-        transition: all 0.3s ease;
-    }
+    @media (max-width: 768px) {
+        .content-wrapper {
+            padding: 1rem;
+        }
 
-    .btn-submit:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 20px rgba(245, 87, 108, 0.4);
-    }
+        .form-card-body {
+            padding: 1.25rem;
+        }
 
-    .btn-cancel {
-        border: 2px solid #e0e0e0;
-        padding: 12px 40px;
-        border-radius: 10px;
-        font-weight: 600;
-        transition: all 0.3s ease;
-    }
+        .time-group {
+            grid-template-columns: 1fr;
+        }
 
-    .btn-cancel:hover {
-        background: #f8f9fa;
-        border-color: #f5576c;
-    }
+        .time-separator {
+            display: none;
+        }
 
-    .warning-box {
-        background: linear-gradient(135deg, #fff3cd 0%, #ffe8a1 100%);
-        border-left: 4px solid #ffc107;
-        padding: 15px 20px;
-        border-radius: 10px;
-        margin-bottom: 20px;
-    }
+        .form-footer {
+            flex-direction: column-reverse;
+            padding: 1.25rem;
+        }
 
-    .warning-box i {
-        font-size: 1.5rem;
-        color: #ffc107;
-        margin-right: 10px;
-    }
-
-    .old-data-box {
-        background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
-        border-left: 4px solid #2196F3;
-        padding: 20px;
-        border-radius: 10px;
-        margin-bottom: 20px;
-    }
-
-    .old-data-item {
-        display: flex;
-        align-items: center;
-        margin-bottom: 10px;
-        padding: 10px;
-        background: rgba(255,255,255,0.5);
-        border-radius: 8px;
-    }
-
-    .old-data-item i {
-        font-size: 1.2rem;
-        color: #2196F3;
-        margin-right: 10px;
-        width: 25px;
-    }
-
-    .old-data-value {
-        font-weight: 600;
-        color: #333;
-    }
-
-    .preview-box {
-        background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%);
-        border-left: 4px solid #9c27b0;
-        padding: 20px;
-        border-radius: 10px;
-        margin-top: 20px;
-    }
-
-    .preview-item {
-        display: flex;
-        align-items: center;
-        margin-bottom: 10px;
-    }
-
-    .preview-item i {
-        font-size: 1.2rem;
-        color: #9c27b0;
-        margin-right: 10px;
-        width: 25px;
-    }
-
-    .preview-value {
-        font-weight: 600;
-        color: #333;
-    }
-
-    .time-picker-group {
-        display: flex;
-        gap: 15px;
-        align-items: center;
-    }
-
-    .time-picker-wrapper {
-        flex: 1;
-    }
-
-    .badge-changed {
-        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-        color: white;
-        padding: 3px 10px;
-        border-radius: 10px;
-        font-size: 0.75rem;
-        margin-left: 10px;
+        .btn {
+            width: 100%;
+            justify-content: center;
+        }
     }
 </style>
 @endpush
 
 @section('content')
-<div class="container-fluid">
-    <div class="row justify-content-center">
-        <div class="col-lg-8">
-            <!-- Form Card -->
-            <div class="card form-card">
-                <!-- Header -->
-                <div class="form-header">
-                    <h2>
-                        <i class="ti ti-edit"></i> Edit Jadwal
-                    </h2>
-                    <p class="mb-0 mt-2 opacity-75">Perbarui informasi jadwal kegiatan</p>
+<div class="content-wrapper">
+    <div class="container-fluid">
+        <!-- Page Header -->
+        <div class="page-header">
+            <h4>
+                <i class="ti ti-edit"></i>
+                Edit Jadwal
+            </h4>
+            <p>Perbarui informasi jadwal kegiatan</p>
+        </div>
+
+        <!-- Form Card -->
+        <div class="form-card">
+            <div class="form-card-body">
+                <!-- Alert Warning -->
+                <div class="alert-warning">
+                    <i class="ti ti-alert-triangle"></i>
+                    <div class="alert-warning-content">
+                        <strong>Perhatian!</strong>
+                        <p>Perubahan jadwal akan mempengaruhi ketersediaan ruangan. Pastikan tidak ada bentrokan dengan jadwal lain.</p>
+                    </div>
                 </div>
 
-                <!-- Form Body -->
-                <div class="form-body">
-                    <!-- Warning Box -->
-                    <div class="warning-box">
-                        <div class="d-flex align-items-start">
-                            <i class="ti ti-alert-triangle"></i>
-                            <div>
-                                <strong>Perhatian!</strong>
-                                <p class="mb-0 mt-1">Perubahan jadwal akan mempengaruhi ketersediaan ruangan. Pastikan tidak ada bentrokan dengan jadwal lain.</p>
+                <!-- Current Data Box -->
+                <div class="current-data-box">
+                    <div class="current-data-title">
+                        <i class="ti ti-history"></i>
+                        Data Jadwal Saat Ini
+                    </div>
+                    <div class="current-data-grid">
+                        <div class="current-data-item">
+                            <i class="ti ti-door"></i>
+                            <div class="current-data-content">
+                                <div class="current-data-label">Ruangan</div>
+                                <div class="current-data-value">{{ $jadwal->ruangan->nama_ruangan ?? 'N/A' }}</div>
+                            </div>
+                        </div>
+                        <div class="current-data-item">
+                            <i class="ti ti-calendar"></i>
+                            <div class="current-data-content">
+                                <div class="current-data-label">Tanggal</div>
+                                <div class="current-data-value">{{ Carbon\Carbon::parse($jadwal->tanggal)->translatedFormat('l, d F Y') }}</div>
+                            </div>
+                        </div>
+                        <div class="current-data-item">
+                            <i class="ti ti-clipboard-text"></i>
+                            <div class="current-data-content">
+                                <div class="current-data-label">Kegiatan</div>
+                                <div class="current-data-value">{{ $jadwal->kegiatan }}</div>
+                            </div>
+                        </div>
+                        <div class="current-data-item">
+                            <i class="ti ti-clock"></i>
+                            <div class="current-data-content">
+                                <div class="current-data-label">Waktu</div>
+                                <div class="current-data-value">{{ substr($jadwal->waktu_mulai, 0, 5) }} - {{ substr($jadwal->waktu_selesai, 0, 5) }}</div>
                             </div>
                         </div>
                     </div>
+                </div>
 
-                    <!-- Old Data Box -->
-                    <div class="old-data-box">
-                        <h6 class="fw-bold mb-3">
-                            <i class="ti ti-history"></i> Data Jadwal Saat Ini
-                        </h6>
-                        <div class="old-data-item">
-                            <i class="ti ti-door"></i>
-                            <span>Ruangan: <span class="old-data-value">{{ $jadwal->ruangan->nama_ruangan ?? 'N/A' }}</span></span>
+                <form action="{{ route('backend.jadwal.update', $jadwal->id) }}" method="POST" id="formJadwal">
+                    @csrf
+                    @method('PUT')
+
+                    <!-- Section: Ruangan -->
+                    <div class="form-section">
+                        <div class="form-section-title">
+                            <i class="ti ti-building"></i>
+                            Informasi Ruangan
                         </div>
-                        <div class="old-data-item">
-                            <i class="ti ti-calendar"></i>
-                            <span>Tanggal: <span class="old-data-value">{{ Carbon\Carbon::parse($jadwal->tanggal)->translatedFormat('d F Y') }}</span></span>
-                        </div>
-                        <div class="old-data-item">
-                            <i class="ti ti-clipboard-text"></i>
-                            <span>Kegiatan: <span class="old-data-value">{{ $jadwal->kegiatan }}</span></span>
-                        </div>
-                        <div class="old-data-item">
-                            <i class="ti ti-clock"></i>
-                            <span>Waktu: <span class="old-data-value">{{ substr($jadwal->waktu_mulai, 0, 5) }} - {{ substr($jadwal->waktu_selesai, 0, 5) }}</span></span>
+
+                        <div class="form-group">
+                            <label class="form-label">
+                                Pilih Ruangan <span class="text-danger">*</span>
+                                @if(old('ruang_id', $jadwal->ruang_id) != $jadwal->ruang_id)
+                                    <span class="badge-changed">Diubah</span>
+                                @endif
+                            </label>
+                            <select name="ruang_id" id="ruang_id" 
+                                    class="form-select @error('ruang_id') is-invalid @enderror" required>
+                                <option value="">-- Pilih Ruangan --</option>
+                                @foreach($ruangans as $ruangan)
+                                    <option value="{{ $ruangan->id }}" 
+                                            {{ old('ruang_id', $jadwal->ruang_id) == $ruangan->id ? 'selected' : '' }}
+                                            data-kapasitas="{{ $ruangan->kapasitas }}"
+                                            data-lokasi="{{ $ruangan->lokasi }}">
+                                        {{ $ruangan->nama_ruangan }} - {{ $ruangan->lokasi }} (Kapasitas: {{ $ruangan->kapasitas }} orang)
+                                    </option>
+                                @endforeach
+                            </select>
+                            @error('ruang_id')
+                                <span class="invalid-feedback">{{ $message }}</span>
+                            @enderror
+                            <small class="form-text" id="ruanganInfo"></small>
                         </div>
                     </div>
 
-                    <form action="{{ route('backend.jadwal.update', $jadwal->id) }}" method="POST" id="formJadwal">
-                        @csrf
-                        @method('PUT')
+                    <!-- Section: Detail Kegiatan -->
+                    <div class="form-section">
+                        <div class="form-section-title">
+                            <i class="ti ti-calendar-event"></i>
+                            Detail Kegiatan
+                        </div>
 
                         <div class="row">
-                            <!-- Ruangan -->
-                            <div class="col-md-12 mb-4">
-                                <label for="ruang_id" class="form-label">
-                                    <i class="ti ti-door"></i> Ruangan <span class="required">*</span>
-                                    @if(old('ruang_id', $jadwal->ruang_id) != $jadwal->ruang_id)
-                                        <span class="badge-changed">Diubah</span>
-                                    @endif
-                                </label>
-                                <select name="ruang_id" id="ruang_id" 
-                                        class="form-select @error('ruang_id') is-invalid @enderror" 
-                                        required>
-                                    <option value="">-- Pilih Ruangan --</option>
-                                    @foreach($ruangans as $ruangan)
-                                        <option value="{{ $ruangan->id }}" 
-                                                {{ old('ruang_id', $jadwal->ruang_id) == $ruangan->id ? 'selected' : '' }}
-                                                data-kapasitas="{{ $ruangan->kapasitas }}"
-                                                data-lokasi="{{ $ruangan->lokasi }}">
-                                            {{ $ruangan->nama_ruangan }} 
-                                            (Kapasitas: {{ $ruangan->kapasitas }} orang - {{ $ruangan->lokasi }})
-                                        </option>
-                                    @endforeach
-                                </select>
-                                @error('ruang_id')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                                <small class="text-muted d-block mt-2" id="ruanganInfo"></small>
-                            </div>
-
-                            <!-- Tanggal -->
-                            <div class="col-md-6 mb-4">
-                                <label for="tanggal" class="form-label">
-                                    <i class="ti ti-calendar"></i> Tanggal <span class="required">*</span>
-                                    @if(old('tanggal', $jadwal->tanggal->format('Y-m-d')) != $jadwal->tanggal->format('Y-m-d'))
-                                        <span class="badge-changed">Diubah</span>
-                                    @endif
-                                </label>
-                                <input type="date" name="tanggal" id="tanggal" 
-                                       class="form-control @error('tanggal') is-invalid @enderror" 
-                                       value="{{ old('tanggal', $jadwal->tanggal->format('Y-m-d')) }}"
-                                       required>
-                                @error('tanggal')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-
-                            <!-- Kegiatan -->
-                            <div class="col-md-6 mb-4">
-                                <label for="kegiatan" class="form-label">
-                                    <i class="ti ti-clipboard-text"></i> Nama Kegiatan <span class="required">*</span>
-                                    @if(old('kegiatan', $jadwal->kegiatan) != $jadwal->kegiatan)
-                                        <span class="badge-changed">Diubah</span>
-                                    @endif
-                                </label>
-                                <input type="text" name="kegiatan" id="kegiatan" 
-                                       class="form-control @error('kegiatan') is-invalid @enderror" 
-                                       value="{{ old('kegiatan', $jadwal->kegiatan) }}"
-                                       placeholder="Contoh: Rapat Koordinasi"
-                                       maxlength="255"
-                                       required>
-                                @error('kegiatan')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-
-                            <!-- Waktu Mulai & Selesai -->
-                            <div class="col-md-12 mb-4">
-                                <label class="form-label">
-                                    <i class="ti ti-clock"></i> Waktu Kegiatan <span class="required">*</span>
-                                    @if(old('waktu_mulai', substr($jadwal->waktu_mulai, 0, 5)) != substr($jadwal->waktu_mulai, 0, 5) || 
-                                        old('waktu_selesai', substr($jadwal->waktu_selesai, 0, 5)) != substr($jadwal->waktu_selesai, 0, 5))
-                                        <span class="badge-changed">Diubah</span>
-                                    @endif
-                                </label>
-                                <div class="time-picker-group">
-                                    <div class="time-picker-wrapper">
-                                        <div class="input-group">
-                                            <span class="input-group-text">
-                                                <i class="ti ti-clock"></i>
-                                            </span>
-                                            <input type="time" name="waktu_mulai" id="waktu_mulai" 
-                                                   class="form-control @error('waktu_mulai') is-invalid @enderror" 
-                                                   value="{{ old('waktu_mulai', substr($jadwal->waktu_mulai, 0, 5)) }}"
-                                                   required>
-                                        </div>
-                                        <small class="text-muted">Waktu Mulai</small>
-                                        @error('waktu_mulai')
-                                            <div class="invalid-feedback d-block">{{ $message }}</div>
-                                        @enderror
-                                    </div>
-
-                                    <div class="text-center pt-3">
-                                        <i class="ti ti-arrow-right fs-4 text-muted"></i>
-                                    </div>
-
-                                    <div class="time-picker-wrapper">
-                                        <div class="input-group">
-                                            <span class="input-group-text">
-                                                <i class="ti ti-clock"></i>
-                                            </span>
-                                            <input type="time" name="waktu_selesai" id="waktu_selesai" 
-                                                   class="form-control @error('waktu_selesai') is-invalid @enderror" 
-                                                   value="{{ old('waktu_selesai', substr($jadwal->waktu_selesai, 0, 5)) }}"
-                                                   required>
-                                        </div>
-                                        <small class="text-muted">Waktu Selesai</small>
-                                        @error('waktu_selesai')
-                                            <div class="invalid-feedback d-block">{{ $message }}</div>
-                                        @enderror
-                                    </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        Tanggal Kegiatan <span class="text-danger">*</span>
+                                        @if(old('tanggal', $jadwal->tanggal->format('Y-m-d')) != $jadwal->tanggal->format('Y-m-d'))
+                                            <span class="badge-changed">Diubah</span>
+                                        @endif
+                                    </label>
+                                    <input type="date" name="tanggal" id="tanggal" 
+                                           class="form-control @error('tanggal') is-invalid @enderror" 
+                                           value="{{ old('tanggal', $jadwal->tanggal->format('Y-m-d')) }}" required>
+                                    @error('tanggal')
+                                        <span class="invalid-feedback">{{ $message }}</span>
+                                    @enderror
                                 </div>
-                                <small class="text-muted d-block mt-2">
-                                    <i class="ti ti-alert-circle"></i> Durasi kegiatan: <span id="durasi" class="fw-bold">-</span>
-                                </small>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        Nama Kegiatan <span class="text-danger">*</span>
+                                        @if(old('kegiatan', $jadwal->kegiatan) != $jadwal->kegiatan)
+                                            <span class="badge-changed">Diubah</span>
+                                        @endif
+                                    </label>
+                                    <input type="text" name="kegiatan" id="kegiatan" 
+                                           class="form-control @error('kegiatan') is-invalid @enderror" 
+                                           value="{{ old('kegiatan', $jadwal->kegiatan) }}"
+                                           placeholder="Contoh: Rapat Koordinasi Tim" maxlength="255" required>
+                                    @error('kegiatan')
+                                        <span class="invalid-feedback">{{ $message }}</span>
+                                    @enderror
+                                </div>
                             </div>
                         </div>
+                    </div>
 
-                        <!-- Preview Box -->
-                        <div class="preview-box" id="previewBox">
-                            <h6 class="fw-bold mb-3">
-                                <i class="ti ti-eye"></i> Preview Perubahan
-                            </h6>
+                    <!-- Section: Waktu -->
+                    <div class="form-section">
+                        <div class="form-section-title">
+                            <i class="ti ti-clock"></i>
+                            Jadwal Waktu
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">
+                                Waktu Kegiatan <span class="text-danger">*</span>
+                                @if(old('waktu_mulai', substr($jadwal->waktu_mulai, 0, 5)) != substr($jadwal->waktu_mulai, 0, 5) || 
+                                    old('waktu_selesai', substr($jadwal->waktu_selesai, 0, 5)) != substr($jadwal->waktu_selesai, 0, 5))
+                                    <span class="badge-changed">Diubah</span>
+                                @endif
+                            </label>
+
+                            <div class="time-group">
+                                <div class="time-item">
+                                    <label>Waktu Mulai</label>
+                                    <input type="time" name="waktu_mulai" id="waktu_mulai" 
+                                           class="form-control @error('waktu_mulai') is-invalid @enderror" 
+                                           value="{{ old('waktu_mulai', substr($jadwal->waktu_mulai, 0, 5)) }}" required>
+                                    @error('waktu_mulai')
+                                        <span class="invalid-feedback">{{ $message }}</span>
+                                    @enderror
+                                </div>
+
+                                <div class="time-separator">
+                                    <i class="ti ti-arrow-right"></i>
+                                </div>
+
+                                <div class="time-item">
+                                    <label>Waktu Selesai</label>
+                                    <input type="time" name="waktu_selesai" id="waktu_selesai" 
+                                           class="form-control @error('waktu_selesai') is-invalid @enderror" 
+                                           value="{{ old('waktu_selesai', substr($jadwal->waktu_selesai, 0, 5)) }}" required>
+                                    @error('waktu_selesai')
+                                        <span class="invalid-feedback">{{ $message }}</span>
+                                    @enderror
+                                </div>
+                            </div>
+
+                            <div class="duration-info">
+                                <i class="ti ti-hourglass"></i>
+                                <span>Durasi: <strong id="durasi">-</strong></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Preview Box -->
+                    <div class="preview-box">
+                        <div class="preview-title">
+                            <i class="ti ti-eye"></i>
+                            Preview Perubahan
+                        </div>
+                        <div class="preview-grid">
                             <div class="preview-item">
                                 <i class="ti ti-door"></i>
-                                <span>Ruangan: <span class="preview-value" id="previewRuangan">-</span></span>
+                                <div class="preview-item-content">
+                                    <div class="preview-label">Ruangan</div>
+                                    <div class="preview-value" id="previewRuangan">-</div>
+                                </div>
                             </div>
                             <div class="preview-item">
                                 <i class="ti ti-calendar"></i>
-                                <span>Tanggal: <span class="preview-value" id="previewTanggal">-</span></span>
+                                <div class="preview-item-content">
+                                    <div class="preview-label">Tanggal</div>
+                                    <div class="preview-value" id="previewTanggal">-</div>
+                                </div>
                             </div>
                             <div class="preview-item">
                                 <i class="ti ti-clipboard-text"></i>
-                                <span>Kegiatan: <span class="preview-value" id="previewKegiatan">-</span></span>
+                                <div class="preview-item-content">
+                                    <div class="preview-label">Kegiatan</div>
+                                    <div class="preview-value" id="previewKegiatan">-</div>
+                                </div>
                             </div>
                             <div class="preview-item">
                                 <i class="ti ti-clock"></i>
-                                <span>Waktu: <span class="preview-value" id="previewWaktu">-</span></span>
+                                <div class="preview-item-content">
+                                    <div class="preview-label">Waktu</div>
+                                    <div class="preview-value" id="previewWaktu">-</div>
+                                </div>
                             </div>
                         </div>
+                    </div>
+                </form>
+            </div>
 
-                        <!-- Action Buttons -->
-                        <div class="d-flex justify-content-between align-items-center mt-4 pt-4 border-top">
-                            <a href="{{ route('backend.jadwal.index') }}" class="btn btn-cancel">
-                                <i class="ti ti-arrow-left"></i> Kembali
-                            </a>
-                            <button type="submit" class="btn btn-primary btn-submit">
-                                <i class="ti ti-check"></i> Update Jadwal
-                            </button>
-                        </div>
-                    </form>
-                </div>
+            <!-- Form Footer -->
+            <div class="form-footer">
+                <a href="{{ route('backend.jadwal.index') }}" class="btn btn-secondary">
+                    <i class="ti ti-arrow-left"></i>
+                    Kembali
+                </a>
+                <button type="submit" form="formJadwal" class="btn btn-primary">
+                    <i class="ti ti-check"></i>
+                    Update Jadwal
+                </button>
             </div>
         </div>
     </div>
@@ -412,7 +658,6 @@
 @push('scripts')
 <script>
 $(document).ready(function() {
-    // Original data for comparison
     const originalData = {
         ruang_id: '{{ $jadwal->ruang_id }}',
         tanggal: '{{ $jadwal->tanggal->format('Y-m-d') }}',
@@ -421,7 +666,6 @@ $(document).ready(function() {
         waktu_selesai: '{{ substr($jadwal->waktu_selesai, 0, 5) }}'
     };
 
-    // Update preview when form changes
     function updatePreview() {
         const ruangSelect = $('#ruang_id option:selected');
         const tanggal = $('#tanggal').val();
@@ -429,16 +673,14 @@ $(document).ready(function() {
         const waktuMulai = $('#waktu_mulai').val();
         const waktuSelesai = $('#waktu_selesai').val();
 
-        $('#previewRuangan').text(ruangSelect.text().trim());
+        $('#previewRuangan').text(ruangSelect.text().split('-')[0].trim());
         $('#previewTanggal').text(formatDate(tanggal));
         $('#previewKegiatan').text(kegiatan);
         $('#previewWaktu').text(waktuMulai + ' - ' + waktuSelesai);
 
-        // Highlight changed fields
         highlightChanges();
     }
 
-    // Highlight changed fields
     function highlightChanges() {
         const currentData = {
             ruang_id: $('#ruang_id').val(),
@@ -448,17 +690,15 @@ $(document).ready(function() {
             waktu_selesai: $('#waktu_selesai').val()
         };
 
-        // Check each field
         for (let key in currentData) {
             if (currentData[key] !== originalData[key]) {
-                $(`#${key}`).css('border-color', '#f5576c');
+                $(`#${key}`).addClass('changed');
             } else {
-                $(`#${key}`).css('border-color', '#e0e0e0');
+                $(`#${key}`).removeClass('changed');
             }
         }
     }
 
-    // Calculate duration
     function calculateDuration() {
         const waktuMulai = $('#waktu_mulai').val();
         const waktuSelesai = $('#waktu_selesai').val();
@@ -466,66 +706,53 @@ $(document).ready(function() {
         if (waktuMulai && waktuSelesai) {
             const start = new Date('2000-01-01 ' + waktuMulai);
             const end = new Date('2000-01-01 ' + waktuSelesai);
-            const diff = (end - start) / 1000 / 60; // in minutes
+            const diff = (end - start) / 1000 / 60;
 
             if (diff > 0) {
                 const hours = Math.floor(diff / 60);
                 const minutes = diff % 60;
-                let durationText = '';
-                
-                if (hours > 0) durationText += hours + ' jam ';
-                if (minutes > 0) durationText += minutes + ' menit';
-                
-                $('#durasi').text(durationText || '0 menit').removeClass('text-danger');
+                let text = '';
+                if (hours > 0) text += hours + ' jam ';
+                if (minutes > 0) text += minutes + ' menit';
+                $('#durasi').text(text || '0 menit');
             } else {
-                $('#durasi').text('Waktu tidak valid!').addClass('text-danger');
+                $('#durasi').text('Waktu tidak valid!');
             }
         }
     }
 
-    // Format date to Indonesian
     function formatDate(dateString) {
         const date = new Date(dateString);
         const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
         return date.toLocaleDateString('id-ID', options);
     }
 
-    // Show ruangan info
     $('#ruang_id').on('change', function() {
         const selected = $(this).find('option:selected');
         const kapasitas = selected.data('kapasitas');
         const lokasi = selected.data('lokasi');
         
         if (kapasitas && lokasi) {
-            $('#ruanganInfo').html(
-                '<i class="ti ti-info-circle"></i> Kapasitas: <strong>' + kapasitas + 
-                ' orang</strong> | Lokasi: <strong>' + lokasi + '</strong>'
-            );
+            $('#ruanganInfo').html('<i class="ti ti-info-circle"></i> Kapasitas: <strong>' + kapasitas + ' orang</strong> | Lokasi: <strong>' + lokasi + '</strong>');
         } else {
             $('#ruanganInfo').html('');
         }
         updatePreview();
     });
 
-    // Event listeners
     $('#tanggal, #kegiatan, #waktu_mulai, #waktu_selesai').on('change input', function() {
         updatePreview();
         calculateDuration();
     });
 
-    // Form validation
     $('#formJadwal').on('submit', function(e) {
-        const waktuMulai = $('#waktu_mulai').val();
-        const waktuSelesai = $('#waktu_selesai').val();
-
-        if (waktuMulai >= waktuSelesai) {
+        if ($('#waktu_mulai').val() >= $('#waktu_selesai').val()) {
             e.preventDefault();
             alert('Waktu selesai harus lebih besar dari waktu mulai!');
             return false;
         }
     });
 
-    // Initial setup
     updatePreview();
     calculateDuration();
     $('#ruang_id').trigger('change');

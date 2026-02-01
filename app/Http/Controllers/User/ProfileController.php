@@ -33,11 +33,15 @@ class ProfileController extends Controller
             ->where('status', 'disetujui')
             ->count();
 
-        // 6. RUANGAN YANG SEDANG DIGUNAKAN HARI INI → 100% AKURAT!
+        // 6. RUANGAN YANG SEDANG DIGUNAKAN HARI INI
         $ruanganSedangDigunakan = Booking::where('user_id', $user->id)
             ->whereDate('tanggal', $today)
             ->whereIn('status', ['Diterima'])
             ->count();
+
+        // 7. Format role untuk ditampilkan (bisa pakai isAdmin atau role)
+        $roleDisplay = $user->isAdmin == 1 ? 'Admin' : 'User';
+        // atau bisa juga: $roleDisplay = $user->role === 'admin' ? 'Admin' : 'User';
 
         return view('frontend.profile.index', compact(
             'user',
@@ -46,7 +50,8 @@ class ProfileController extends Controller
             'totalPeminjaman',
             'totalKembali',
             'belumKembali',
-            'ruanganSedangDigunakan'
+            'ruanganSedangDigunakan',
+            'roleDisplay'
         ));
     }
 }

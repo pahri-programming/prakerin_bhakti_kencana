@@ -13,9 +13,6 @@
                         <h5 class="mb-0">
                             <i class="ti ti-users me-2"></i> Data Akun
                         </h5>
-                        <a href="{{ route('backend.user.create') }}" class="btn btn-success btn-sm">
-                            <i class="ti ti-plus fs-5"></i> Tambah Akun
-                        </a>
                     </div>
 
                     <div class="card-body bg-light">
@@ -36,7 +33,7 @@
                                             <td>{{ $loop->iteration }}</td>
                                             <td>{{ $data->name }}</td>
                                             <td>{{ $data->email }}</td>
-                                            <td>{{ $data->isAdmin == 1 ? 'Admin' : 'Member' }}</td>
+                                            <td>{{ $data->isAdmin == 1 ? 'Admin' : 'User' }}</td>
                                             <td class="text-center">
                                                 <div class="d-flex justify-content-center gap-2">
                                                     <a href="{{ route('backend.user.edit', $data->id) }}"

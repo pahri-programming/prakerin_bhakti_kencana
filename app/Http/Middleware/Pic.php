@@ -5,21 +5,24 @@ use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-class TeknisiMiddleware
+class Pic
 {
     /**
      * Handle an incoming request.
      *
      * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
      */
-    public function handle(Request $request, Closure $next): Response
+    public function handle(Request $request, Closure $next, ...$roles): Response
     {
         if (! auth()->check()) {
-            return redirect()->route('login')->with('error', 'Silakan login terlebih dahulu.');
+            return redirect()->route('login');
         }
 
-        if (auth()->user()->role !== 'teknisi') {
-            return abort(403, 'Akses ditolak! Khusus untuk teknisi.');
+        $userRole = auth()->user()->role;
+
+        // Check if user has any of the allowed roles
+        if (! in_array($userRole, $roles)) {
+            abort(403, 'Unauthorized action.');
         }
 
         return $next($request);

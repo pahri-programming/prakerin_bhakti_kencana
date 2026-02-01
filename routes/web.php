@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\BookingCheckController;
 use App\Http\Controllers\Api\PeminjamanCheckController;
+use App\Http\Controllers\Auth\GoogleController;
 use App\Http\Controllers\BackendController;
 use App\Http\Controllers\Backend\BarangController;
 use App\Http\Controllers\Backend\BarangRuanganController;
@@ -14,7 +15,6 @@ use App\Http\Controllers\Backend\PengembalianBarangController;
 use App\Http\Controllers\Backend\RuanganController;
 use App\Http\Controllers\Backend\UserController;
 use App\Http\Controllers\FrontendController;
-use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\User\ProfileController;
 use App\Http\Controllers\User\UserBookingController;
 use App\Http\Controllers\User\UserPeminjamanController;
@@ -66,9 +66,6 @@ Route::get('/booking/check-expired', [BookingCheckController::class, 'check'])
 |--------------------------------------------------------------------------
 */
 Route::middleware(['auth'])->group(function () {
-    // Notification
-    Route::post('/notifications/read', [NotificationController::class, 'markAsRead'])
-        ->name('notifications.read');
 
     // User Profile
     Route::get('/profile', [ProfileController::class, 'index'])->name('profile');
@@ -145,10 +142,19 @@ Route::prefix('admin')->name('backend.')->middleware(['auth', 'admin'])->group(f
     |--------------------------------------------------------------------------
     */
 
-    // Booking Management
-    Route::prefix('booking')->name('booking.')->group(function () {
-        Route::get('/export', [BookingController::class, 'export'])->name('export');
-    });
+    Route::patch('booking/{id}/approve', [BookingController::class, 'approve'])
+        ->name('booking.approve');
+
+    Route::patch('booking/{id}/reject', [BookingController::class, 'reject'])
+        ->name('booking.reject');
+
+    Route::patch('booking/{id}/complete', [BookingController::class, 'complete'])
+        ->name('booking.complete');
+
+    // Booking Export
+    Route::get('booking/export', [BookingController::class, 'export'])
+        ->name('booking.export');
+
     Route::resource('booking', BookingController::class);
 
     // Peminjaman Barang Management
@@ -184,6 +190,9 @@ Route::prefix('admin')->name('backend.')->middleware(['auth', 'admin'])->group(f
         Route::get('/pengembalian/pdf', [LaporanUbkController::class, 'pdfPengembalian'])->name('pdf_pengembalian');
     });
 });
+
+Route::get('/auth/google', [GoogleController::class, 'redirect'])->name('google.login');
+Route::get('/auth/google/callback', [GoogleController::class, 'callback']);
 
 /*
 |--------------------------------------------------------------------------

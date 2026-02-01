@@ -41,11 +41,9 @@ class KategoriController extends Controller
     {
         $validator = \Validator::make($request->all(), [
             'nama'      => 'required|string|max:100|unique:kategoris,nama',
-            'deskripsi' => 'required|string',
         ], [
             'nama.required'      => 'Nama kategori wajib diisi!',
             'nama.unique'        => 'Nama kategori sudah ada!',
-            'deskripsi.required' => 'Deskripsi wajib diisi!',
         ]);
 
         if ($validator->fails()) {
@@ -56,7 +54,6 @@ class KategoriController extends Controller
         try {
             $kategori            = new Kategori();
             $kategori->nama      = ucwords(strtolower($request->nama));
-            $kategori->deskripsi = $request->deskripsi;
             $kategori->save();
 
             Log::info("Kategori baru dibuat: {$kategori->nama}");
@@ -68,31 +65,6 @@ class KategoriController extends Controller
             return back()->withInput();
         }
     }
-
-    // public function store(Request $request)
-    // {
-    //     $request->validate([
-    //         'nama' => 'required|string|max:100|unique:kategoris,nama',
-    //         'deskripsi' => 'nullable|string',
-
-    //     ]);
-
-    //     try {
-    //         $kategori = new Kategori();
-    //         $kategori->nama = ucwords(strtolower($request->nama));
-    //         $kategori->deskripsi = $request->deskripsi ?: '-';
-    //         $kategori->save();
-
-    //         Log::info("Kategori baru dibuat: {$kategori->nama}");
-
-    //         toast('Kategori baru berhasil ditambahkan.', 'success');
-    //         return redirect()->route('backend.kategori.index');
-    //     } catch (\Exception $e) {
-    //         Log::error('Gagal menambah kategori: ' . $e->getMessage());
-    //         toast('Terjadi kesalahan saat menambah kategori.', 'error');
-    //         return back()->withInput();
-    //     }
-    // }
 
     public function edit($id)
     {
@@ -106,12 +78,10 @@ class KategoriController extends Controller
 
         $request->validate([
             'nama' => "required|string|max:100|unique:kategoris,nama,{$kategori->id}",
-            'deskripsi' => 'nullable|string',
         ]);
 
         try {
             $kategori->nama      = ucwords(strtolower($request->nama));
-            $kategori->deskripsi = $request->deskripsi ?: '-';
             $kategori->save();
 
             Log::info("Kategori diperbarui: {$kategori->nama}");

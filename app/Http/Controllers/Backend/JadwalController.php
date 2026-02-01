@@ -2,6 +2,7 @@
 namespace App\Http\Controllers\Backend;
 
 use App\Http\Controllers\Controller;
+use App\Models\Booking;
 use App\Models\Jadwal;
 use App\Models\Ruangan;
 use Carbon\Carbon;
@@ -56,7 +57,7 @@ class JadwalController extends Controller
 
         $jadwal = $query->orderBy('tanggal', 'DESC')
             ->orderBy('waktu_mulai', 'ASC')
-            ->paginate(10)
+            ->paginate(15) //  Ubah dari 10 ke 15
             ->through(function ($item) {
                 $item->tanggal_format = Carbon::parse($item->tanggal)->translatedFormat('d F Y');
                 $item->hari           = Carbon::parse($item->tanggal)->translatedFormat('l');
@@ -71,7 +72,7 @@ class JadwalController extends Controller
             5 => 'Mei', 6        => 'Juni', 7     => 'Juli', 8      => 'Agustus',
             9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember',
         ];
-        $tahun = range(date('Y') - 2, date('Y') + 1);
+        $tahun = range(date('Y') - 2, date('Y') + 2); //  +2 tahun ke depan
 
         // Confirm delete
         $title = 'Hapus Data Jadwal';
@@ -86,7 +87,7 @@ class JadwalController extends Controller
      */
     public function create()
     {
-        $ruangans = Ruangan::where('status', 'tersedia')->orderBy('nama_ruangan')->get();
+        $ruangans = Ruangan::orderBy('nama_ruangan')->get(); //  Tampilkan semua ruangan
         return view('backend.jadwal.create', compact('ruangans'));
     }
 
@@ -112,21 +113,25 @@ class JadwalController extends Controller
         ]);
 
         try {
-            // Check konflik jadwal
-            $konflik = Jadwal::where('ruang_id', $validated['ruang_id'])
-                ->where('tanggal', $validated['tanggal'])
-                ->where(function ($query) use ($validated) {
-                    $query->whereBetween('waktu_mulai', [$validated['waktu_mulai'], $validated['waktu_selesai']])
-                        ->orWhereBetween('waktu_selesai', [$validated['waktu_mulai'], $validated['waktu_selesai']])
-                        ->orWhere(function ($q) use ($validated) {
-                            $q->where('waktu_mulai', '<=', $validated['waktu_mulai'])
-                                ->where('waktu_selesai', '>=', $validated['waktu_selesai']);
-                        });
-                })
-                ->exists();
-
-            if ($konflik) {
+            //  Cek konflik dengan jadwal lain
+            if ($this->checkJadwalConflict(
+                $validated['ruang_id'],
+                $validated['tanggal'],
+                $validated['waktu_mulai'],
+                $validated['waktu_selesai']
+            )) {
                 toast('Jadwal bentrok! Ruangan sudah terpakai pada waktu tersebut.', 'error');
+                return back()->withInput();
+            }
+
+            //  Cek konflik dengan booking yang sudah diterima
+            if ($this->checkBookingConflict(
+                $validated['ruang_id'],
+                $validated['tanggal'],
+                $validated['waktu_mulai'],
+                $validated['waktu_selesai']
+            )) {
+                toast('Jadwal bentrok! Ada booking yang sudah diterima di waktu tersebut.', 'error');
                 return back()->withInput();
             }
 
@@ -137,10 +142,11 @@ class JadwalController extends Controller
             DB::commit();
 
             Log::info('Jadwal berhasil dibuat', [
-                'id'       => $jadwal->id,
-                'ruangan'  => $jadwal->ruangan->nama_ruangan ?? 'N/A',
-                'tanggal'  => $jadwal->tanggal,
-                'kegiatan' => $jadwal->kegiatan,
+                'id'         => $jadwal->id,
+                'ruangan'    => $jadwal->ruangan->nama_ruangan ?? 'N/A',
+                'tanggal'    => $jadwal->tanggal,
+                'kegiatan'   => $jadwal->kegiatan,
+                'created_by' => auth()->user()->name,
             ]);
 
             toast('Jadwal berhasil ditambahkan!', 'success');
@@ -158,19 +164,6 @@ class JadwalController extends Controller
             toast('Gagal menambahkan jadwal: ' . $e->getMessage(), 'error');
             return back()->withInput();
         }
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        $jadwal                 = Jadwal::with('ruangan')->findOrFail($id);
-        $jadwal->tanggal_format = Carbon::parse($jadwal->tanggal)->translatedFormat('d F Y');
-        $jadwal->hari           = Carbon::parse($jadwal->tanggal)->translatedFormat('l');
-        $jadwal->status_waktu   = $this->getStatusWaktu($jadwal);
-
-        return view('backend.jadwal.show', compact('jadwal'));
     }
 
     /**
@@ -207,22 +200,26 @@ class JadwalController extends Controller
         try {
             $jadwal = Jadwal::findOrFail($id);
 
-            // Check konflik jadwal (kecuali jadwal ini sendiri)
-            $konflik = Jadwal::where('ruang_id', $validated['ruang_id'])
-                ->where('tanggal', $validated['tanggal'])
-                ->where('id', '!=', $id)
-                ->where(function ($query) use ($validated) {
-                    $query->whereBetween('waktu_mulai', [$validated['waktu_mulai'], $validated['waktu_selesai']])
-                        ->orWhereBetween('waktu_selesai', [$validated['waktu_mulai'], $validated['waktu_selesai']])
-                        ->orWhere(function ($q) use ($validated) {
-                            $q->where('waktu_mulai', '<=', $validated['waktu_mulai'])
-                                ->where('waktu_selesai', '>=', $validated['waktu_selesai']);
-                        });
-                })
-                ->exists();
-
-            if ($konflik) {
+            //  Cek konflik dengan jadwal lain (kecuali jadwal ini sendiri)
+            if ($this->checkJadwalConflict(
+                $validated['ruang_id'],
+                $validated['tanggal'],
+                $validated['waktu_mulai'],
+                $validated['waktu_selesai'],
+                $id
+            )) {
                 toast('Jadwal bentrok! Ruangan sudah terpakai pada waktu tersebut.', 'error');
+                return back()->withInput();
+            }
+
+            //  Cek konflik dengan booking yang sudah diterima
+            if ($this->checkBookingConflict(
+                $validated['ruang_id'],
+                $validated['tanggal'],
+                $validated['waktu_mulai'],
+                $validated['waktu_selesai']
+            )) {
+                toast('Jadwal bentrok! Ada booking yang sudah diterima di waktu tersebut.', 'error');
                 return back()->withInput();
             }
 
@@ -233,10 +230,11 @@ class JadwalController extends Controller
             DB::commit();
 
             Log::info('Jadwal berhasil diupdate', [
-                'id'       => $jadwal->id,
-                'ruangan'  => $jadwal->ruangan->nama_ruangan ?? 'N/A',
-                'tanggal'  => $jadwal->tanggal,
-                'kegiatan' => $jadwal->kegiatan,
+                'id'         => $jadwal->id,
+                'ruangan'    => $jadwal->ruangan->nama_ruangan ?? 'N/A',
+                'tanggal'    => $jadwal->tanggal,
+                'kegiatan'   => $jadwal->kegiatan,
+                'updated_by' => auth()->user()->name,
             ]);
 
             toast('Jadwal berhasil diperbarui!', 'success');
@@ -264,15 +262,17 @@ class JadwalController extends Controller
         try {
             $jadwal = Jadwal::findOrFail($id);
 
-            // Cek apakah jadwal sudah lewat (opsional: tidak bisa dihapus jika sudah lewat)
-            // if (Carbon::parse($jadwal->tanggal)->isPast()) {
-            //     toast('Jadwal yang sudah lewat tidak dapat dihapus!', 'error');
-            //     return back();
-            // }
+            $kegiatan = $jadwal->kegiatan;
+            $tanggal  = $jadwal->tanggal_format;
 
             $jadwal->delete();
 
-            Log::info('Jadwal berhasil dihapus', ['id' => $id]);
+            Log::info('Jadwal berhasil dihapus', [
+                'id'         => $id,
+                'kegiatan'   => $kegiatan,
+                'tanggal'    => $tanggal,
+                'deleted_by' => auth()->user()->name,
+            ]);
 
             toast('Jadwal berhasil dihapus!', 'success');
             return redirect()->route('backend.jadwal.index');
@@ -288,6 +288,8 @@ class JadwalController extends Controller
         }
     }
 
+    // =================== HELPER METHODS ===================
+
     /**
      * Get status waktu jadwal
      */
@@ -295,7 +297,6 @@ class JadwalController extends Controller
     {
         $now = Carbon::now();
 
-        // Convert tanggal to string format if it's Carbon object
         $tanggalString = $jadwal->tanggal instanceof Carbon
             ? $jadwal->tanggal->format('Y-m-d')
             : $jadwal->tanggal;
@@ -309,5 +310,47 @@ class JadwalController extends Controller
         } else {
             return 'akan-datang';
         }
+    }
+
+    /**
+     *  CEK KONFLIK DENGAN JADWAL LAIN
+     */
+    private function checkJadwalConflict($ruangId, $tanggal, $waktuMulai, $waktuSelesai, $excludeId = null)
+    {
+        $query = Jadwal::where('ruang_id', $ruangId)
+            ->where('tanggal', $tanggal)
+            ->where(function ($q) use ($waktuMulai, $waktuSelesai) {
+                $q->whereBetween('waktu_mulai', [$waktuMulai, $waktuSelesai])
+                    ->orWhereBetween('waktu_selesai', [$waktuMulai, $waktuSelesai])
+                    ->orWhere(function ($q2) use ($waktuMulai, $waktuSelesai) {
+                        $q2->where('waktu_mulai', '<=', $waktuMulai)
+                            ->where('waktu_selesai', '>=', $waktuSelesai);
+                    });
+            });
+
+        if ($excludeId) {
+            $query->where('id', '!=', $excludeId);
+        }
+
+        return $query->exists();
+    }
+
+    /**
+     *  CEK KONFLIK DENGAN BOOKING YANG DITERIMA
+     */
+    private function checkBookingConflict($ruangId, $tanggal, $waktuMulai, $waktuSelesai)
+    {
+        return Booking::where('ruang_id', $ruangId)
+            ->where('tanggal', $tanggal)
+            ->where('status', 'Diterima')
+            ->where(function ($q) use ($waktuMulai, $waktuSelesai) {
+                $q->whereBetween('waktu_mulai', [$waktuMulai, $waktuSelesai])
+                    ->orWhereBetween('waktu_selesai', [$waktuMulai, $waktuSelesai])
+                    ->orWhere(function ($q2) use ($waktuMulai, $waktuSelesai) {
+                        $q2->where('waktu_mulai', '<=', $waktuMulai)
+                            ->where('waktu_selesai', '>=', $waktuSelesai);
+                    });
+            })
+            ->exists();
     }
 }

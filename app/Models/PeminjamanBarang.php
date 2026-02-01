@@ -26,7 +26,6 @@ class PeminjamanBarang extends Model
         'tanggal_pinjam'  => 'date:Y-m-d',
         'tanggal_kembali' => 'date:Y-m-d',
         'status'          => 'string',
-        'is_read'         => 'boolean',
     ];
 
     // Accessors untuk format tanggal

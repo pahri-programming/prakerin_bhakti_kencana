@@ -20,6 +20,13 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'instansi',
+        'isAdmin',
+        'role',
+        'email_verified_at',
+        'provider',
+        'provider_id',
+
     ];
 
     /**
@@ -42,7 +49,54 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password'          => 'hashed',
+            'isAdmin'           => 'boolean',
+
         ];
+    }
+
+    /**
+     * Check if user is Admin
+     */
+    public function isAdmin(): bool
+    {
+        return $this->role === 'admin';
+    }
+
+    /**
+     * Check if user is PIC (Person In Charge)
+     */
+    public function isPIC(): bool
+    {
+        return $this->role === 'pic';
+    }
+
+    /**
+     * Check if user is regular User
+     */
+    public function isUser(): bool
+    {
+        return $this->role === 'user';
+    }
+
+    /**
+     * Check if user is Admin or PIC (has access to backend)
+     */
+    public function hasBackendAccess(): bool
+    {
+        return in_array($this->role, ['admin', 'pic']);
+    }
+
+    /**
+     * Get role label in Indonesian
+     */
+    public function getRoleLabelAttribute(): string
+    {
+        return match ($this->role) {
+            'admin' => 'Administrator',
+            'pic'   => 'Petugas (PIC)',
+            'user'  => 'User/Mahasiswa',
+            default => 'Unknown',
+        };
     }
 
     public function booking()
@@ -60,12 +114,6 @@ class User extends Authenticatable
     public function pelaporanKerusakans()
     {
         return $this->hasMany(PelaporanKerusakan::class, 'user_id');
-    }
-
-    // Relasi ke Pelaporan Kerusakan (sebagai teknisi)
-    public function laporanDitangani()
-    {
-        return $this->hasMany(PelaporanKerusakan::class, 'teknisi_id');
     }
 
 }

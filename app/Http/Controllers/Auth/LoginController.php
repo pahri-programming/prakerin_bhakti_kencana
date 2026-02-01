@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
@@ -28,10 +27,11 @@ class LoginController extends Controller
      */
     protected function redirectTo()
     {
-        if (Auth::user()->is_admin == 1) {
-            return '/admin'; // atau '/admin'
+        // Perbaiki: gunakan isAdmin bukan is_admin
+        if (Auth::user()->isAdmin == 1) {
+            return '/admin';
         }
-        return '/'; 
+        return '/';
     }
 
     /**

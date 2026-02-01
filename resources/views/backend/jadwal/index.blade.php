@@ -338,12 +338,7 @@
 
                             <!-- Actions -->
                             <div class="action-buttons d-flex justify-content-end gap-1 pt-3 border-top">
-                                <a href="{{ route('backend.jadwal.show', $item->id) }}" 
-                                   class="btn btn-sm btn-info" 
-                                   data-bs-toggle="tooltip" 
-                                   title="Detail">
-                                    <i class="ti ti-eye"></i>
-                                </a>
+
                                 <a href="{{ route('backend.jadwal.edit', $item->id) }}" 
                                    class="btn btn-sm btn-warning" 
                                    data-bs-toggle="tooltip" 
@@ -398,9 +393,9 @@
                             <i class="ti ti-refresh"></i> Reset Filter
                         </a>
                     @else
-                        <a href="{{ route('backend.jadwal.create') }}" class="btn btn-primary">
+                        {{-- <a href="{{ route('backend.jadwal.create') }}" class="btn btn-primary">
                             <i class="ti ti-plus"></i> Tambah Jadwal
-                        </a>
+                        </a> --}}
                     @endif
                 </div>
             </div>

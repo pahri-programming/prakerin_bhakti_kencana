@@ -2,7 +2,7 @@
 
 @section('title', 'Dashboard')
 
-@section('styles')
+@push('styles')
     <style>
         /* card sizing tweak */
         .dash-card {
@@ -49,7 +49,8 @@
             font-size: .85rem;
         }
     </style>
-@endsection
+@endpush
+
 
 @section('content')
     <div class="container-fluid">

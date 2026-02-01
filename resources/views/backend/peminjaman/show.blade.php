@@ -191,12 +191,12 @@
                             </a>
                         @endif
 
-                        @if ($peminjaman->hasReturn())
+                        {{-- @if ($peminjaman->hasReturn())
                             <a href="{{ route('backend.pengembalian.show', $peminjaman->pengembalianBarang->id) }}"
                                 class="btn btn-info w-100 mb-2">
                                 <i class="fas fa-eye me-2"></i>Lihat Pengembalian
                             </a>
-                        @endif
+                        @endif --}}
 
                         <!-- Keterangan -->
                         @if ($peminjaman->keterangan)

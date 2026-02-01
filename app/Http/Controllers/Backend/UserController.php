@@ -26,30 +26,30 @@ class UserController extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    public function create()
-    {
-        return view('backend.user.create');
-    }
+    // public function create()
+    // {
+    //     return view('backend.user.create');
+    // }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
-    {
-        $request->validate([
-            'name'     => 'required|string|max:255',
-            'email'    => 'required|email|unique:users,email',
-            'password' => 'required|string|min:6|confirmed',
-        ]);
-        $user           = new User();
-        $user->name     = $request->name;
-        $user->email    = $request->email;
-        $user->password = Hash::make($request->password);
-        $user->save();
+    // /**
+    //  * Store a newly created resource in storage.
+    //  */
+    // public function store(Request $request)
+    // {
+    //     $request->validate([
+    //         'name'     => 'required|string|max:255',
+    //         'email'    => 'required|email|unique:users,email',
+    //         'password' => 'required|string|min:6|confirmed',
+    //     ]);
+    //     $user           = new User();
+    //     $user->name     = $request->name;
+    //     $user->email    = $request->email;
+    //     $user->password = Hash::make($request->password);
+    //     $user->save();
 
-        toast('User Berhasil Ditambahkan!', 'success');
-        return redirect()->route('backend.user.index')->with('success', 'User created successfully.');
-    }
+    //     toast('User Berhasil Ditambahkan!', 'success');
+    //     return redirect()->route('backend.user.index')->with('success', 'User created successfully.');
+    // }
 
     /**
      * Display the specified resource.

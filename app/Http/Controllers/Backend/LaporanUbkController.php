@@ -23,8 +23,8 @@ class LaporanUbkController extends Controller
         $peminjamans      = collect();
         $total_booking    = 0;
         $total_peminjaman = 0;
-        
-        // otomatis update status booking dan peminjaman yang sudah lewat
+
+        // otomatis update status booking yang sudah lewat
         Booking::where('status', 'Diterima')
             ->where(function ($q) {
                 $q->where('tanggal', '<', now()->toDateString())
@@ -35,14 +35,9 @@ class LaporanUbkController extends Controller
             })
             ->update(['status' => 'Selesai']);
 
+        // otomatis update status peminjaman yang sudah lewat tanggal kembali
         PeminjamanBarang::whereIn('status', ['dipinjam', 'disetujui'])
-            ->where(function ($q) {
-                $q->where('tanggal_kembali', '<', now()->toDateString())
-                    ->orWhere(function ($s) {
-                        $s->where('tanggal_kembali', now()->toDateString())
-                            ->where('waktu_selesai', '<', now()->format('H:i:s'));
-                    });
-            })
+            ->where('tanggal_kembali', '<', now()->toDateString())
             ->update(['status' => 'selesai']);
 
         // booking query
@@ -62,7 +57,6 @@ class LaporanUbkController extends Controller
             $total_booking = $bookings->unique('nama')->count();
         }
 
-       
         // peminjaman query
         if ($isPeminjaman) {
             $query = PeminjamanBarang::with(['user', 'barang'])
@@ -84,24 +78,6 @@ class LaporanUbkController extends Controller
             $total_peminjaman = $peminjamans->unique('nama')->count();
         }
 
-        
-        //penyimpanan data di session untuk laporan PDF
-        if ($jenis) {
-            $data  = $isBooking ? $bookings : $peminjamans;
-            $total = $isBooking ? $total_booking : $total_peminjaman;
-            $judul = $isBooking ? 'Laporan Booking Ruangan' : 'Laporan Peminjaman Barang';
-
-            session([
-                'laporan_data'    => $data,
-                'laporan_total'   => $total,
-                'laporan_judul'   => $judul,
-                'laporan_periode' => ($start && $end)
-                    ? Carbon::parse($start)->translatedFormat('d M Y') . ' - ' . Carbon::parse($end)->translatedFormat('d M Y')
-                    : 'Semua Periode',
-                'laporan_jenis'   => $jenis,
-            ]);
-        }
-
         return view('backend.laporan-ubk.index', compact(
             'bookings',
             'peminjamans',
@@ -115,16 +91,21 @@ class LaporanUbkController extends Controller
 
     private function formatBooking($d)
     {
+        // Pastikan semua property ada dan aman
+        $tanggal = $d->tanggal ?? now()->toDateString();
+
         return (object) [
-            'kode'              => $d->kode,
+            'kode'              => $d->kode ?? 'N/A',
             'nama'              => $d->user?->name ?? 'User Dihapus',
             'item'              => $d->ruangan?->nama_ruangan ?? 'Ruangan Dihapus',
-            'tanggal_indonesia' => Carbon::parse($d->tanggal)->translatedFormat('d F Y'),
-            'waktu'             => "{$d->waktu_mulai} - {$d->waktu_selesai}",
-            'status_laporan' => match ($d->status) {
+            'tanggal_indonesia' => Carbon::parse($tanggal)->translatedFormat('d F Y'),
+            'hari'              => Carbon::parse($tanggal)->translatedFormat('l'),
+            'waktu'             => ($d->waktu_mulai ?? '00:00') . ' - ' . ($d->waktu_selesai ?? '00:00'),
+            'status_laporan'    => match ($d->status ?? 'Unknown') {
                 'Pending'  => 'Menunggu',
                 'Diterima' => 'Disetujui',
                 'Selesai'  => 'Selesai',
+                'Ditolak'  => 'Ditolak',
                 default    => 'Unknown',
             },
         ];
@@ -132,38 +113,55 @@ class LaporanUbkController extends Controller
 
     private function formatPeminjaman($d)
     {
+        // Pastikan semua property ada dan aman
+        $tanggalPinjam  = $d->tanggal_pinjam ?? now()->toDateString();
+        $tanggalKembali = $d->tanggal_kembali ?? now()->toDateString();
+
         return (object) [
-            'kode'              => $d->kode,
+            'kode'              => $d->kode ?? 'N/A',
             'nama'              => $d->user?->name ?? 'User Dihapus',
             'item'              => $d->barang?->nama ?? 'Barang Dihapus',
             'jumlah'            => $d->jumlah ?? 1,
-            'tanggal_indonesia' =>
-            Carbon::parse($d->tanggal_pinjam)->translatedFormat('d F Y')
-            . ' - ' .
-            Carbon::parse($d->tanggal_kembali)->translatedFormat('d F Y'),
-            'waktu'             => "{$d->waktu_mulai} - {$d->waktu_selesai}",
-            'status' => strtolower($d->status),
-            'status_laporan' => match (strtolower($d->status)) {
+            'tanggal_indonesia' => Carbon::parse($tanggalPinjam)->translatedFormat('d F Y')
+            . ' - '
+            . Carbon::parse($tanggalKembali)->translatedFormat('d F Y'),
+            'status'            => strtolower($d->status ?? 'unknown'),
+            'status_laporan'    => match (strtolower($d->status ?? 'unknown')) {
                 'menunggu'  => 'Menunggu',
                 'disetujui' => 'Disetujui',
                 'dipinjam'  => 'Dipinjam',
                 'selesai'   => 'Selesai',
+                'ditolak'   => 'Ditolak',
                 default     => 'Unknown',
             },
-            'keterangan' => $d->keterangan ?? '-',
+            'keterangan'        => $d->keterangan ?? '-',
         ];
     }
 
     public function pdfBooking(Request $request)
     {
-        if (! session('laporan_jenis') || session('laporan_jenis') !== 'booking') {
-            $this->index($request);
+        // Ambil ulang data booking dari database untuk memastikan data yang benar
+        $start = $request->get('start_date');
+        $end   = $request->get('end_date');
+
+        $query = Booking::with(['user', 'ruangan'])
+            ->whereIn('status', ['Pending', 'Diterima', 'Selesai']);
+
+        if ($start && $end) {
+            $query->whereBetween('tanggal', [$start, $end]);
         }
 
-        $data    = session('laporan_data');
-        $total   = session('laporan_total');
-        $judul   = session('laporan_judul');
-        $periode = session('laporan_periode');
+        $bookings = $query
+            ->orderBy('tanggal', 'desc')
+            ->get()
+            ->map(fn($d) => $this->formatBooking($d));
+
+        $data    = $bookings;
+        $total   = $bookings->unique('nama')->count();
+        $judul   = 'Laporan Booking Ruangan';
+        $periode = ($start && $end)
+            ? Carbon::parse($start)->translatedFormat('d M Y') . ' - ' . Carbon::parse($end)->translatedFormat('d M Y')
+            : 'Semua Periode';
 
         $pdf = Pdf::loadView('backend.laporan-ubk.pdf_booking', compact(
             'data', 'total', 'judul', 'periode'
@@ -172,19 +170,35 @@ class LaporanUbkController extends Controller
         return $pdf->download(
             "BKU-LaporanBooking-" . Carbon::now()->locale('id')->translatedFormat('d-m-Y') . '.pdf'
         );
-
     }
 
     public function pdfPeminjaman(Request $request)
     {
-        if (! session('laporan_jenis') || session('laporan_jenis') !== 'peminjaman') {
-            $this->index($request);
+        // Ambil ulang data peminjaman dari database untuk memastikan data yang benar
+        $start = $request->get('start_date');
+        $end   = $request->get('end_date');
+
+        $query = PeminjamanBarang::with(['user', 'barang'])
+            ->whereIn('status', ['menunggu', 'disetujui', 'dipinjam', 'selesai']);
+
+        if ($start && $end) {
+            $query->where(function ($q) use ($start, $end) {
+                $q->where('tanggal_pinjam', '<=', $end)
+                    ->where('tanggal_kembali', '>=', $start);
+            });
         }
 
-        $data    = session('laporan_data');
-        $total   = session('laporan_total');
-        $judul   = session('laporan_judul');
-        $periode = session('laporan_periode');
+        $peminjamans = $query
+            ->orderByRaw('COALESCE(tanggal_kembali, tanggal_pinjam) DESC')
+            ->get()
+            ->map(fn($d) => $this->formatPeminjaman($d));
+
+        $data    = $peminjamans;
+        $total   = $peminjamans->unique('nama')->count();
+        $judul   = 'Laporan Peminjaman Barang';
+        $periode = ($start && $end)
+            ? Carbon::parse($start)->translatedFormat('d M Y') . ' - ' . Carbon::parse($end)->translatedFormat('d M Y')
+            : 'Semua Periode';
 
         $pdf = Pdf::loadView('backend.laporan-ubk.pdf_peminjaman', compact(
             'data', 'total', 'judul', 'periode'
@@ -193,7 +207,5 @@ class LaporanUbkController extends Controller
         return $pdf->download(
             "BKU-LaporanPeminjaman-" . Carbon::now()->locale('id')->translatedFormat('d-m-Y') . '.pdf'
         );
-
     }
-
 }

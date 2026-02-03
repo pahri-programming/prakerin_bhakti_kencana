@@ -347,26 +347,34 @@ $(document).ready(function() {
     const preview = $('#preview');
     const removeBtn = $('#removeImage');
 
-    // Click to upload
-    uploadArea.click(function(e) {
-        if (!$(e.target).is('#removeImage') && !$(e.target).closest('#removeImage').length) {
-            fileInput.click();
-        }
+    // 🔥 FIX: Click to upload - hanya di uploadContent
+    uploadContent.click(function(e) {
+        e.stopPropagation();
+        fileInput.click();
+    });
+
+    // 🔥 FIX: Tambahkan click pada ikon upload juga
+    uploadContent.find('i, h6, small').click(function(e) {
+        e.stopPropagation();
+        fileInput.click();
     });
 
     // Drag & drop
     uploadArea.on('dragover', function(e) {
         e.preventDefault();
+        e.stopPropagation();
         $(this).addClass('dragover');
     });
 
     uploadArea.on('dragleave', function(e) {
         e.preventDefault();
+        e.stopPropagation();
         $(this).removeClass('dragover');
     });
 
     uploadArea.on('drop', function(e) {
         e.preventDefault();
+        e.stopPropagation();
         $(this).removeClass('dragover');
         
         const files = e.originalEvent.dataTransfer.files;
@@ -389,12 +397,14 @@ $(document).ready(function() {
         const validTypes = ['image/jpeg', 'image/jpg', 'image/png'];
         if (!validTypes.includes(file.type)) {
             alert('Format file tidak valid! Gunakan JPG, JPEG, atau PNG');
+            fileInput.val(''); // Reset input
             return;
         }
 
         // Validate file size (2MB)
         if (file.size > 2 * 1024 * 1024) {
             alert('Ukuran file terlalu besar! Maksimal 2MB');
+            fileInput.val(''); // Reset input
             return;
         }
 
@@ -411,6 +421,7 @@ $(document).ready(function() {
     // Remove image
     removeBtn.click(function(e) {
         e.stopPropagation();
+        e.preventDefault();
         fileInput.val('');
         preview.attr('src', '');
         previewContent.addClass('d-none');
@@ -427,13 +438,14 @@ $(document).ready(function() {
         }
 
         // Confirm submission
-        const confirmMsg = `Apakah Anda yakin data verifikasi sudah benar?\n\nKondisi: ${kondisi.replace('_', ' ').toUpperCase()}`;
+        const kondisiText = kondisi.replace(/_/g, ' ').toUpperCase();
+        const confirmMsg = `Apakah Anda yakin data verifikasi sudah benar?\n\nKondisi: ${kondisiText}`;
         if (!confirm(confirmMsg)) {
             e.preventDefault();
             return false;
         }
 
-        $('#submitBtn').prop('disabled', true).html('<i class="ti ti-loader"></i> Menyimpan...');
+        $('#submitBtn').prop('disabled', true).html('<i class="ti ti-loader ti-spin"></i> Menyimpan...');
     });
 });
 </script>

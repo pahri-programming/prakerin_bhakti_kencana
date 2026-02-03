@@ -43,7 +43,10 @@
 
     <div id="main-wrapper">
         <!-- Sidebar Start -->
-        @include('layouts.components-backend.sidebar')
+        @if (auth()->check())
+            @include('layouts.components-backend.sidebar')
+        @endif
+
         <!--  Sidebar End -->
         <div class="page-wrapper">
             <!--  Header Start -->

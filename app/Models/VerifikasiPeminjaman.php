@@ -53,6 +53,15 @@ class VerifikasiPeminjaman extends Model
         };
     }
 
+    public function getFotoBuktiUrlAttribute(): ?string
+    {
+        if (! $this->foto_bukti) {
+            return null;
+        }
+
+        return asset('storage/' . $this->foto_bukti);
+    }
+
     public function getKondisiBadgeAttribute(): string
     {
         return match ($this->kondisi) {

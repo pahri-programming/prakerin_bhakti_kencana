@@ -49,8 +49,8 @@
     }
 
     .hero-logo img {
-        width: 200px;
-        height: 120px;
+        width: 250px;
+        height: 180px;
         object-fit: cover;
         border-radius: 12px;
         display: block;

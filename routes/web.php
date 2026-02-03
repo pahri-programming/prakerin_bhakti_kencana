@@ -15,6 +15,9 @@ use App\Http\Controllers\Backend\PengembalianBarangController;
 use App\Http\Controllers\Backend\RuanganController;
 use App\Http\Controllers\Backend\UserController;
 use App\Http\Controllers\FrontendController;
+use App\Http\Controllers\Pic\PicDashboardController;
+use App\Http\Controllers\Pic\VerifikasiBookingController;
+use App\Http\Controllers\Pic\VerifikasiPeminjamanController;
 use App\Http\Controllers\User\ProfileController;
 use App\Http\Controllers\User\UserBookingController;
 use App\Http\Controllers\User\UserPeminjamanController;
@@ -90,6 +93,37 @@ Route::middleware(['auth'])->group(function () {
             ->name('booking.export');
         Route::get('/peminjaman/export', [FrontendController::class, 'exportRiwayatPeminjaman'])
             ->name('peminjaman.export');
+    });
+});
+
+/*
+|--------------------------------------------------------------------------
+| 🔥 PIC Routes (Person In Charge - Petugas Pengecekan)
+| PERBAIKAN: Tambahkan parameter 'pic' di middleware
+|--------------------------------------------------------------------------
+*/
+Route::prefix('pic')->name('pic.')->middleware(['auth', 'pic:pic'])->group(function () {
+    //                                                        ^^^^
+    //                                        PENTING: Tambahkan :pic untuk pass role parameter
+
+    // Dashboard PIC
+    Route::get('/', [PicDashboardController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard', [PicDashboardController::class, 'index'])->name('dashboard.index');
+
+    // Verifikasi Peminjaman Barang
+    Route::prefix('verifikasi-peminjaman')->name('verifikasi-peminjaman.')->group(function () {
+        Route::get('/', [VerifikasiPeminjamanController::class, 'index'])->name('index');
+        Route::get('/{id}/create', [VerifikasiPeminjamanController::class, 'create'])->name('create');
+        Route::post('/{id}', [VerifikasiPeminjamanController::class, 'store'])->name('store');
+        Route::get('/{id}', [VerifikasiPeminjamanController::class, 'show'])->name('show');
+    });
+
+    // Verifikasi Booking Ruangan
+    Route::prefix('verifikasi-booking')->name('verifikasi-booking.')->group(function () {
+        Route::get('/', [VerifikasiBookingController::class, 'index'])->name('index');
+        Route::get('/{id}/create', [VerifikasiBookingController::class, 'create'])->name('create');
+        Route::post('/{id}', [VerifikasiBookingController::class, 'store'])->name('store');
+        Route::get('/{id}', [VerifikasiBookingController::class, 'show'])->name('show');
     });
 });
 
@@ -172,6 +206,25 @@ Route::prefix('admin')->name('backend.')->middleware(['auth', 'admin'])->group(f
 
     /*
     |--------------------------------------------------------------------------
+    | Verifikasi Management (Admin melihat laporan PIC)
+    |--------------------------------------------------------------------------
+    */
+    Route::prefix('verifikasi')->name('verifikasi.')->group(function () {
+        // Verifikasi Peminjaman
+        Route::get('/peminjaman', [\App\Http\Controllers\Backend\VerifikasiPeminjamanController::class, 'index'])
+            ->name('peminjaman.index');
+        Route::put('/peminjaman/{id}/tindakan', [\App\Http\Controllers\Backend\VerifikasiPeminjamanController::class, 'updateTindakan'])
+            ->name('peminjaman.tindakan');
+
+        // Verifikasi Booking
+        Route::get('/booking', [\App\Http\Controllers\Backend\VerifikasiBookingController::class, 'index'])
+            ->name('booking.index');
+        Route::put('/booking/{id}/tindakan', [\App\Http\Controllers\Backend\VerifikasiBookingController::class, 'updateTindakan'])
+            ->name('booking.tindakan');
+    });
+
+    /*
+    |--------------------------------------------------------------------------
     | Reports (Laporan)
     |--------------------------------------------------------------------------
     */
@@ -189,6 +242,36 @@ Route::prefix('admin')->name('backend.')->middleware(['auth', 'admin'])->group(f
         // Laporan Pengembalian PDF (NEW)
         Route::get('/pengembalian/pdf', [LaporanUbkController::class, 'pdfPengembalian'])->name('pdf_pengembalian');
     });
+
+    Route::prefix('verifikasi/laporan')->name('verifikasi.laporan.')->group(function () {
+
+        // ===== LAPORAN PEMINJAMAN =====
+        Route::get('/peminjaman', [App\Http\Controllers\Backend\LaporanVerifikasiController::class, 'laporanPeminjaman'])
+            ->name('peminjaman');
+
+        Route::get('/peminjaman/{id}/detail', [App\Http\Controllers\Backend\LaporanVerifikasiController::class, 'detailPeminjaman'])
+            ->name('peminjaman.detail');
+
+        Route::post('/peminjaman/{id}/tindakan', [App\Http\Controllers\Backend\LaporanVerifikasiController::class, 'tindakanPeminjaman'])
+            ->name('peminjaman.tindakan');
+
+        Route::get('/peminjaman/export-pdf', [App\Http\Controllers\Backend\LaporanVerifikasiController::class, 'exportPeminjaman'])
+            ->name('peminjaman.export');
+
+        // ===== LAPORAN BOOKING =====
+        Route::get('/booking', [App\Http\Controllers\Backend\LaporanVerifikasiController::class, 'laporanBooking'])
+            ->name('booking');
+
+        Route::get('/booking/{id}/detail', [App\Http\Controllers\Backend\LaporanVerifikasiController::class, 'detailBooking'])
+            ->name('booking.detail');
+
+        Route::post('/booking/{id}/tindakan', [App\Http\Controllers\Backend\LaporanVerifikasiController::class, 'tindakanBooking'])
+            ->name('booking.tindakan');
+
+        Route::get('/booking/export-pdf', [App\Http\Controllers\Backend\LaporanVerifikasiController::class, 'exportBooking'])
+            ->name('booking.export');
+    });
+
 });
 
 Route::get('/auth/google', [GoogleController::class, 'redirect'])->name('google.login');

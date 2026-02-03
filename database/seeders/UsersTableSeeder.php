@@ -21,7 +21,19 @@ class UsersTableSeeder extends Seeder
             ]
         );
 
-        // User biasa
+        // PIC (Person In Charge) - Petugas Pengecekan
+        User::firstOrCreate(
+            ['email' => 'pic@bku.ac.id'],
+            [
+                'name'     => 'PIC Pengecekan BKU',
+                'password' => Hash::make('picbku2026'),
+                'isAdmin'  => 0,
+                'role'     => 'pic',
+                'instansi' => 'Petugas Pengecekan - Universitas Bhakti Kencana',
+            ]
+        );
+
+        // User biasaz
         User::firstOrCreate(
             ['email' => 'user@bku.ac.id'],
             [
@@ -32,5 +44,6 @@ class UsersTableSeeder extends Seeder
                 'instansi' => 'Karyawan Universitas Bhakti Kencana',
             ]
         );
+
     }
 }

@@ -28,7 +28,8 @@ class Booking extends Model
         return \Carbon\Carbon::parse($this->tanggal)->translatedFormat('d F Y');
     }
 
-    // Relasi
+    // = RELASI =
+
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id');
@@ -39,6 +40,64 @@ class Booking extends Model
         return $this->belongsTo(Ruangan::class, 'ruang_id');
     }
 
+    // 🔥 RELASI KE VERIFIKASI PIC (TAMBAHAN BARU)
+    public function verifikasi()
+    {
+        return $this->hasOne(\App\Models\VerifikasiBooking::class, 'booking_id');
+    }
+
+    // = HELPER METHODS VERIFIKASI (TAMBAHAN BARU) =
+
+    /**
+     * Cek apakah sudah diverifikasi oleh PIC
+     */
+    public function isVerified(): bool
+    {
+        return $this->verifikasi()->exists();
+    }
+
+    /**
+     * Cek apakah perlu verifikasi
+     * (status Selesai tapi belum diverifikasi)
+     */
+    public function needsVerification(): bool
+    {
+        return $this->status === 'Selesai' && ! $this->isVerified();
+    }
+
+    /**
+     * Get status badge untuk verifikasi
+     */
+    public function getStatusVerifikasiBadgeAttribute(): string
+    {
+        if ($this->isVerified()) {
+            return 'success';
+        } elseif ($this->needsVerification()) {
+            return 'warning';
+        }
+        return 'secondary';
+    }
+
+    /**
+     * Get label status verifikasi
+     */
+    public function getStatusVerifikasiLabelAttribute(): string
+    {
+        if ($this->isVerified()) {
+            $kondisi = $this->verifikasi->kondisi_ruangan ?? 'unknown';
+            return match ($kondisi) {
+                'baik'  => '✅ Baik & Bersih',
+                'kotor' => '🧹 Kotor/Perlu Bersih',
+                'rusak' => '🔴 Rusak',
+                default => 'Sudah Diverifikasi',
+            };
+        } elseif ($this->needsVerification()) {
+            return 'Perlu Verifikasi PIC';
+        }
+        return '-';
+    }
+
+    // = BOOT METHOD =
 
     protected static function boot()
     {

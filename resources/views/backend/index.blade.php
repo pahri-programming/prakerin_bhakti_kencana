@@ -191,7 +191,6 @@
                                     <tr class="text-muted small">
                                         <th>Kode Booking</th>
                                         <th>Nama</th>
-                                        <th>Kode Ruangan</th>
                                         <th>Nama Ruangan</th>
                                         <th>Lokasi</th>
                                         <th>Tanggal</th>
@@ -210,7 +209,6 @@
                                                     <small class="text-muted">{{ $b->user->email }}</small>
                                                 </div>
                                             </td>
-                                            <td>{{ $b->ruangan->kode_ruangan ?? '-' }}</td>
                                             <td>{{ $b->ruangan->nama_ruangan ?? '-' }}</td>
                                             <td>{{ Str::limit($b->ruangan->lokasi ?? '-', 45) }}</td>
                                             <td>{{ $b->tanggal_format }}</td>

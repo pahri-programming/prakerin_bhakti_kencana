@@ -64,7 +64,8 @@ class PeminjamanBarang extends Model
         return $this->detailbarangs->sum('jumlah');
     }
 
-    // Relasi
+    // ================= RELASI =================
+
     public function user()
     {
         return $this->belongsTo(User::class);
@@ -80,6 +81,14 @@ class PeminjamanBarang extends Model
         return $this->hasMany(PengembalianBarang::class, 'peminjaman_barang_id');
     }
 
+    // 🔥 RELASI KE VERIFIKASI PIC (TAMBAHAN BARU)
+    public function verifikasi()
+    {
+        return $this->hasOne(VerifikasiPeminjaman::class, 'peminjaman_id');
+    }
+
+    // ================= HELPER METHODS =================
+
     public function hasReturn()
     {
         return $this->pengembalianbarangs()->exists();
@@ -90,6 +99,58 @@ class PeminjamanBarang extends Model
         return $this->pengembalianbarangs()
             ->where('status', 'dikembalikan')
             ->exists();
+    }
+
+    // 🔥 HELPER METHODS VERIFIKASI (TAMBAHAN BARU)
+
+    /**
+     * Cek apakah sudah diverifikasi oleh PIC
+     */
+    public function isVerified(): bool
+    {
+        return $this->verifikasi()->exists();
+    }
+
+    /**
+     * Cek apakah perlu verifikasi
+     * (status dikembalikan tapi belum diverifikasi)
+     */
+    public function needsVerification(): bool
+    {
+        return $this->status === 'dikembalikan' && ! $this->isVerified();
+    }
+
+    /**
+     * Get status badge untuk verifikasi
+     */
+    public function getStatusVerifikasiBadgeAttribute(): string
+    {
+        if ($this->isVerified()) {
+            return 'success';
+        } elseif ($this->needsVerification()) {
+            return 'warning';
+        }
+        return 'secondary';
+    }
+
+    /**
+     * Get label status verifikasi
+     */
+    public function getStatusVerifikasiLabelAttribute(): string
+    {
+        if ($this->isVerified()) {
+            $kondisi = $this->verifikasi->kondisi ?? 'unknown';
+            return match ($kondisi) {
+                'baik'         => '✅ Baik (Verified)',
+                'rusak_ringan' => '⚠️ Rusak Ringan',
+                'rusak_berat'  => '🔴 Rusak Berat',
+                'hilang'       => '❌ Hilang',
+                default        => 'Sudah Diverifikasi',
+            };
+        } elseif ($this->needsVerification()) {
+            return 'Perlu Verifikasi PIC';
+        }
+        return '-';
     }
 
     // Boot method untuk auto generate kode

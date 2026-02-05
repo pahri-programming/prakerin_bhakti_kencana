@@ -35,12 +35,28 @@ class Booking extends Model
         return $this->belongsTo(User::class, 'user_id');
     }
 
+    /**
+     * Relasi ke Pengembalian Ruangan
+     */
+    public function pengembalian()
+    {
+        return $this->hasOne(PengembalianRuangan::class, 'booking_id');
+    }
+
+    /**
+     * Check apakah sudah ada pengembalian
+     */
+    public function hasPengembalian()
+    {
+        return $this->pengembalian()->exists();
+    }
+
     public function ruangan()
     {
         return $this->belongsTo(Ruangan::class, 'ruang_id');
     }
 
-    // 🔥 RELASI KE VERIFIKASI PIC (TAMBAHAN BARU)
+    //  RELASI KE VERIFIKASI PIC (TAMBAHAN BARU)
     public function verifikasi()
     {
         return $this->hasOne(\App\Models\VerifikasiBooking::class, 'booking_id');

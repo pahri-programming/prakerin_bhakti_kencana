@@ -32,7 +32,8 @@
                                 <table class="table table-sm table-borderless mb-0">
                                     <tr>
                                         <td width="40%" class="fw-semibold text-muted">Kode Booking</td>
-                                        <td><span class="badge bg-info">{{ $verifikasi->booking->kode ?? '–' }}</span></td>
+                                        <td><span class="badge bg-info">{{ $verifikasi->booking->kode ?? '–' }}</span>
+                                        </td>
                                     </tr>
                                     <tr>
                                         <td class="fw-semibold text-muted">Nama User</td>
@@ -64,20 +65,23 @@
                                     </tr>
                                     <tr>
                                         <td class="fw-semibold text-muted">Tanggal</td>
-                                        <td>{{ \Carbon\Carbon::parse($verifikasi->booking->tanggal)->translatedFormat('d F Y') }}</td>
+                                        <td>{{ \Carbon\Carbon::parse($verifikasi->booking->tanggal)->translatedFormat('d F Y') }}
+                                        </td>
                                     </tr>
                                     <tr>
                                         <td class="fw-semibold text-muted">Waktu</td>
-                                        <td>{{ substr($verifikasi->booking->waktu_mulai, 0, 5) }} – {{ substr($verifikasi->booking->waktu_selesai, 0, 5) }}</td>
+                                        <td>{{ substr($verifikasi->booking->waktu_mulai, 0, 5) }} –
+                                            {{ substr($verifikasi->booking->waktu_selesai, 0, 5) }}</td>
                                     </tr>
                                 </table>
                             </div>
                         </div>
 
-                        @if($verifikasi->booking->keperluan)
-                        <div class="mt-2 p-2 bg-light rounded">
-                            <small class="text-muted"><strong>Keperluan:</strong> {{ $verifikasi->booking->keperluan }}</small>
-                        </div>
+                        @if ($verifikasi->booking->keperluan)
+                            <div class="mt-2 p-2 bg-light rounded">
+                                <small class="text-muted"><strong>Keperluan:</strong>
+                                    {{ $verifikasi->booking->keperluan }}</small>
+                            </div>
                         @endif
                     </div>
                 </div>
@@ -107,25 +111,29 @@
                         <div class="row mb-3">
                             <div class="col-md-6">
                                 <p class="mb-1 fw-semibold">Kondisi Ruangan</p>
-                                <span class="badge bg-{{ $verifikasi->kondisi_badge }} fs-6">{{ $verifikasi->kondisi_label }}</span>
+                                <span
+                                    class="badge bg-{{ $verifikasi->kondisi_badge }} fs-6">{{ $verifikasi->kondisi_label }}</span>
                             </div>
                             <div class="col-md-6">
                                 <p class="mb-1 fw-semibold">Status Verifikasi</p>
-                                <span class="badge bg-{{ $verifikasi->status_badge }} fs-6">{{ $verifikasi->status_label }}</span>
+                                <span
+                                    class="badge bg-{{ $verifikasi->status_badge }} fs-6">{{ $verifikasi->status_label }}</span>
                             </div>
                         </div>
 
-                        <p class="mb-1 fw-semibold">Catatan dari PIC</p>
-                        <div class="alert alert-light">
-                            <i class="ti ti-message"></i> {{ $verifikasi->catatan_pic ?: '–' }}
+                        <div class="mb-3">
+                            <p class="mb-1"><strong>Catatan dari PIC:</strong></p>
+                            <div class="p-3 bg-light border rounded">
+                                <i class="ti ti-message me-2 text-primary"></i>
+                                <span class="text-dark"
+                                    id="modal-catatan">{{ $verifikasi->catatan_pic ?? 'Tidak ada catatan' }}</span>
+                            </div>
                         </div>
 
-                        @if($verifikasi->foto_bukti)
-                        <p class="mb-1 fw-semibold">Foto Bukti</p>
-                        <img src="{{ asset('storage/' . $verifikasi->foto_bukti) }}"
-                             class="img-fluid rounded border"
-                             alt="Foto Bukti"
-                             style="max-height:280px;">
+                        @if ($verifikasi->foto_bukti)
+                            <p class="mb-1 fw-semibold">Foto Bukti</p>
+                            <img src="{{ asset('storage/' . $verifikasi->foto_bukti) }}"
+                                class="img-fluid rounded border" alt="Foto Bukti" style="max-height:280px;">
                         @endif
                     </div>
                 </div>
@@ -136,7 +144,8 @@
                         <h6 class="mb-0"><i class="ti ti-edit"></i> Tindakan Admin</h6>
                     </div>
                     <div class="card-body">
-                        <form action="{{ route('backend.verifikasi.booking.tindakan', $verifikasi->id) }}" method="POST">
+                        <form action="{{ route('backend.verifikasi.booking.tindakan', $verifikasi->id) }}"
+                            method="POST">
                             @csrf
                             @method('PUT')
 
@@ -146,8 +155,12 @@
                                 </label>
                                 <select name="status_verifikasi" class="form-select form-select-sm" required>
                                     <option value="">Pilih Status</option>
-                                    <option value="diterima"       {{ $verifikasi->status_verifikasi == 'diterima'       ? 'selected' : '' }}>✅ Diterima</option>
-                                    <option value="perlu_tindakan" {{ $verifikasi->status_verifikasi == 'perlu_tindakan' ? 'selected' : '' }}>⚡ Perlu Tindakan Lanjut</option>
+                                    <option value="diterima"
+                                        {{ $verifikasi->status_verifikasi == 'diterima' ? 'selected' : '' }}>✅
+                                        Diterima</option>
+                                    <option value="perlu_tindakan"
+                                        {{ $verifikasi->status_verifikasi == 'perlu_tindakan' ? 'selected' : '' }}>⚡
+                                        Perlu Tindakan Lanjut</option>
                                 </select>
                             </div>
 
@@ -155,11 +168,8 @@
                                 <label class="form-label form-label-sm">
                                     Keterangan Tindakan <span class="text-danger">*</span>
                                 </label>
-                                <textarea name="tindakan_admin"
-                                          class="form-control form-control-sm"
-                                          rows="3"
-                                          placeholder="Misal: Tagih biaya penggantian Rp 5.000.000 ke user …"
-                                          required>{{ $verifikasi->tindakan_admin }}</textarea>
+                                <textarea name="tindakan_admin" class="form-control form-control-sm" rows="3"
+                                    placeholder="Misal: Tagih biaya penggantian Rp 5.000.000 ke user …" required>{{ $verifikasi->tindakan_admin }}</textarea>
                             </div>
 
                             <button type="submit" class="btn btn-primary btn-sm w-100">

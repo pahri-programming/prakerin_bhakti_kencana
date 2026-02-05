@@ -5,6 +5,8 @@ use App\Http\Controllers\Controller;
 use App\Models\VerifikasiBooking;
 use App\Models\VerifikasiPeminjaman;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class LaporanVerifikasiController extends Controller
 {
@@ -92,6 +94,8 @@ class LaporanVerifikasiController extends Controller
         ]);
 
         try {
+            DB::beginTransaction();
+
             $verifikasi = VerifikasiPeminjaman::findOrFail($id);
 
             $verifikasi->update([
@@ -99,11 +103,18 @@ class LaporanVerifikasiController extends Controller
                 'status_verifikasi' => $request->status_verifikasi,
             ]);
 
+            DB::commit();
+
+            Log::info('Admin Update Tindakan Verifikasi Peminjaman', [
+                'verifikasi_id' => $id,
+                'admin_id'      => auth()->id(),
+                'tindakan'      => $request->tindakan_admin,
+                'status'        => $request->status_verifikasi,
+            ]);
+
             // Jika status jadi "perlu_tindakan" dan kondisi rusak berat/hilang
-            // Bisa tambahkan notifikasi ke user atau buat laporan kerusakan otomatis
             if ($request->status_verifikasi === 'perlu_tindakan' &&
                 in_array($verifikasi->kondisi, ['rusak_berat', 'hilang'])) {
-
                 // Opsional: Kirim notifikasi ke user
                 // Opsional: Buat laporan kerusakan otomatis
             }
@@ -113,6 +124,13 @@ class LaporanVerifikasiController extends Controller
                 ->with('success', 'Tindakan berhasil disimpan!');
 
         } catch (\Exception $e) {
+            DB::rollBack();
+
+            Log::error('Error update tindakan verifikasi peminjaman', [
+                'verifikasi_id' => $id,
+                'error'         => $e->getMessage(),
+            ]);
+
             return back()
                 ->with('error', 'Gagal menyimpan tindakan: ' . $e->getMessage());
         }
@@ -163,7 +181,6 @@ class LaporanVerifikasiController extends Controller
         ];
 
         return view('backend.verifikasi.laporan-booking', compact('verifikasi', 'stats'));
-
     }
 
     /**

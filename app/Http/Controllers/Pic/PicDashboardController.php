@@ -41,12 +41,12 @@ class PicDashboardController extends Controller
         ];
 
         // Recent Verifikasi Peminjaman
-        // 🔥 FIX: Ganti peminjaman.barang jadi peminjaman.detailbarangs.barangRuangan.barang
+        // Ganti peminjaman.barang jadi peminjaman.detailbarangs.barangRuangan.barang
         $recentVerifikasiPeminjaman = VerifikasiPeminjaman::with([
-            'peminjaman.user',
-            'peminjaman.detailbarangs.barangRuangan.barang', // 👈 Relasi yang benar
-            'peminjaman.detailbarangs.barangRuangan.ruangan',
-        ])
+                'peminjaman.user',
+                'peminjaman.detailbarangs.barangRuangan.barang', // 👈 Relasi yang benar
+                'peminjaman.detailbarangs.barangRuangan.ruangan'
+            ])
             ->where('pic_id', $picId)
             ->latest('tanggal_verifikasi')
             ->take(5)
@@ -60,12 +60,12 @@ class PicDashboardController extends Controller
             ->get();
 
         // Pending Verifikasi Peminjaman
-        // 🔥 FIX: Ganti 'barang' jadi 'detailbarangs.barangRuangan.barang'
+        // Ganti 'barang' jadi 'detailbarangs.barangRuangan.barang'
         $pendingPeminjaman = PeminjamanBarang::with([
-            'user',
-            'detailbarangs.barangRuangan.barang', // 👈 Relasi yang benar
-            'detailbarangs.barangRuangan.ruangan',
-        ])
+                'user',
+                'detailbarangs.barangRuangan.barang', // 👈 Relasi yang benar
+                'detailbarangs.barangRuangan.ruangan'
+            ])
             ->where('status', 'dikembalikan')
             ->doesntHave('verifikasi')
             ->latest('tanggal_kembali')

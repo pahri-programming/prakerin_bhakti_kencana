@@ -21,7 +21,7 @@ class VerifikasiPeminjamanController extends Controller
      */
     public function index(Request $request)
     {
-        // 🔥 FIX: Ganti 'barang' jadi 'detailbarangs.barangRuangan.barang'
+        //  Ganti 'barang' jadi 'detailbarangs.barangRuangan.barang'
         $query = PeminjamanBarang::with([
             'user',
             'detailbarangs.barangRuangan.barang',
@@ -45,7 +45,7 @@ class VerifikasiPeminjamanController extends Controller
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
-                // 🔥 FIX: Search di detailbarangs -> barangRuangan -> barang
+                //  Search di detailbarangs -> barangRuangan -> barang
                 $q->whereHas('detailbarangs.barangRuangan.barang', function ($q2) use ($search) {
                     $q2->where('nama', 'like', "%{$search}%");
                 })
@@ -66,7 +66,7 @@ class VerifikasiPeminjamanController extends Controller
      */
     public function create($id)
     {
-        // 🔥 FIX: Ganti 'barang' jadi 'detailbarangs.barangRuangan.barang'
+        //  Ganti 'barang' jadi 'detailbarangs.barangRuangan.barang'
         $peminjaman = PeminjamanBarang::with([
             'user',
             'detailbarangs.barangRuangan.barang',

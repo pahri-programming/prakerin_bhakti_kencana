@@ -38,7 +38,7 @@ class LaporanUbkController extends Controller
         // otomatis update status peminjaman yang sudah lewat tanggal kembali
         PeminjamanBarang::whereIn('status', ['dipinjam', 'disetujui'])
             ->where('tanggal_kembali', '<', now()->toDateString())
-            ->update(['status' => 'selesai']);
+            ->update(['status' => 'dikembalikan']);
 
         // booking query
         if ($isBooking) {
@@ -59,11 +59,10 @@ class LaporanUbkController extends Controller
 
         // peminjaman query
         if ($isPeminjaman) {
-            $query = PeminjamanBarang::with(['user', 'barang'])
-                ->whereIn('status', ['menunggu', 'disetujui', 'dipinjam', 'selesai']);
+            $query = PeminjamanBarang::with(['user', 'detailbarangs.barangRuangan.barang', 'detailbarangs.barangRuangan.ruangan'])
+                ->whereIn('status', ['menunggu', 'disetujui', 'dipinjam', 'dikembalikan']);
 
             if ($start && $end) {
-                // overlap logic (dipertahankan)
                 $query->where(function ($q) use ($start, $end) {
                     $q->where('tanggal_pinjam', '<=', $end)
                         ->where('tanggal_kembali', '>=', $start);
@@ -71,11 +70,10 @@ class LaporanUbkController extends Controller
             }
 
             $peminjamans = $query
-                ->orderByRaw('COALESCE(tanggal_kembali, tanggal_pinjam) DESC')
-                ->get()
-                ->map(fn($d) => $this->formatPeminjaman($d));
+                ->orderBy('tanggal_pinjam', 'desc')
+                ->get();
 
-            $total_peminjaman = $peminjamans->unique('nama')->count();
+            $total_peminjaman = $peminjamans->unique('user_id')->count();
         }
 
         return view('backend.laporan-ubk.index', compact(
@@ -91,7 +89,6 @@ class LaporanUbkController extends Controller
 
     private function formatBooking($d)
     {
-        // Pastikan semua property ada dan aman
         $tanggal = $d->tanggal ?? now()->toDateString();
 
         return (object) [
@@ -111,36 +108,8 @@ class LaporanUbkController extends Controller
         ];
     }
 
-    private function formatPeminjaman($d)
-    {
-        // Pastikan semua property ada dan aman
-        $tanggalPinjam  = $d->tanggal_pinjam ?? now()->toDateString();
-        $tanggalKembali = $d->tanggal_kembali ?? now()->toDateString();
-
-        return (object) [
-            'kode'              => $d->kode ?? 'N/A',
-            'nama'              => $d->user?->name ?? 'User Dihapus',
-            'item'              => $d->barang?->nama ?? 'Barang Dihapus',
-            'jumlah'            => $d->jumlah ?? 1,
-            'tanggal_indonesia' => Carbon::parse($tanggalPinjam)->translatedFormat('d F Y')
-            . ' - '
-            . Carbon::parse($tanggalKembali)->translatedFormat('d F Y'),
-            'status'            => strtolower($d->status ?? 'unknown'),
-            'status_laporan'    => match (strtolower($d->status ?? 'unknown')) {
-                'menunggu'  => 'Menunggu',
-                'disetujui' => 'Disetujui',
-                'dipinjam'  => 'Dipinjam',
-                'selesai'   => 'Selesai',
-                'ditolak'   => 'Ditolak',
-                default     => 'Unknown',
-            },
-            'keterangan'        => $d->keterangan ?? '-',
-        ];
-    }
-
     public function pdfBooking(Request $request)
     {
-        // Ambil ulang data booking dari database untuk memastikan data yang benar
         $start = $request->get('start_date');
         $end   = $request->get('end_date');
 
@@ -174,12 +143,11 @@ class LaporanUbkController extends Controller
 
     public function pdfPeminjaman(Request $request)
     {
-        // Ambil ulang data peminjaman dari database untuk memastikan data yang benar
         $start = $request->get('start_date');
         $end   = $request->get('end_date');
 
-        $query = PeminjamanBarang::with(['user', 'barang'])
-            ->whereIn('status', ['menunggu', 'disetujui', 'dipinjam', 'selesai']);
+        $query = PeminjamanBarang::with(['user', 'detailbarangs.barangRuangan.barang', 'detailbarangs.barangRuangan.ruangan'])
+            ->whereIn('status', ['menunggu', 'disetujui', 'dipinjam', 'dikembalikan']);
 
         if ($start && $end) {
             $query->where(function ($q) use ($start, $end) {
@@ -189,19 +157,17 @@ class LaporanUbkController extends Controller
         }
 
         $peminjamans = $query
-            ->orderByRaw('COALESCE(tanggal_kembali, tanggal_pinjam) DESC')
-            ->get()
-            ->map(fn($d) => $this->formatPeminjaman($d));
+            ->orderBy('tanggal_pinjam', 'desc')
+            ->get();
 
-        $data    = $peminjamans;
-        $total   = $peminjamans->unique('nama')->count();
+        $total   = $peminjamans->unique('user_id')->count();
         $judul   = 'Laporan Peminjaman Barang';
         $periode = ($start && $end)
             ? Carbon::parse($start)->translatedFormat('d M Y') . ' - ' . Carbon::parse($end)->translatedFormat('d M Y')
             : 'Semua Periode';
 
         $pdf = Pdf::loadView('backend.laporan-ubk.pdf_peminjaman', compact(
-            'data', 'total', 'judul', 'periode'
+            'peminjamans', 'total', 'judul', 'periode'
         ))->setPaper('a4', 'landscape');
 
         return $pdf->download(

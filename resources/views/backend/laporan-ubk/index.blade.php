@@ -395,15 +395,14 @@
                             <table class="table table-custom" id="tabelPeminjaman">
                                 <thead>
                                     <tr>
-                                        <th width="5%">No</th>
+                                        <th width="4%">No</th>
                                         <th width="10%">Kode</th>
-                                        <th width="15%">Nama Customer</th>
-                                        <th width="15%">Barang</th>
-                                        <th width="8%">Jumlah</th>
-                                        <th width="18%">Periode Peminjaman</th>
-                                        <th width="12%">Waktu</th>
+                                        <th width="12%">Nama Peminjam</th>
+                                        <th width="25%">Detail Barang</th>
+                                        <th width="15%">Ruangan</th>
+                                        <th width="15%">Periode Peminjaman</th>
                                         <th width="10%">Status</th>
-                                        <th width="12%">Keterangan</th>
+                                        <th width="9%">Keterangan</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -414,38 +413,66 @@
                                                 <span class="badge bg-info">{{ $p->kode }}</span>
                                             </td>
                                             <td>
-                                                <strong>{{ $p->nama }}</strong>
-                                            </td>
-                                            <td>{{ $p->item }}</td>
-                                            <td class="text-center">
-                                                <span class="badge bg-dark">{{ $p->jumlah }}</span>
+                                                <strong>{{ $p->user->name ?? 'User Dihapus' }}</strong>
                                             </td>
                                             <td>
-                                                <small>{{ $p->tanggal_indonesia ?? $p->tanggal_format }}</small>
+                                                @if($p->detailbarangs && $p->detailbarangs->isNotEmpty())
+                                                    <ul class="list-unstyled mb-0" style="font-size: 0.9rem;">
+                                                        @foreach($p->detailbarangs as $detail)
+                                                            <li class="mb-1">
+                                                                <i class="ti ti-box me-1"></i>
+                                                                {{ $detail->barangRuangan->barang->nama ?? '-' }}
+                                                                <span class="badge bg-dark ms-1">{{ $detail->jumlah }}</span>
+                                                            </li>
+                                                        @endforeach
+                                                    </ul>
+                                                @else
+                                                    <em class="text-muted">Tidak ada barang</em>
+                                                @endif
+                                            </td>
+                                            <td>
+                                                @if($p->detailbarangs && $p->detailbarangs->isNotEmpty())
+                                                    <ul class="list-unstyled mb-0" style="font-size: 0.85rem;">
+                                                        @foreach($p->detailbarangs->unique('barang_ruangan_id') as $detail)
+                                                            <li class="mb-1">
+                                                                <i class="ti ti-door me-1"></i>
+                                                                {{ $detail->barangRuangan->ruangan->nama_ruangan ?? '-' }}
+                                                            </li>
+                                                        @endforeach
+                                                    </ul>
+                                                @else
+                                                    <em class="text-muted">-</em>
+                                                @endif
+                                            </td>
+                                            <td>
+                                                <small>
+                                                    {{ \Carbon\Carbon::parse($p->tanggal_pinjam)->translatedFormat('d M Y') }}
+                                                    <br>s/d<br>
+                                                    {{ \Carbon\Carbon::parse($p->tanggal_kembali)->translatedFormat('d M Y') }}
+                                                </small>
                                             </td>
                                             <td>
                                                 @php
-                                                    $range = explode(' - ', $p->waktu ?? '');
-                                                    $mulai = $range[0] ?? '-';
-                                                    $selesai = $range[1] ?? '-';
-                                                @endphp
-                                                <strong>{{ $mulai }}</strong> -
-                                                <strong>{{ $selesai }}</strong>
-                                            </td>
-                                            <td>
-                                                @php
-                                                    $status = strtolower($p->status_laporan ?? $p->status);
+                                                    $status = strtolower($p->status);
                                                     $badgeClass = match ($status) {
                                                         'menunggu' => 'status-pending',
                                                         'disetujui' => 'status-approved',
                                                         'dipinjam' => 'status-borrowed',
-                                                        'dikembalikan', 'selesai' => 'status-completed',
+                                                        'dikembalikan' => 'status-completed',
                                                         'ditolak' => 'status-rejected',
                                                         default => 'bg-secondary',
                                                     };
+                                                    $statusLabel = match ($status) {
+                                                        'menunggu' => 'Menunggu',
+                                                        'disetujui' => 'Disetujui',
+                                                        'dipinjam' => 'Dipinjam',
+                                                        'dikembalikan' => 'Dikembalikan',
+                                                        'ditolak' => 'Ditolak',
+                                                        default => 'Unknown',
+                                                    };
                                                 @endphp
                                                 <span class="status-badge {{ $badgeClass }}">
-                                                    {{ $p->status_laporan ?? 'Unknown' }}
+                                                    {{ $statusLabel }}
                                                 </span>
                                             </td>
                                             <td>

@@ -13,7 +13,7 @@ class VerifikasiBookingController extends Controller
 {
     public function __construct()
     {
-        $this->middleware(['auth', 'pic']);
+        $this->middleware(['auth', 'pic:pic']);
     }
 
     // ---------------------------------------------------------------

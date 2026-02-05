@@ -56,13 +56,13 @@
 
         <!-- Brand Logo -->
         <div class="brand-logo d-flex align-items-center justify-content-between px-3 py-2">
-            @if(Auth::user()->role == 'pic')
+            @if (Auth::user()->role == 'pic')
                 <a href="{{ route('pic.dashboard') }}" class="d-flex align-items-center text-decoration-none">
-            @else
-                <a href="{{ route('backend.index') }}" class="d-flex align-items-center text-decoration-none">
+                @else
+                    <a href="{{ route('backend.index') }}" class="d-flex align-items-center text-decoration-none">
             @endif
-                <img src="{{ asset('assets/backend/images/logos/ubk2.png') }}" alt="Logo UBK" class="logo-img me-2" />
-                <span class="brand-text fw-semibold fs-5 text-dark">Bhakti Kencana</span>
+            <img src="{{ asset('assets/backend/images/logos/ubk2.png') }}" alt="Logo UBK" class="logo-img me-2" />
+            <span class="brand-text fw-semibold fs-5 text-dark">Bhakti Kencana</span>
             </a>
             <a href="javascript:void(0)" class="sidebartoggler ms-auto text-decoration-none fs-5 d-block d-xl-none">
                 <i class="ti ti-x"></i>
@@ -73,11 +73,11 @@
         <nav class="sidebar-nav scroll-sidebar" data-simplebar>
             <ul id="sidebarnav">
 
-                @if(Auth::user()->role == 'pic')
+                @if (Auth::user()->role == 'pic')
                     {{-- ================================== --}}
                     {{-- SIDEBAR UNTUK PIC --}}
                     {{-- ================================== --}}
-                    
+
                     <!-- HOME SECTION -->
                     <li class="nav-small-cap">
                         <i class="ti ti-dots nav-small-cap-icon fs-4"></i>
@@ -85,7 +85,8 @@
                     </li>
 
                     <!-- Dashboard PIC -->
-                    <li class="sidebar-item pic-menu {{ request()->is('pic') || request()->routeIs('pic.dashboard') ? 'active' : '' }}">
+                    <li
+                        class="sidebar-item pic-menu {{ request()->is('pic') || request()->routeIs('pic.dashboard') ? 'active' : '' }}">
                         <a class="sidebar-link" href="{{ route('pic.dashboard') }}" aria-expanded="false">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
                                 <path fill="currentColor"
@@ -103,7 +104,8 @@
 
                     <!-- Verifikasi Peminjaman Barang -->
                     <li class="sidebar-item pic-menu {{ request()->is('pic/verifikasi-peminjaman*') ? 'active' : '' }}">
-                        <a class="sidebar-link" href="{{ route('pic.verifikasi-peminjaman.index') }}" aria-expanded="false">
+                        <a class="sidebar-link" href="{{ route('pic.verifikasi-peminjaman.index') }}"
+                            aria-expanded="false">
                             <span><i class="ti ti-package"></i></span>
                             <span class="hide-menu">Verifikasi Peminjaman</span>
                             @php
@@ -111,7 +113,7 @@
                                     ->doesntHave('verifikasi')
                                     ->count();
                             @endphp
-                            @if($pendingPeminjaman > 0)
+                            @if ($pendingPeminjaman > 0)
                                 <span class="badge bg-warning rounded-pill ms-auto">{{ $pendingPeminjaman }}</span>
                             @endif
                         </a>
@@ -119,7 +121,8 @@
 
                     <!-- Verifikasi Booking Ruangan -->
                     <li class="sidebar-item pic-menu {{ request()->is('pic/verifikasi-booking*') ? 'active' : '' }}">
-                        <a class="sidebar-link" href="{{ route('pic.verifikasi-booking.index') }}" aria-expanded="false">
+                        <a class="sidebar-link" href="{{ route('pic.verifikasi-booking.index') }}"
+                            aria-expanded="false">
                             <span><i class="ti ti-door"></i></span>
                             <span class="hide-menu">Verifikasi Booking</span>
                             @php
@@ -127,17 +130,16 @@
                                     ->doesntHave('verifikasi')
                                     ->count();
                             @endphp
-                            @if($pendingBooking > 0)
+                            @if ($pendingBooking > 0)
                                 <span class="badge bg-warning rounded-pill ms-auto">{{ $pendingBooking }}</span>
                             @endif
                         </a>
                     </li>
-
                 @else
                     {{-- ================================== --}}
                     {{-- SIDEBAR UNTUK ADMIN --}}
                     {{-- ================================== --}}
-                    
+
                     <!-- HOME SECTION -->
                     <li class="nav-small-cap">
                         <i class="ti ti-dots nav-small-cap-icon fs-4"></i>
@@ -197,7 +199,8 @@
                     </li>
 
                     <!-- Barang -->
-                    <li class="sidebar-item {{ request()->is('admin/barang') || request()->is('admin/barang/create') || request()->is('admin/barang/*/edit') ? 'active' : '' }}">
+                    <li
+                        class="sidebar-item {{ request()->is('admin/barang') || request()->is('admin/barang/create') || request()->is('admin/barang/*/edit') ? 'active' : '' }}">
                         <a class="sidebar-link" href="{{ route('backend.barang.index') }}" aria-expanded="false">
                             <span><i class="ti ti-box"></i></span>
                             <span class="hide-menu">Barang</span>
@@ -206,7 +209,8 @@
 
                     <!-- Barang Ruangan -->
                     <li class="sidebar-item {{ request()->is('admin/barangruangan*') ? 'active' : '' }}">
-                        <a class="sidebar-link" href="{{ route('backend.barangruangan.index') }}" aria-expanded="false">
+                        <a class="sidebar-link" href="{{ route('backend.barangruangan.index') }}"
+                            aria-expanded="false">
                             <span><i class="ti ti-layout-grid"></i></span>
                             <span class="hide-menu">Barang Ruangan</span>
                         </a>
@@ -228,15 +232,18 @@
 
                     <!-- Peminjaman Barang -->
                     <li class="sidebar-item {{ request()->is('admin/peminjaman*') ? 'active' : '' }}">
-                        <a class="sidebar-link" href="{{ route('backend.peminjaman.index') }}" aria-expanded="false">
+                        <a class="sidebar-link" href="{{ route('backend.peminjaman.index') }}"
+                            aria-expanded="false">
                             <span><i class="ti ti-package"></i></span>
                             <span class="hide-menu">Peminjaman Barang</span>
                         </a>
                     </li>
 
                     <!-- Pengembalian Barang -->
-                    <li class="sidebar-item {{ request()->is('admin/pengembalian*') ? 'active' : '' }}">
-                        <a class="sidebar-link" href="{{ route('backend.pengembalian.index') }}" aria-expanded="false">
+                    <li
+                        class="sidebar-item {{ request()->is('admin/pengembalian*') && !request()->is('admin/pengembalian-ruangan*') ? 'active' : '' }}">
+                        <a class="sidebar-link" href="{{ route('backend.pengembalian.index') }}"
+                            aria-expanded="false">
                             <span><i class="ti ti-package-import"></i></span>
                             <span class="hide-menu">Pengembalian Barang</span>
                         </a>
@@ -250,7 +257,8 @@
 
                     <!-- Laporan UBK -->
                     <li class="sidebar-item {{ request()->is('admin/laporan-ubk*') ? 'active' : '' }}">
-                        <a class="sidebar-link" href="{{ route('backend.laporan-ubk.index') }}" aria-expanded="false">
+                        <a class="sidebar-link" href="{{ route('backend.laporan-ubk.index') }}"
+                            aria-expanded="false">
                             <span><i class="ti ti-report-money"></i></span>
                             <span class="hide-menu">Laporan UBK</span>
                         </a>
@@ -262,41 +270,53 @@
                             <span><i class="ti ti-clipboard-check"></i></span>
                             <span class="hide-menu">Laporan Verifikasi PIC</span>
                             @php
-                                $totalPerluTindakan = \App\Models\VerifikasiPeminjaman::whereIn('kondisi', ['rusak_berat', 'hilang'])
-                                    ->where('status_verifikasi', 'pending')
-                                    ->count() +
-                                \App\Models\VerifikasiBooking::where('kondisi_ruangan', 'rusak')
-                                    ->where('status_verifikasi', 'pending')
-                                    ->count();
+                                $totalPerluTindakan =
+                                    \App\Models\VerifikasiPeminjaman::whereIn('kondisi', ['rusak_berat', 'hilang'])
+                                        ->where('status_verifikasi', 'pending')
+                                        ->count() +
+                                    \App\Models\VerifikasiBooking::where('kondisi_ruangan', 'rusak')
+                                        ->where('status_verifikasi', 'pending')
+                                        ->count();
                             @endphp
-                            @if($totalPerluTindakan > 0)
+                            @if ($totalPerluTindakan > 0)
                                 <span class="badge bg-danger rounded-pill ms-auto">{{ $totalPerluTindakan }}</span>
                             @endif
                         </a>
-                        <ul class="sidebar-submenu collapse {{ request()->is('admin/verifikasi/laporan*') ? 'show' : '' }}">
-                            <li class="sidebar-item {{ request()->is('admin/verifikasi/laporan/peminjaman*') ? 'active' : '' }}">
+                        <ul
+                            class="sidebar-submenu collapse {{ request()->is('admin/verifikasi/laporan*') ? 'show' : '' }}">
+                            <li
+                                class="sidebar-item {{ request()->is('admin/verifikasi/laporan/peminjaman*') ? 'active' : '' }}">
                                 <a class="sidebar-link" href="{{ route('backend.verifikasi.laporan.peminjaman') }}">
                                     <span class="hide-menu">Laporan Peminjaman</span>
                                     @php
-                                        $perluTindakanPeminjaman = \App\Models\VerifikasiPeminjaman::whereIn('kondisi', ['rusak_berat', 'hilang'])
+                                        $perluTindakanPeminjaman = \App\Models\VerifikasiPeminjaman::whereIn(
+                                            'kondisi',
+                                            ['rusak_berat', 'hilang'],
+                                        )
                                             ->where('status_verifikasi', 'pending')
                                             ->count();
                                     @endphp
-                                    @if($perluTindakanPeminjaman > 0)
-                                        <span class="badge bg-danger rounded-pill ms-auto">{{ $perluTindakanPeminjaman }}</span>
+                                    @if ($perluTindakanPeminjaman > 0)
+                                        <span
+                                            class="badge bg-danger rounded-pill ms-auto">{{ $perluTindakanPeminjaman }}</span>
                                     @endif
                                 </a>
                             </li>
-                            <li class="sidebar-item {{ request()->is('admin/verifikasi/laporan/booking*') ? 'active' : '' }}">
+                            <li
+                                class="sidebar-item {{ request()->is('admin/verifikasi/laporan/booking*') ? 'active' : '' }}">
                                 <a class="sidebar-link" href="{{ route('backend.verifikasi.laporan.booking') }}">
                                     <span class="hide-menu">Laporan Booking</span>
                                     @php
-                                        $perluTindakanBooking = \App\Models\VerifikasiBooking::where('kondisi_ruangan', 'rusak')
+                                        $perluTindakanBooking = \App\Models\VerifikasiBooking::where(
+                                            'kondisi_ruangan',
+                                            'rusak',
+                                        )
                                             ->where('status_verifikasi', 'pending')
                                             ->count();
                                     @endphp
-                                    @if($perluTindakanBooking > 0)
-                                        <span class="badge bg-danger rounded-pill ms-auto">{{ $perluTindakanBooking }}</span>
+                                    @if ($perluTindakanBooking > 0)
+                                        <span
+                                            class="badge bg-danger rounded-pill ms-auto">{{ $perluTindakanBooking }}</span>
                                     @endif
                                 </a>
                             </li>
@@ -308,7 +328,8 @@
         </nav>
 
         <!-- User Profile Section -->
-        <div class="fixed-profile p-3 mx-4 mb-2 {{ Auth::user()->role == 'pic' ? 'bg-warning bg-opacity-10' : 'bg-secondary-subtle' }} rounded mt-3">
+        <div
+            class="fixed-profile p-3 mx-4 mb-2 {{ Auth::user()->role == 'pic' ? 'bg-warning bg-opacity-10' : 'bg-secondary-subtle' }} rounded mt-3">
             <div class="hstack gap-3">
                 <div class="john-img">
                     <img src="{{ asset('assets/backend/images/profile/user-1.jpg') }}" class="rounded-circle"
@@ -317,7 +338,7 @@
                 <div class="john-title">
                     <h6 class="mb-0 fs-4 fw-semibold">{{ Auth::user()->name }}</h6>
                     <span class="fs-2 text-muted">
-                        @if(Auth::user()->isAdmin == 1)
+                        @if (Auth::user()->isAdmin == 1)
                             Administrator
                         @elseif(Auth::user()->role == 'pic')
                             PIC Pengecekan BKU
@@ -328,9 +349,9 @@
                 </div>
                 <a href="{{ route('logout') }}"
                     onclick="event.preventDefault(); document.getElementById('logout-form').submit();"
-                    class="border-0 bg-transparent {{ Auth::user()->role == 'pic' ? 'text-warning' : 'text-primary' }} ms-auto" 
-                    tabindex="0" type="button"
-                    aria-label="Logout" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Logout">
+                    class="border-0 bg-transparent {{ Auth::user()->role == 'pic' ? 'text-warning' : 'text-primary' }} ms-auto"
+                    tabindex="0" type="button" aria-label="Logout" data-bs-toggle="tooltip"
+                    data-bs-placement="top" data-bs-title="Logout">
                     <i class="ti ti-power fs-6"></i>
                 </a>
 
@@ -347,43 +368,45 @@
 </aside>
 
 @push('scripts')
-<script>
-    // Auto active menu based on current URL
-    $(document).ready(function() {
-        // Get current URL path
-        var currentPath = window.location.pathname;
+    <script>
+        // Auto active menu based on current URL
+        $(document).ready(function() {
+            // Get current URL path
+            var currentPath = window.location.pathname;
 
-        // Find matching sidebar link
-        $('#sidebarnav .sidebar-link').each(function() {
-            var linkHref = $(this).attr('href');
-            if (linkHref && linkHref !== 'javascript:void(0)' && currentPath.includes(linkHref.split('/').pop())) {
-                $(this).closest('.sidebar-item').addClass('active');
-                
-                // If it's a submenu item, show parent menu
-                if ($(this).closest('.sidebar-submenu').length) {
-                    $(this).closest('.sidebar-submenu').addClass('show');
-                    $(this).closest('.sidebar-submenu').prev('.sidebar-link').attr('aria-expanded', 'true');
+            // Find matching sidebar link
+            $('#sidebarnav .sidebar-link').each(function() {
+                var linkHref = $(this).attr('href');
+                if (linkHref && linkHref !== 'javascript:void(0)' && currentPath.includes(linkHref.split(
+                        '/').pop())) {
+                    $(this).closest('.sidebar-item').addClass('active');
+
+                    // If it's a submenu item, show parent menu
+                    if ($(this).closest('.sidebar-submenu').length) {
+                        $(this).closest('.sidebar-submenu').addClass('show');
+                        $(this).closest('.sidebar-submenu').prev('.sidebar-link').attr('aria-expanded',
+                            'true');
+                    }
                 }
-            }
-        });
+            });
 
-        // Handle submenu toggle
-        $('.sidebar-link.has-arrow').click(function(e) {
-            e.preventDefault();
-            var $submenu = $(this).next('.sidebar-submenu');
-            
-            // Toggle submenu
-            $submenu.toggleClass('show');
-            
-            // Toggle arrow
-            $(this).attr('aria-expanded', $submenu.hasClass('show'));
-        });
+            // Handle submenu toggle
+            $('.sidebar-link.has-arrow').click(function(e) {
+                e.preventDefault();
+                var $submenu = $(this).next('.sidebar-submenu');
 
-        // Initialize tooltips
-        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-        var tooltipList = tooltipTriggerList.map(function(tooltipTriggerEl) {
-            return new bootstrap.Tooltip(tooltipTriggerEl);
+                // Toggle submenu
+                $submenu.toggleClass('show');
+
+                // Toggle arrow
+                $(this).attr('aria-expanded', $submenu.hasClass('show'));
+            });
+
+            // Initialize tooltips
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            var tooltipList = tooltipTriggerList.map(function(tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
         });
-    });
-</script>
+    </script>
 @endpush

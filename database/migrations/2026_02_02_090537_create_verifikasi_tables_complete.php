@@ -24,7 +24,6 @@ return new class extends Migration
             $table->timestamp('tanggal_verifikasi')->useCurrent();
             $table->boolean('is_reported_to_admin')->default(true)->comment('Otomatis kirim laporan ke admin');
             $table->timestamps();
-
             $table->index('peminjaman_id');
             $table->index('pic_id');
             $table->index('kondisi');

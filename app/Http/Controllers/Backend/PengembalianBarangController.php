@@ -31,6 +31,7 @@ class PengembalianBarangController extends Controller
             'barangRuangan.barang',
             'barangRuangan.ruangan',
             'detailpengembalians.barang',
+            'verifikasi.pic', // ✅ Tambah relasi verifikasi
         ])
             ->latest()
             ->get()
@@ -54,7 +55,8 @@ class PengembalianBarangController extends Controller
             'peminjamanBarang.user',
             'barangRuangan.barang',
             'barangRuangan.ruangan',
-            'detailpengembalians',
+            'detailpengembalians.barang',
+            'verifikasi.pic', // ✅ Tambah relasi verifikasi
         ]);
 
         // Filter by search
@@ -76,14 +78,13 @@ class PengembalianBarangController extends Controller
             $query->whereDate('tanggal_kembali', $request->tanggal_kembali);
         }
 
-        // Filter by status
+        // ✅ UPDATED: Filter by status baru
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
 
         $pengembalian = $query->latest()->paginate(10);
 
-        // Confirm delete
         $title = 'Data Pengembalian Barang';
         $text  = "Apakah anda yakin ingin menghapus data pengembalian ini?";
         confirmDelete($title, $text);
@@ -94,19 +95,20 @@ class PengembalianBarangController extends Controller
     /**
      * Create - Form tambah pengembalian
      */
-    // Di PengembalianBarangController.php
     public function create()
     {
         $peminjamans = PeminjamanBarang::with(['user', 'detailbarangs.barangRuangan.barang', 'detailbarangs.barangRuangan.ruangan'])
             ->where('status', 'disetujui')
-            ->whereDoesntHave('pengembalianbarangs') // ← Ubah ini
+            ->whereDoesntHave('pengembalianbarangs')
             ->latest()
             ->get();
 
         return view('backend.pengembalian.create', compact('peminjamans'));
     }
+
     /**
-     * Store - Simpan pengembalian baru
+     * ✅ UPDATED: Store - Simpan pengembalian baru (OPSI 1)
+     * Admin hanya cek status awal: baik atau bermasalah
      */
     public function store(Request $request)
     {
@@ -115,14 +117,14 @@ class PengembalianBarangController extends Controller
                 'peminjaman_barang_id' => 'required|exists:peminjaman_barangs,id',
                 'barang_ruangan_id'    => 'required|exists:barang_ruangans,id',
                 'tanggal_kembali'      => 'required|date',
-                'status'               => 'required|in:dikembalikan,belum dikembalikan',
                 'keterangan'           => 'nullable|string|max:500',
                 'barang_id'            => 'required|array|min:1',
                 'barang_id.*'          => 'required|exists:barangs,id',
                 'jumlah'               => 'required|array|min:1',
                 'jumlah.*'             => 'required|integer|min:1',
-                'kondisi'              => 'required|array|min:1',
-                'kondisi.*'            => 'required|in:baik,rusak,hilang',
+                // ✅ UPDATED: Ganti kondisi jadi status_awal
+                'status_awal'          => 'required|array|min:1',
+                'status_awal.*'        => 'required|in:baik,bermasalah',
             ], [
                 'required' => ':attribute harus diisi',
                 'exists'   => ':attribute tidak valid',
@@ -147,26 +149,36 @@ class PengembalianBarangController extends Controller
             }
 
             // Validasi detail barang
-            $detailBarangs = [];
+            $detailBarangs       = [];
+            $hasProblematicItems = false;
+
             foreach ($validated['barang_id'] as $index => $barangId) {
-                $jumlah  = $validated['jumlah'][$index];
-                $kondisi = $validated['kondisi'][$index];
+                $jumlah     = $validated['jumlah'][$index];
+                $statusAwal = $validated['status_awal'][$index];
 
                 $detailBarangs[] = [
-                    'barang_id' => $barangId,
-                    'jumlah'    => $jumlah,
-                    'kondisi'   => $kondisi,
+                    'barang_id'   => $barangId,
+                    'jumlah'      => $jumlah,
+                    'status_awal' => $statusAwal,
                 ];
+
+                // ✅ Cek apakah ada barang bermasalah
+                if ($statusAwal === 'bermasalah') {
+                    $hasProblematicItems = true;
+                }
             }
 
             DB::beginTransaction();
+
+            // ✅ UPDATED: Tentukan status berdasarkan status awal barang
+            $status = $hasProblematicItems ? 'menunggu_pic' : 'dikembalikan';
 
             // Create pengembalian
             $pengembalian = PengembalianBarang::create([
                 'peminjaman_barang_id' => $validated['peminjaman_barang_id'],
                 'barang_ruangan_id'    => $validated['barang_ruangan_id'],
                 'tanggal_kembali'      => $validated['tanggal_kembali'],
-                'status'               => $validated['status'],
+                'status'               => $status, // ✅ Status otomatis
                 'keterangan'           => $validated['keterangan'] ?? null,
             ]);
 
@@ -177,7 +189,7 @@ class PengembalianBarangController extends Controller
                     'pengembalian_barang_id' => $pengembalian->id,
                     'barang_id'              => $detail['barang_id'],
                     'jumlah'                 => $detail['jumlah'],
-                    'kondisi'                => $detail['kondisi'],
+                    'status_awal'            => $detail['status_awal'], // ✅ UPDATED
                 ]);
 
                 if ($detailPengembalian) {
@@ -185,18 +197,16 @@ class PengembalianBarangController extends Controller
                 }
             }
 
-            // Jika status dikembalikan, kembalikan qty ke barang ruangan
-            if ($validated['status'] === 'dikembalikan') {
+            // ✅ UPDATED: Jika semua baik, langsung kembalikan stok
+            if (! $hasProblematicItems) {
                 foreach ($peminjaman->detailbarangs as $detailPeminjaman) {
                     $barangRuangan = BarangRuangan::where('id', $detailPeminjaman->barang_ruangan_id)
                         ->lockForUpdate()
                         ->first();
 
                     if ($barangRuangan) {
-                        // Tambah qty
                         $barangRuangan->increment('qty', $detailPeminjaman->jumlah);
 
-                        // Ubah status jadi 'tersedia' jika qty > 0
                         if ($barangRuangan->qty > 0) {
                             $barangRuangan->update(['status' => 'tersedia']);
                         }
@@ -210,15 +220,25 @@ class PengembalianBarangController extends Controller
             DB::commit();
 
             Log::info('Pengembalian barang berhasil dibuat', [
-                'id'          => $pengembalian->id,
-                'peminjaman'  => $peminjaman->kode,
-                'jumlah_item' => $detailCount,
+                'id'                    => $pengembalian->id,
+                'peminjaman'            => $peminjaman->kode,
+                'jumlah_item'           => $detailCount,
+                'has_problematic_items' => $hasProblematicItems,
+                'status'                => $status,
             ]);
 
-            toast(
-                'Pengembalian berhasil dibuat. Total ' . $detailCount . ' item barang.',
-                'success'
-            );
+            // ✅ UPDATED: Pesan berbeda berdasarkan kondisi
+            if ($hasProblematicItems) {
+                toast(
+                    'Pengembalian berhasil dicatat. Ada barang bermasalah, menunggu verifikasi PIC.',
+                    'warning'
+                );
+            } else {
+                toast(
+                    'Pengembalian berhasil dicatat. Semua barang dalam kondisi baik, stok sudah dikembalikan.',
+                    'success'
+                );
+            }
 
             return redirect()->route('backend.pengembalian.index');
 
@@ -254,9 +274,9 @@ class PengembalianBarangController extends Controller
             'barangRuangan.barang',
             'barangRuangan.ruangan',
             'detailpengembalians.barang',
+            'verifikasi.pic', // ✅ Tambah relasi verifikasi
         ])->findOrFail($id);
 
-        // Format tanggal
         $pengembalian->tanggal_kembali_format = Carbon::parse($pengembalian->tanggal_kembali)
             ->translatedFormat('d F Y');
 
@@ -266,14 +286,20 @@ class PengembalianBarangController extends Controller
     /**
      * Edit - Form edit pengembalian
      */
-
     public function edit($id)
     {
         $pengembalian = PengembalianBarang::with([
             'peminjamanBarang',
             'barangRuangan',
             'detailpengembalians',
+            'verifikasi', // ✅ Tambah relasi verifikasi
         ])->findOrFail($id);
+
+        // ✅ Tidak bisa edit jika sudah diverifikasi PIC
+        if ($pengembalian->isVerified()) {
+            toast('Pengembalian yang sudah diverifikasi PIC tidak dapat diedit.', 'error');
+            return redirect()->route('backend.pengembalian.show', $id);
+        }
 
         $barangs        = Barang::orderBy('nama')->get();
         $barangRuangans = BarangRuangan::with(['barang', 'ruangan'])->get();
@@ -282,24 +308,27 @@ class PengembalianBarangController extends Controller
     }
 
     /**
-     * Update - Update pengembalian
+     * ✅ UPDATED: Update - Update pengembalian (hanya tanggal & keterangan)
      */
     public function update(Request $request, $id)
     {
         try {
-            $pengembalian = PengembalianBarang::with(['detailpengembalians'])->findOrFail($id);
+            $pengembalian = PengembalianBarang::with(['detailpengembalians', 'verifikasi'])->findOrFail($id);
 
-            // Validasi input
+            // ✅ Tidak bisa edit jika sudah diverifikasi
+            if ($pengembalian->isVerified()) {
+                toast('Pengembalian yang sudah diverifikasi PIC tidak dapat diedit.', 'error');
+                return back();
+            }
+
             $validated = $request->validate([
-                'barang_ruangan_id' => 'required|exists:barang_ruangans,id',
-                'tanggal_kembali'   => 'required|date',
-                'status'            => 'required|in:dikembalikan,belum dikembalikan',
-                'keterangan'        => 'nullable|string|max:500',
-                // Validasi untuk update kondisi
-                'detail_id'         => 'required|array',
-                'detail_id.*'       => 'required|exists:detail_pengembalian_barangs,id',
-                'kondisi'           => 'required|array',
-                'kondisi.*'         => 'required|in:baik,rusak,hilang',
+                'tanggal_kembali' => 'required|date',
+                'keterangan'      => 'nullable|string|max:500',
+                // ✅ UPDATED: Validasi status_awal bukan kondisi
+                'detail_id'       => 'required|array',
+                'detail_id.*'     => 'required|exists:detail_pengembalian_barangs,id',
+                'status_awal'     => 'required|array',
+                'status_awal.*'   => 'required|in:baik,bermasalah',
             ], [
                 'required' => ':attribute harus diisi',
                 'exists'   => ':attribute tidak valid',
@@ -307,106 +336,51 @@ class PengembalianBarangController extends Controller
                 'date'     => ':attribute harus berupa tanggal',
             ]);
 
-            $oldStatus = $pengembalian->status;
-            $newStatus = $validated['status'];
-
             DB::beginTransaction();
 
-            // Update pengembalian
+            // Update tanggal & keterangan
             $pengembalian->update([
-                'barang_ruangan_id' => $validated['barang_ruangan_id'],
-                'tanggal_kembali'   => $validated['tanggal_kembali'],
-                'status'            => $validated['status'],
-                'keterangan'        => $validated['keterangan'] ?? null,
+                'tanggal_kembali' => $validated['tanggal_kembali'],
+                'keterangan'      => $validated['keterangan'] ?? null,
             ]);
 
-            // Update kondisi barang pada detail pengembalian
+            // ✅ Update status_awal per detail
+            $hasProblematicItems = false;
             foreach ($validated['detail_id'] as $index => $detailId) {
-                $kondisi = $validated['kondisi'][$index];
+                $statusAwal = $validated['status_awal'][$index];
 
                 $detail = DetailPengembalianBarang::find($detailId);
                 if ($detail) {
-                    $detail->update(['kondisi' => $kondisi]);
+                    $detail->update(['status_awal' => $statusAwal]);
+                }
+
+                if ($statusAwal === 'bermasalah') {
+                    $hasProblematicItems = true;
                 }
             }
 
-            // Handle stock changes based on status
-            if ($oldStatus !== $newStatus) {
-                $peminjaman = $pengembalian->peminjamanBarang;
-
-                // Jika status berubah ke dikembalikan, kembalikan qty
-                if ($oldStatus === 'belum dikembalikan' && $newStatus === 'dikembalikan') {
-                    foreach ($peminjaman->detailbarangs as $detail) {
-                        $barangRuangan = BarangRuangan::where('id', $detail->barang_ruangan_id)
-                            ->lockForUpdate()
-                            ->first();
-
-                        if ($barangRuangan) {
-                            $barangRuangan->increment('qty', $detail->jumlah);
-
-                            if ($barangRuangan->qty > 0) {
-                                $barangRuangan->update(['status' => 'tersedia']);
-                            }
-                        }
-                    }
-
-                    // Update status peminjaman
-                    $peminjaman->update(['status' => 'dikembalikan']);
-                }
-
-                // Jika status berubah ke belum dikembalikan, kurangi qty kembali
-                if ($oldStatus === 'dikembalikan' && $newStatus === 'belum dikembalikan') {
-                    foreach ($peminjaman->detailbarangs as $detail) {
-                        $barangRuangan = BarangRuangan::where('id', $detail->barang_ruangan_id)
-                            ->lockForUpdate()
-                            ->first();
-
-                        if ($barangRuangan) {
-                            if ($barangRuangan->qty < $detail->jumlah) {
-                                throw new Exception("Qty tidak mencukupi untuk dibatalkan.");
-                            }
-
-                            $barangRuangan->decrement('qty', $detail->jumlah);
-
-                            if ($barangRuangan->qty == 0) {
-                                $barangRuangan->update(['status' => 'sedang dipinjam']);
-                            }
-                        }
-                    }
-
-                    // Update status peminjaman kembali ke disetujui
-                    $peminjaman->update(['status' => 'disetujui']);
-                }
-            }
+            // ✅ Update status pengembalian
+            $newStatus = $hasProblematicItems ? 'menunggu_pic' : 'dikembalikan';
+            $pengembalian->update(['status' => $newStatus]);
 
             DB::commit();
 
             Log::info('Pengembalian berhasil diupdate', [
-                'id'         => $pengembalian->id,
-                'old_status' => $oldStatus,
-                'new_status' => $newStatus,
-                'updated_by' => auth()->id(),
-                'updated_at' => now(),
+                'id'                    => $pengembalian->id,
+                'has_problematic_items' => $hasProblematicItems,
+                'new_status'            => $newStatus,
+                'updated_by'            => auth()->id(),
             ]);
 
             toast('Data pengembalian berhasil diperbarui.', 'success');
             return redirect()->route('backend.pengembalian.index');
 
         } catch (\Illuminate\Validation\ValidationException $e) {
-            Log::warning('Validasi gagal saat update pengembalian', [
-                'errors' => $e->errors(),
-            ]);
             throw $e;
 
         } catch (Exception $e) {
             DB::rollBack();
-
-            Log::error('Update pengembalian error', [
-                'message' => $e->getMessage(),
-                'file'    => $e->getFile(),
-                'line'    => $e->getLine(),
-            ]);
-
+            Log::error('Update pengembalian error', ['message' => $e->getMessage()]);
             toast($e->getMessage(), 'error');
             return back()->withInput();
         }
@@ -420,9 +394,15 @@ class PengembalianBarangController extends Controller
         try {
             DB::beginTransaction();
 
-            $pengembalian = PengembalianBarang::with('detailpengembalians')->findOrFail($id);
+            $pengembalian = PengembalianBarang::with(['detailpengembalians', 'verifikasi'])->findOrFail($id);
 
-            // Jika status dikembalikan, kembalikan qty ke kondisi semula (kurangi lagi)
+            // ✅ Tidak bisa hapus jika sudah diverifikasi
+            if ($pengembalian->isVerified()) {
+                toast('Pengembalian yang sudah diverifikasi PIC tidak dapat dihapus.', 'error');
+                return back();
+            }
+
+            // ✅ Jika status dikembalikan, kembalikan stok ke semula
             if ($pengembalian->status === 'dikembalikan') {
                 $peminjaman = $pengembalian->peminjamanBarang;
 
@@ -432,7 +412,6 @@ class PengembalianBarangController extends Controller
                         ->first();
 
                     if ($barangRuangan) {
-                        // Kurangi qty (karena sebelumnya sudah ditambah saat pengembalian)
                         if ($barangRuangan->qty >= $detail->jumlah) {
                             $barangRuangan->decrement('qty', $detail->jumlah);
                         }
@@ -443,14 +422,10 @@ class PengembalianBarangController extends Controller
                     }
                 }
 
-                // Kembalikan status peminjaman ke disetujui
                 $peminjaman->update(['status' => 'disetujui']);
             }
 
-            // Hapus detail terlebih dahulu
             $pengembalian->detailpengembalians()->delete();
-
-            // Hapus pengembalian
             $pengembalian->delete();
 
             DB::commit();
@@ -467,79 +442,66 @@ class PengembalianBarangController extends Controller
     }
 
     /**
-     * Update status pengembalian
+     * ✅ NEW: Method dipanggil setelah PIC verifikasi selesai
+     * Update stok barang setelah verifikasi PIC
      */
-    public function updateStatus(Request $request, $id)
+    public function updateStatusFromVerifikasi($pengembalianId)
     {
-        $validated = $request->validate([
-            'status' => 'required|in:dikembalikan,belum dikembalikan',
-        ]);
-
         try {
             DB::beginTransaction();
 
-            $pengembalian = PengembalianBarang::with('peminjamanBarang.detailbarangs')->findOrFail($id);
-            $oldStatus    = $pengembalian->status;
-            $newStatus    = $validated['status'];
+            $pengembalian = PengembalianBarang::with(['peminjamanBarang.detailbarangs', 'verifikasi'])->findOrFail($pengembalianId);
 
-            if ($oldStatus !== $newStatus) {
-                $peminjaman = $pengembalian->peminjamanBarang;
-
-                // Jika status berubah ke dikembalikan, kembalikan qty
-                if ($oldStatus === 'belum dikembalikan' && $newStatus === 'dikembalikan') {
-                    foreach ($peminjaman->detailbarangs as $detail) {
-                        $barangRuangan = BarangRuangan::where('id', $detail->barang_ruangan_id)
-                            ->lockForUpdate()
-                            ->first();
-
-                        if ($barangRuangan) {
-                            $barangRuangan->increment('qty', $detail->jumlah);
-
-                            if ($barangRuangan->qty > 0) {
-                                $barangRuangan->update(['status' => 'tersedia']);
-                            }
-                        }
-                    }
-
-                    $peminjaman->update(['status' => 'dikembalikan']);
-                }
-
-                // Jika status berubah ke belum dikembalikan, kurangi qty
-                if ($oldStatus === 'dikembalikan' && $newStatus === 'belum dikembalikan') {
-                    foreach ($peminjaman->detailbarangs as $detail) {
-                        $barangRuangan = BarangRuangan::where('id', $detail->barang_ruangan_id)
-                            ->lockForUpdate()
-                            ->first();
-
-                        if ($barangRuangan) {
-                            if ($barangRuangan->qty < $detail->jumlah) {
-                                throw new Exception("Qty tidak mencukupi.");
-                            }
-
-                            $barangRuangan->decrement('qty', $detail->jumlah);
-
-                            if ($barangRuangan->qty == 0) {
-                                $barangRuangan->update(['status' => 'sedang dipinjam']);
-                            }
-                        }
-                    }
-
-                    $peminjaman->update(['status' => 'disetujui']);
-                }
+            if (! $pengembalian->isVerified()) {
+                throw new Exception('Pengembalian belum diverifikasi');
             }
 
-            $pengembalian->update(['status' => $newStatus]);
+            $verifikasi = $pengembalian->verifikasi;
+
+            // ✅ Tentukan status berdasarkan kondisi verifikasi PIC
+            if (in_array($verifikasi->kondisi, ['rusak_berat', 'hilang'])) {
+                $status = 'perlu_tindakan'; // Admin harus ambil keputusan
+            } else {
+                $status = 'dikembalikan'; // Rusak ringan atau baik, bisa dikembalikan
+            }
+
+            // ✅ Kembalikan stok jika bukan rusak berat/hilang
+            if ($status === 'dikembalikan') {
+                $peminjaman = $pengembalian->peminjamanBarang;
+
+                foreach ($peminjaman->detailbarangs as $detail) {
+                    $barangRuangan = BarangRuangan::where('id', $detail->barang_ruangan_id)
+                        ->lockForUpdate()
+                        ->first();
+
+                    if ($barangRuangan) {
+                        $barangRuangan->increment('qty', $detail->jumlah);
+
+                        if ($barangRuangan->qty > 0) {
+                            $barangRuangan->update(['status' => 'tersedia']);
+                        }
+                    }
+                }
+
+                $peminjaman->update(['status' => 'dikembalikan']);
+            }
+
+            $pengembalian->update(['status' => $status]);
 
             DB::commit();
 
-            toast('Status pengembalian berhasil diperbarui.', 'success');
-            return redirect()->back();
+            Log::info('Status pengembalian diupdate dari verifikasi PIC', [
+                'pengembalian_id' => $pengembalianId,
+                'kondisi'         => $verifikasi->kondisi,
+                'new_status'      => $status,
+            ]);
+
+            return true;
 
         } catch (Exception $e) {
             DB::rollBack();
-            Log::error('Update status error: ' . $e->getMessage());
-            toast($e->getMessage(), 'error');
-            return back();
+            Log::error('Error update status from verifikasi: ' . $e->getMessage());
+            return false;
         }
     }
 }

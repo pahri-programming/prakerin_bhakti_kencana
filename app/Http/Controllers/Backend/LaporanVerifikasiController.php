@@ -70,6 +70,34 @@ class LaporanVerifikasiController extends Controller
     }
 
     /**
+     * Get detail barang for AJAX (NEW METHOD)
+     */
+    public function getDetailBarang($id)
+    {
+        try {
+            $verifikasi = VerifikasiPeminjaman::with([
+                'peminjaman.detailbarangs.barangRuangan.barang',
+                'peminjaman.detailbarangs.barangRuangan.ruangan',
+            ])->findOrFail($id);
+
+            $details = [];
+            if ($verifikasi->peminjaman && $verifikasi->peminjaman->detailbarangs) {
+                foreach ($verifikasi->peminjaman->detailbarangs as $detail) {
+                    $details[] = [
+                        'nama'    => $detail->barangRuangan->barang->nama ?? '-',
+                        'jumlah'  => $detail->jumlah,
+                        'ruangan' => $detail->barangRuangan->ruangan->nama_ruangan ?? '-',
+                    ];
+                }
+            }
+
+            return response()->json(['details' => $details]);
+        } catch (\Exception $e) {
+            return response()->json(['details' => []], 500);
+        }
+    }
+
+    /**
      * Detail laporan verifikasi peminjaman
      */
     public function detailPeminjaman($id)
@@ -112,13 +140,6 @@ class LaporanVerifikasiController extends Controller
                 'status'        => $request->status_verifikasi,
             ]);
 
-            // Jika status jadi "perlu_tindakan" dan kondisi rusak berat/hilang
-            if ($request->status_verifikasi === 'perlu_tindakan' &&
-                in_array($verifikasi->kondisi, ['rusak_berat', 'hilang'])) {
-                // Opsional: Kirim notifikasi ke user
-                // Opsional: Buat laporan kerusakan otomatis
-            }
-
             return redirect()
                 ->route('backend.verifikasi.laporan.peminjaman')
                 ->with('success', 'Tindakan berhasil disimpan!');
@@ -149,17 +170,17 @@ class LaporanVerifikasiController extends Controller
     {
         $query = VerifikasiBooking::with(['booking.ruangan', 'booking.user', 'pic']);
 
-        // Filter by kondisi_ruangan  (select name="kondisi")
+        // Filter by kondisi_ruangan
         if ($request->filled('kondisi')) {
             $query->where('kondisi_ruangan', $request->kondisi);
         }
 
-        // Filter by status_verifikasi  (select name="status")
+        // Filter by status_verifikasi
         if ($request->filled('status')) {
             $query->where('status_verifikasi', $request->status);
         }
 
-        // Date range  (tanggal_dari / tanggal_sampai → tanggal_verifikasi)
+        // Date range
         if ($request->filled('tanggal_dari')) {
             $query->whereDate('tanggal_verifikasi', '>=', $request->tanggal_dari);
         }
@@ -169,7 +190,7 @@ class LaporanVerifikasiController extends Controller
 
         $verifikasi = $query->orderBy('tanggal_verifikasi', 'desc')->paginate(15);
 
-        // Statistics — semua key yang dipakai di view
+        // Statistics
         $stats = [
             'total'          => VerifikasiBooking::count(),
             'baik'           => VerifikasiBooking::where('kondisi_ruangan', 'baik')->count(),

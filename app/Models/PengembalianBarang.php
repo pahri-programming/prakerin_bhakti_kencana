@@ -1,10 +1,8 @@
 <?php
-
 namespace App\Models;
 
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Str;
 
 class PengembalianBarang extends Model
 {
@@ -23,9 +21,7 @@ class PengembalianBarang extends Model
         'status'          => 'string',
     ];
 
-    // ===========================
     // ACCESSORS
-    // ===========================
 
     /**
      * Format tanggal kembali untuk display
@@ -36,25 +32,53 @@ class PengembalianBarang extends Model
     }
 
     /**
-     * Get ringkasan kondisi barang
+     * ✅ UPDATED: Get ringkasan status awal (bukan kondisi detail)
+     * Admin cek: baik atau bermasalah
      */
-    public function getKondisiSummaryAttribute()
+    public function getStatusAwalSummaryAttribute()
     {
-        $baik = $this->detailpengembalians->where('kondisi', 'baik')->count();
-        $rusak = $this->detailpengembalians->where('kondisi', 'rusak')->count();
-        $hilang = $this->detailpengembalians->where('kondisi', 'hilang')->count();
+        $baik       = $this->detailpengembalians->where('status_awal', 'baik')->count();
+        $bermasalah = $this->detailpengembalians->where('status_awal', 'bermasalah')->count();
 
         $summary = [];
-        if ($baik > 0) $summary[] = "{$baik} baik";
-        if ($rusak > 0) $summary[] = "{$rusak} rusak";
-        if ($hilang > 0) $summary[] = "{$hilang} hilang";
+        if ($baik > 0) {
+            $summary[] = "{$baik} baik";
+        }
+
+        if ($bermasalah > 0) {
+            $summary[] = "{$bermasalah} bermasalah";
+        }
 
         return implode(', ', $summary) ?: 'Tidak ada data';
     }
 
-    // ===========================
+    /**
+     * Get status label
+     */
+    public function getStatusLabelAttribute(): string
+    {
+        return match ($this->status) {
+            'menunggu_pic'   => '⏳ Menunggu Verifikasi PIC',
+            'dikembalikan'   => '✅ Dikembalikan',
+            'perlu_tindakan' => '🚨 Perlu Tindakan Admin',
+            default          => 'Unknown',
+        };
+    }
+
+    /**
+     * Get status badge class
+     */
+    public function getStatusBadgeAttribute(): string
+    {
+        return match ($this->status) {
+            'menunggu_pic'   => 'info',
+            'dikembalikan'   => 'success',
+            'perlu_tindakan' => 'danger',
+            default          => 'secondary',
+        };
+    }
+
     // RELATIONSHIPS
-    // ===========================
 
     /**
      * Relasi ke PeminjamanBarang
@@ -81,6 +105,14 @@ class PengembalianBarang extends Model
     }
 
     /**
+     * ✅ NEW: Relasi ke VerifikasiPengembalian (PIC verifikasi)
+     */
+    public function verifikasi()
+    {
+        return $this->hasOne(VerifikasiPengembalian::class, 'pengembalian_barang_id');
+    }
+
+    /**
      * Relasi ke User melalui peminjaman
      */
     public function user()
@@ -88,16 +120,14 @@ class PengembalianBarang extends Model
         return $this->hasOneThrough(
             User::class,
             PeminjamanBarang::class,
-            'id',                      // Foreign key di peminjaman_barangs
-            'id',                      // Foreign key di users
-            'peminjaman_barang_id',    // Local key di pengembalian_barangs
-            'user_id'                  // Local key di peminjaman_barangs
+            'id',                   // Foreign key di peminjaman_barangs
+            'id',                   // Foreign key di users
+            'peminjaman_barang_id', // Local key di pengembalian_barangs
+            'user_id'               // Local key di peminjaman_barangs
         );
     }
 
-    // ===========================
     // BOOT METHOD
-    // ===========================
 
     protected static function boot()
     {
@@ -111,12 +141,10 @@ class PengembalianBarang extends Model
         });
     }
 
-    // ===========================
     // HELPER METHODS
-    // ===========================
 
     /**
-     * Check apakah semua barang sudah dikembalikan
+     * Check apakah semua barang sudah dikembalikan (status final)
      */
     public function isFullyReturned()
     {
@@ -124,13 +152,46 @@ class PengembalianBarang extends Model
     }
 
     /**
-     * Check apakah ada barang yang rusak atau hilang
+     * ✅ NEW: Check apakah ada barang bermasalah (status awal admin)
      */
-    public function hasDamagedItems()
+    public function hasProblematicItems()
     {
         return $this->detailpengembalians()
-            ->whereIn('kondisi', ['rusak', 'hilang'])
+            ->where('status_awal', 'bermasalah')
             ->exists();
+    }
+
+    /**
+     * ✅ NEW: Check apakah sudah diverifikasi oleh PIC
+     */
+    public function isVerified(): bool
+    {
+        return $this->verifikasi()->exists();
+    }
+
+    /**
+     * ✅ NEW: Check apakah perlu verifikasi PIC
+     * (Ada barang bermasalah tapi belum diverifikasi)
+     */
+    public function needsVerification(): bool
+    {
+        return $this->hasProblematicItems() && ! $this->isVerified();
+    }
+
+    /**
+     * ✅ NEW: Check apakah menunggu PIC
+     */
+    public function isWaitingForPic(): bool
+    {
+        return $this->status === 'menunggu_pic';
+    }
+
+    /**
+     * ✅ NEW: Check apakah perlu tindakan admin
+     */
+    public function needsAdminAction(): bool
+    {
+        return $this->status === 'perlu_tindakan';
     }
 
     /**
@@ -139,5 +200,31 @@ class PengembalianBarang extends Model
     public function getTotalItemsAttribute()
     {
         return $this->detailpengembalians->sum('jumlah');
+    }
+
+    // SCOPES
+
+    /**
+     * Scope untuk pengembalian yang menunggu verifikasi PIC
+     */
+    public function scopeWaitingForPic($query)
+    {
+        return $query->where('status', 'menunggu_pic');
+    }
+
+    /**
+     * Scope untuk pengembalian yang perlu tindakan admin
+     */
+    public function scopeNeedsAction($query)
+    {
+        return $query->where('status', 'perlu_tindakan');
+    }
+
+    /**
+     * Scope untuk pengembalian yang sudah selesai
+     */
+    public function scopeCompleted($query)
+    {
+        return $query->where('status', 'dikembalikan');
     }
 }

@@ -26,9 +26,10 @@ class VerifikasiPeminjaman extends Model
     protected $casts = [
         'tanggal_verifikasi'   => 'datetime',
         'is_reported_to_admin' => 'boolean',
+        'foto_bukti'           => 'array',
     ];
 
-    // ================= RELATIONSHIPS =================
+    //  RELATIONSHIPS
 
     public function peminjaman()
     {
@@ -40,7 +41,7 @@ class VerifikasiPeminjaman extends Model
         return $this->belongsTo(User::class, 'pic_id');
     }
 
-    // ================= ACCESSORS =================
+    //  ACCESSORS
 
     public function getKondisiLabelAttribute(): string
     {
@@ -53,14 +54,6 @@ class VerifikasiPeminjaman extends Model
         };
     }
 
-    public function getFotoBuktiUrlAttribute(): ?string
-    {
-        if (! $this->foto_bukti) {
-            return null;
-        }
-
-        return asset('storage/' . $this->foto_bukti);
-    }
 
     public function getKondisiBadgeAttribute(): string
     {
@@ -93,12 +86,57 @@ class VerifikasiPeminjaman extends Model
         };
     }
 
+     public function getFotoBuktiUrlAttribute(): ?string
+    {
+        $urls = $this->foto_bukti_urls;
+        return !empty($urls) ? $urls[0] : null;
+    }
+
+    /**
+     * Check if has multiple photos
+     */
+    public function hasMultiplePhotos(): bool
+    {
+        return is_array($this->foto_bukti) && count($this->foto_bukti) > 1;
+    }
+
+    /**
+     * Get total photos count
+     */
+    public function getTotalPhotosAttribute(): int
+    {
+        if (!$this->foto_bukti) {
+            return 0;
+        }
+        
+        return is_array($this->foto_bukti) ? count($this->foto_bukti) : 1;
+    }
+
     public function getTanggalVerifikasiFormatAttribute(): string
     {
         return Carbon::parse($this->tanggal_verifikasi)->translatedFormat('d F Y, H:i') . ' WIB';
     }
 
-    // ================= HELPER METHODS =================
+    //  HELPER METHODS
+
+    public function getFotoBuktiUrlsAttribute(): array
+    {
+        if (! $this->foto_bukti) {
+            return [];
+        }
+
+        // Jika foto_bukti adalah array (multiple upload)
+        if (is_array($this->foto_bukti)) {
+            return array_map(function ($path) {
+                return asset('storage/' . $path);
+            }, $this->foto_bukti);
+        }
+
+        // Backward compatibility: jika foto_bukti masih string (single upload lama)
+        return [asset('storage/' . $this->foto_bukti)];
+    }
+
+    
 
     public function needsAdminAction(): bool
     {

@@ -11,7 +11,7 @@
         box-shadow: 0 3px 14px rgba(0,0,0,0.08);
     }
 
-    /* ---------- sidebar info ---------- */
+    /*  sidebar info  */
     .info-row {
         display: flex;
         justify-content: space-between;
@@ -22,7 +22,7 @@
     .info-label { color: #6c757d; font-weight: 600; font-size: 0.9rem; }
     .info-value { color: #2d3748; font-weight: 700; font-size: 0.9rem; text-align: right; }
 
-    /* ---------- kondisi radio ---------- */
+    /*  kondisi radio  */
     .kondisi-grid {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
@@ -57,7 +57,7 @@
     .kondisi-option .label { font-weight: 700; font-size: 0.95rem; color: #2d3748; }
     .kondisi-option .sub   { font-size: 0.78rem; color: #6c757d; margin-top: 0.15rem; }
 
-    /* ---------- upload area ---------- */
+    /*  upload area  */
     .upload-zone {
         border: 2px dashed #dee2e6;
         border-radius: 12px;
@@ -75,11 +75,61 @@
 
     .upload-zone .upload-icon { font-size: 2.8rem; color: #2980b9; }
 
-    .preview-wrap img {
-        max-width: 100%;
-        max-height: 260px;
+    /*  preview gallery  */
+    .preview-gallery {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+
+    .preview-item {
+        position: relative;
         border-radius: 8px;
-        margin-top: 0.75rem;
+        overflow: hidden;
+        border: 2px solid #dee2e6;
+        aspect-ratio: 1;
+    }
+
+    .preview-item img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .preview-item .remove-btn {
+        position: absolute;
+        top: 5px;
+        right: 5px;
+        background: rgba(220, 53, 69, 0.9);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 28px;
+        height: 28px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-size: 16px;
+    }
+
+    .preview-item .remove-btn:hover {
+        background: rgba(220, 53, 69, 1);
+        transform: scale(1.1);
+    }
+
+    .preview-item .photo-number {
+        position: absolute;
+        bottom: 5px;
+        left: 5px;
+        background: rgba(41, 128, 185, 0.9);
+        color: white;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-weight: 600;
     }
 </style>
 @endpush
@@ -210,34 +260,33 @@
                         @enderror
                     </div>
 
-                    <!-- Foto Bukti -->
+                    <!-- Foto Bukti (Multiple) -->
                     <div class="mb-4">
-                        <label class="form-label fw-bold">Foto Bukti</label>
+                        <label class="form-label fw-bold">Foto Bukti <span class="badge bg-info">Maksimal 6 foto</span></label>
 
                         <div class="upload-zone" id="uploadZone">
-                            <input type="file" name="foto_bukti" id="fotoInput"
-                                   class="d-none" accept="image/jpeg,image/jpg,image/png">
+                            <input type="file" name="foto_bukti[]" id="fotoInput"
+                                   class="d-none" accept="image/jpeg,image/jpg,image/png" multiple>
 
                             <!-- placeholder -->
                             <div id="uploadPlaceholder">
                                 <div class="upload-icon"><i class="ti ti-cloud-upload"></i></div>
                                 <p class="mb-0 fw-semibold">Klik atau tarik foto ke sini</p>
-                                <small class="text-muted">JPG / PNG · maks 2 MB</small>
-                            </div>
-
-                            <!-- preview -->
-                            <div id="previewWrap" class="preview-wrap d-none">
-                                <img id="previewImg" src="" alt="preview">
-                                <div class="mt-2">
-                                    <button type="button" class="btn btn-sm btn-outline-danger" id="btnHapusFoto">
-                                        <i class="ti ti-trash"></i> Hapus
-                                    </button>
-                                </div>
+                                <small class="text-muted">JPG / PNG · maks 2 MB per foto · maksimal 6 foto</small>
                             </div>
                         </div>
 
-                        <small class="text-muted">Opsional – foto kondisi ruangan sebagai bukti</small>
+                        <!-- Preview Gallery -->
+                        <div id="previewGallery" class="preview-gallery d-none"></div>
+
+                        <small class="text-muted d-block mt-2">
+                            <i class="ti ti-info-circle"></i> Opsional – foto kondisi ruangan sebagai bukti. 
+                            Upload beberapa foto untuk dokumentasi lebih lengkap.
+                        </small>
                         @error('foto_bukti')
+                        <div class="text-danger mt-1" style="font-size:.85rem">{{ $message }}</div>
+                        @enderror
+                        @error('foto_bukti.*')
                         <div class="text-danger mt-1" style="font-size:.85rem">{{ $message }}</div>
                         @enderror
                     </div>
@@ -263,7 +312,11 @@
 (function () {
     'use strict';
 
-    /* ---------- kondisi radio ---------- */
+    const MAX_FILES = 6;
+    const MAX_SIZE = 2 * 1024 * 1024; // 2MB
+    let selectedFiles = [];
+
+    /*  kondisi radio  */
     document.querySelectorAll('.kondisi-option').forEach(function (el) {
         el.addEventListener('click', function () {
             document.querySelectorAll('.kondisi-option').forEach(function (o) { o.classList.remove('selected'); });
@@ -272,56 +325,123 @@
         });
     });
 
-    /* ---------- file upload / drag-drop ---------- */
+    /*  file upload / drag-drop (MULTIPLE)  */
     var zone        = document.getElementById('uploadZone');
     var input       = document.getElementById('fotoInput');
     var placeholder = document.getElementById('uploadPlaceholder');
-    var previewWrap = document.getElementById('previewWrap');
-    var previewImg  = document.getElementById('previewImg');
-    var btnHapus    = document.getElementById('btnHapusFoto');
+    var gallery     = document.getElementById('previewGallery');
 
     zone.addEventListener('click', function (e) {
-        if (e.target === btnHapus || btnHapus.contains(e.target)) return;
-        input.click();
+        if (!e.target.closest('.remove-btn')) {
+            input.click();
+        }
     });
 
-    zone.addEventListener('dragover', function (e) { e.preventDefault(); zone.classList.add('dragover'); });
-    zone.addEventListener('dragleave', function (e) { e.preventDefault(); zone.classList.remove('dragover'); });
+    zone.addEventListener('dragover', function (e) { 
+        e.preventDefault(); 
+        zone.classList.add('dragover'); 
+    });
+
+    zone.addEventListener('dragleave', function (e) { 
+        e.preventDefault(); 
+        zone.classList.remove('dragover'); 
+    });
+
     zone.addEventListener('drop', function (e) {
         e.preventDefault();
         zone.classList.remove('dragover');
-        if (e.dataTransfer.files.length) loadFile(e.dataTransfer.files[0]);
+        if (e.dataTransfer.files.length) {
+            handleFiles(e.dataTransfer.files);
+        }
     });
 
     input.addEventListener('change', function () {
-        if (this.files[0]) loadFile(this.files[0]);
+        if (this.files.length) {
+            handleFiles(this.files);
+        }
     });
 
-    function loadFile(file) {
-        if (!['image/jpeg','image/jpg','image/png'].includes(file.type)) {
-            return alert('Format tidak valid. Gunakan JPG atau PNG.');
+    function handleFiles(files) {
+        const filesArray = Array.from(files);
+        
+        // Check total files limit
+        if (selectedFiles.length + filesArray.length > MAX_FILES) {
+            alert(`Maksimal ${MAX_FILES} foto. Anda sudah memilih ${selectedFiles.length} foto.`);
+            return;
         }
-        if (file.size > 2 * 1024 * 1024) {
-            return alert('Ukuran file melebihi 2 MB.');
-        }
-        var reader = new FileReader();
-        reader.onload = function (e) {
-            previewImg.src = e.target.result;
-            placeholder.classList.add('d-none');
-            previewWrap.classList.remove('d-none');
-        };
-        reader.readAsDataURL(file);
+
+        filesArray.forEach(file => {
+            // Validate file type
+            if (!['image/jpeg', 'image/jpg', 'image/png'].includes(file.type)) {
+                alert(`File ${file.name} bukan format JPG/PNG yang valid.`);
+                return;
+            }
+
+            // Validate file size
+            if (file.size > MAX_SIZE) {
+                alert(`File ${file.name} melebihi 2 MB.`);
+                return;
+            }
+
+            selectedFiles.push(file);
+        });
+
+        updatePreview();
+        updateFileInput();
     }
 
-    btnHapus.addEventListener('click', function (e) {
-        e.stopPropagation();
-        input.value = '';
-        previewImg.src = '';
-        previewWrap.classList.add('d-none');
-        placeholder.classList.remove('d-none');
-    });
+    function updatePreview() {
+        if (selectedFiles.length === 0) {
+            gallery.classList.add('d-none');
+            placeholder.classList.remove('d-none');
+            return;
+        }
 
-    /* ---------- form submit ---------- */
+        placeholder.classList.add('d-none');
+        gallery.classList.remove('d-none');
+        gallery.innerHTML = '';
+
+        selectedFiles.forEach((file, index) => {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const previewItem = document.createElement('div');
+                previewItem.className = 'preview-item';
+                previewItem.innerHTML = `
+                    <img src="${e.target.result}" alt="Preview ${index + 1}">
+                    <button type="button" class="remove-btn" data-index="${index}">
+                        <i class="ti ti-x"></i>
+                    </button>
+                    <span class="photo-number">${index + 1}/${MAX_FILES}</span>
+                `;
+                
+                gallery.appendChild(previewItem);
+
+                // Add remove handler
+                previewItem.querySelector('.remove-btn').addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    removeFile(index);
+                });
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    function removeFile(index) {
+        selectedFiles.splice(index, 1);
+        updatePreview();
+        updateFileInput();
+    }
+
+    function updateFileInput() {
+        // Create new DataTransfer to update input files
+        const dataTransfer = new DataTransfer();
+        selectedFiles.forEach(file => {
+            dataTransfer.items.add(file);
+        });
+        input.files = dataTransfer.files;
+    }
+
+    /*  form submit  */
     document.getElementById('formVerifikasi').addEventListener('submit', function (e) {
         var checked = document.querySelector('input[name="kondisi_ruangan"]:checked');
         if (!checked) {
@@ -329,7 +449,10 @@
             alert('Silakan pilih kondisi ruangan terlebih dahulu.');
             return;
         }
-        if (!confirm('Pastikan data sudah benar.\nKondisi: ' + checked.value.toUpperCase())) {
+
+        const confirmMsg = `Pastikan data sudah benar.\nKondisi: ${checked.value.toUpperCase()}\nJumlah foto: ${selectedFiles.length}`;
+        
+        if (!confirm(confirmMsg)) {
             e.preventDefault();
         } else {
             document.getElementById('btnSubmit').disabled = true;

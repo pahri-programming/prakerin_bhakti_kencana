@@ -103,8 +103,8 @@
                     </li>
 
                     <!-- Verifikasi Peminjaman Barang -->
-                    <li class="sidebar-item pic-menu {{ request()->is('pic/verifikasi-peminjaman*') ? 'active' : '' }}">
-                        <a class="sidebar-link" href="{{ route('pic.verifikasi-peminjaman.index') }}"
+                    <li class="sidebar-item pic-menu {{ request()->is('pic/verifikasi-pengembalian*') ? 'active' : '' }}">
+                        <a class="sidebar-link" href="{{ route('pic.verifikasi-pengembalian.index') }}"
                             aria-expanded="false">
                             <span><i class="ti ti-package"></i></span>
                             <span class="hide-menu">Verifikasi Peminjaman</span>

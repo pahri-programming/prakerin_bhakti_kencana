@@ -16,7 +16,8 @@ return new class extends Migration
             $table->foreignId('pengembalian_barang_id')->constrained('pengembalian_barangs')->onDelete('cascade');
             $table->foreignId('barang_id')->constrained('barangs')->onDelete('cascade');
             $table->integer('jumlah');
-            $table->enum('kondisi', ['baik', 'rusak', 'hilang'])->default('baik');
+            $table->enum('status_awal', ['baik', 'bermasalah'])
+                ->default('baik');
             $table->timestamps();
         });
     }

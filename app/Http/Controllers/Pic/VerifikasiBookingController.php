@@ -16,9 +16,7 @@ class VerifikasiBookingController extends Controller
         $this->middleware(['auth', 'pic:pic']);
     }
 
-    // ---------------------------------------------------------------
-    // INDEX — list semua booking status Selesai
-    // ---------------------------------------------------------------
+  
     public function index(Request $request)
     {
         $query = Booking::with(['ruangan', 'user', 'verifikasi.pic'])
@@ -53,9 +51,7 @@ class VerifikasiBookingController extends Controller
         return view('pic.verifikasi-booking.index', compact('bookings'));
     }
 
-    // ---------------------------------------------------------------
-    // CREATE — tampilkan form verifikasi
-    // ---------------------------------------------------------------
+   
     public function create($id)
     {
         $booking = Booking::with(['ruangan', 'user', 'verifikasi'])->findOrFail($id);
@@ -73,21 +69,22 @@ class VerifikasiBookingController extends Controller
         return view('pic.verifikasi-booking.create', compact('booking'));
     }
 
-    // ---------------------------------------------------------------
-    // STORE — simpan hasil verifikasi
-    // ---------------------------------------------------------------
+   
     public function store(Request $request, $id)
     {
-        $request->validate([
+        $validated = $request->validate([
             'kondisi_ruangan' => 'required|in:baik,kotor,rusak',
             'catatan_pic'     => 'nullable|string|max:1000',
-            'foto_bukti'      => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
+            'foto_bukti'      => 'nullable|array|max:6',              // Array max 6
+            'foto_bukti.*'    => 'image|mimes:jpeg,jpg,png|max:2048', // Each file max 2MB
         ], [
             'kondisi_ruangan.required' => 'Kondisi ruangan wajib dipilih.',
             'kondisi_ruangan.in'       => 'Nilai kondisi ruangan tidak valid.',
-            'foto_bukti.image'         => 'Foto bukti harus berupa gambar.',
-            'foto_bukti.mimes'         => 'Format foto harus JPG, JPEG, atau PNG.',
-            'foto_bukti.max'           => 'Ukuran foto maksimal 2 MB.',
+            'foto_bukti.array'         => 'Format foto tidak valid.',
+            'foto_bukti.max'           => 'Maksimal 6 foto.',
+            'foto_bukti.*.image'       => 'File harus berupa gambar.',
+            'foto_bukti.*.mimes'       => 'Format gambar harus jpeg, jpg, atau png.',
+            'foto_bukti.*.max'         => 'Ukuran gambar maksimal 2MB per file.',
         ]);
 
         $booking = Booking::findOrFail($id);
@@ -99,18 +96,18 @@ class VerifikasiBookingController extends Controller
         try {
             DB::beginTransaction();
 
-            // Upload foto jika ada
-            $fotoPath = null;
+            // Upload multiple foto bukti
+            $fotoPaths = [];
             if ($request->hasFile('foto_bukti')) {
-                $fotoPath = $request->file('foto_bukti')->storeAs(
-                    'verifikasi/booking',
-                    'vb_' . $id . '_' . time() . '.' . $request->file('foto_bukti')->extension(),
-                    'public'
-                );
+                foreach ($request->file('foto_bukti') as $index => $file) {
+                    $filename    = 'verifikasi_booking_' . $id . '_' . ($index + 1) . '_' . time() . '.' . $file->getClientOriginalExtension();
+                    $path        = $file->storeAs('verifikasi/booking', $filename, 'public');
+                    $fotoPaths[] = $path;
+                }
             }
 
             // Auto-set status berdasarkan kondisi
-            $statusVerifikasi = match ($request->kondisi_ruangan) {
+            $statusVerifikasi = match ($validated['kondisi_ruangan']) {
                 'baik'  => 'diterima',
                 'kotor' => 'pending',
                 'rusak' => 'perlu_tindakan',
@@ -119,9 +116,9 @@ class VerifikasiBookingController extends Controller
             VerifikasiBooking::create([
                 'booking_id'           => $id,
                 'pic_id'               => Auth::id(),
-                'kondisi_ruangan'      => $request->kondisi_ruangan,
-                'catatan_pic'          => $request->catatan_pic,
-                'foto_bukti'           => $fotoPath,
+                'kondisi_ruangan'      => $validated['kondisi_ruangan'],
+                'catatan_pic'          => $validated['catatan_pic'],
+                'foto_bukti'           => ! empty($fotoPaths) ? $fotoPaths : null, // Array or null
                 'status_verifikasi'    => $statusVerifikasi,
                 'tanggal_verifikasi'   => now(),
                 'is_reported_to_admin' => true,
@@ -130,10 +127,11 @@ class VerifikasiBookingController extends Controller
             DB::commit();
 
             Log::info('Verifikasi Booking Created', [
-                'booking_id' => $id,
-                'pic_id'     => Auth::id(),
-                'kondisi'    => $request->kondisi_ruangan,
-                'status'     => $statusVerifikasi,
+                'booking_id'   => $id,
+                'pic_id'       => Auth::id(),
+                'kondisi'      => $validated['kondisi_ruangan'],
+                'status'       => $statusVerifikasi,
+                'total_photos' => count($fotoPaths),
             ]);
 
             $msg = $statusVerifikasi === 'diterima'
@@ -156,9 +154,7 @@ class VerifikasiBookingController extends Controller
         }
     }
 
-    // ---------------------------------------------------------------
-    // SHOW — tampilkan detail verifikasi yang sudah selesai
-    // ---------------------------------------------------------------
+    
     public function show($id)
     {
         $booking = Booking::with(['ruangan', 'user', 'verifikasi.pic'])->findOrFail($id);

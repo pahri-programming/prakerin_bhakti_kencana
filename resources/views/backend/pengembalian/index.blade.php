@@ -27,6 +27,13 @@
         </div>
     @endif
 
+    @if(session('warning'))
+        <div class="alert alert-warning alert-dismissible fade show border-0 shadow-sm mb-4" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i>{{ session('warning') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    @endif
+
     <!-- Main Card -->
     <div class="card border-0 shadow-sm rounded-3">
         <div class="card-body p-0">
@@ -56,11 +63,14 @@
                         <div class="col-md-2">
                             <select name="status" class="form-select">
                                 <option value="">Semua Status</option>
+                                <option value="menunggu_pic" {{ request('status') == 'menunggu_pic' ? 'selected' : '' }}>
+                                    Menunggu PIC
+                                </option>
                                 <option value="dikembalikan" {{ request('status') == 'dikembalikan' ? 'selected' : '' }}>
                                     Dikembalikan
                                 </option>
-                                <option value="belum dikembalikan" {{ request('status') == 'belum dikembalikan' ? 'selected' : '' }}>
-                                    Belum Dikembalikan
+                                <option value="perlu_tindakan" {{ request('status') == 'perlu_tindakan' ? 'selected' : '' }}>
+                                    Perlu Tindakan
                                 </option>
                             </select>
                         </div>
@@ -90,12 +100,12 @@
                         <tr>
                             <th class="px-4 py-3 text-muted fw-semibold" width="5%">No</th>
                             <th class="py-3 text-muted fw-semibold" width="12%">Kode Peminjaman</th>
-                            <th class="py-3 text-muted fw-semibold" width="15%">Peminjam</th>
-                            <th class="py-3 text-muted fw-semibold" width="22%">Barang Dikembalikan</th>
+                            <th class="py-3 text-muted fw-semibold" width="13%">Peminjam</th>
                             <th class="py-3 text-muted fw-semibold" width="10%">Tanggal</th>
-                            <th class="py-3 text-muted fw-semibold" width="12%">Kondisi</th>
-                            <th class="py-3 text-muted fw-semibold" width="10%">Status</th>
-                            <th class="py-3 text-muted fw-semibold text-center" width="14%">Aksi</th>
+                            <th class="py-3 text-muted fw-semibold" width="12%">Status Awal</th>
+                            <th class="py-3 text-muted fw-semibold" width="11%">Status</th>
+                            <th class="py-3 text-muted fw-semibold" width="12%">Verifikasi PIC</th>
+                            <th class="py-3 text-muted fw-semibold text-center" width="12%">Aksi</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -116,29 +126,10 @@
                                         </div>
                                         @if($item->peminjamanBarang->instansi)
                                             <small class="text-muted">
-                                                <i class="fas fa-building me-1"></i>{{ $item->peminjamanBarang->instansi }}
+                                                <i class="fas fa-building me-1"></i>{{ Str::limit($item->peminjamanBarang->instansi, 15) }}
                                             </small>
                                         @endif
                                     </div>
-                                </td>
-                                <td>
-                                    @if($item->detailpengembalians && $item->detailpengembalians->count() > 0)
-                                        @foreach($item->detailpengembalians->take(2) as $detail)
-                                            <div class="mb-1">
-                                                <span class="badge bg-success bg-opacity-10 text-success">
-                                                    <i class="fas fa-box me-1"></i>{{ $detail->barang->nama ?? '-' }}
-                                                </span>
-                                                <small class="text-muted">({{ $detail->jumlah }} unit)</small>
-                                            </div>
-                                        @endforeach
-                                        @if($item->detailpengembalians->count() > 2)
-                                            <small class="text-muted">
-                                                +{{ $item->detailpengembalians->count() - 2 }} lainnya
-                                            </small>
-                                        @endif
-                                    @else
-                                        <small class="text-muted">-</small>
-                                    @endif
                                 </td>
                                 <td>
                                     <div class="small">
@@ -149,9 +140,8 @@
                                 <td>
                                     @if($item->detailpengembalians && $item->detailpengembalians->count() > 0)
                                         @php
-                                            $baik = $item->detailpengembalians->where('kondisi', 'baik')->count();
-                                            $rusak = $item->detailpengembalians->where('kondisi', 'rusak')->count();
-                                            $hilang = $item->detailpengembalians->where('kondisi', 'hilang')->count();
+                                            $baik = $item->detailpengembalians->where('status_awal', 'baik')->count();
+                                            $bermasalah = $item->detailpengembalians->where('status_awal', 'bermasalah')->count();
                                         @endphp
                                         <div class="small">
                                             @if($baik > 0)
@@ -159,14 +149,9 @@
                                                     ✓ {{ $baik }} Baik
                                                 </span>
                                             @endif
-                                            @if($rusak > 0)
+                                            @if($bermasalah > 0)
                                                 <span class="badge bg-warning bg-opacity-10 text-warning mb-1">
-                                                    ⚠ {{ $rusak }} Rusak
-                                                </span>
-                                            @endif
-                                            @if($hilang > 0)
-                                                <span class="badge bg-danger bg-opacity-10 text-danger mb-1">
-                                                    ✗ {{ $hilang }} Hilang
+                                                    ⚠ {{ $bermasalah }} Bermasalah
                                                 </span>
                                             @endif
                                         </div>
@@ -175,14 +160,36 @@
                                     @endif
                                 </td>
                                 <td>
-                                    @if($item->status == 'dikembalikan')
+                                    @if($item->status == 'menunggu_pic')
+                                        <span class="badge bg-info px-3 py-2">
+                                            <i class="fas fa-clock me-1"></i>Menunggu PIC
+                                        </span>
+                                    @elseif($item->status == 'dikembalikan')
                                         <span class="badge bg-success px-3 py-2">
                                             <i class="fas fa-check-circle me-1"></i>Dikembalikan
                                         </span>
                                     @else
-                                        <span class="badge bg-warning px-3 py-2">
-                                            <i class="fas fa-clock me-1"></i>Belum
+                                        <span class="badge bg-danger px-3 py-2">
+                                            <i class="fas fa-exclamation-triangle me-1"></i>Perlu Tindakan
                                         </span>
+                                    @endif
+                                </td>
+                                <td>
+                                    @if($item->verifikasi)
+                                        <div class="small">
+                                            <span class="badge {{ $item->verifikasi->status_badge }} mb-1">
+                                                {{ $item->verifikasi->kondisi_label }}
+                                            </span>
+                                            <div class="text-muted">
+                                                <small>oleh {{ $item->verifikasi->pic->name }}</small>
+                                            </div>
+                                        </div>
+                                    @else
+                                        @if($item->status == 'menunggu_pic')
+                                            <span class="badge bg-secondary">Belum Diverifikasi</span>
+                                        @else
+                                            <span class="text-muted">-</span>
+                                        @endif
                                     @endif
                                 </td>
                                 <td>
@@ -193,25 +200,38 @@
                                            title="Detail">
                                             <i class="fas fa-eye text-info"></i>
                                         </a>
-                                        <a href="{{ route('backend.pengembalian.edit', $item->id) }}" 
-                                           class="btn btn-sm btn-light border" 
-                                           data-bs-toggle="tooltip" 
-                                           title="Edit">
-                                            <i class="fas fa-edit text-warning"></i>
-                                        </a>
-                                        <form action="{{ route('backend.pengembalian.destroy', $item->id) }}" 
-                                              method="POST" 
-                                              class="d-inline"
-                                              onsubmit="return confirm('Yakin ingin menghapus data ini?')">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" 
-                                                    class="btn btn-sm btn-light border" 
+                                        
+                                        @if(!$item->isVerified())
+                                            <a href="{{ route('backend.pengembalian.edit', $item->id) }}" 
+                                               class="btn btn-sm btn-light border" 
+                                               data-bs-toggle="tooltip" 
+                                               title="Edit">
+                                                <i class="fas fa-edit text-warning"></i>
+                                            </a>
+                                        @else
+                                            <button class="btn btn-sm btn-light border" 
                                                     data-bs-toggle="tooltip" 
-                                                    title="Hapus">
-                                                <i class="fas fa-trash text-danger"></i>
+                                                    title="Tidak bisa edit (sudah diverifikasi)"
+                                                    disabled>
+                                                <i class="fas fa-lock text-muted"></i>
                                             </button>
-                                        </form>
+                                        @endif
+
+                                        @if(!$item->isVerified())
+                                            <form action="{{ route('backend.pengembalian.destroy', $item->id) }}" 
+                                                  method="POST" 
+                                                  class="d-inline"
+                                                  onsubmit="return confirm('Yakin ingin menghapus data ini?')">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" 
+                                                        class="btn btn-sm btn-light border" 
+                                                        data-bs-toggle="tooltip" 
+                                                        title="Hapus">
+                                                    <i class="fas fa-trash text-danger"></i>
+                                                </button>
+                                            </form>
+                                        @endif
                                     </div>
                                 </td>
                             </tr>
@@ -261,12 +281,6 @@
 </div>
 
 <style>
-.avatar-sm {
-    width: 45px;
-    height: 45px;
-    font-size: 18px;
-}
-
 .btn-light.border:hover {
     background-color: #f8f9fa;
     transform: translateY(-2px);

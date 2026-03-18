@@ -11,39 +11,42 @@ class DetailPengembalianBarang extends Model
         'pengembalian_barang_id',
         'barang_id',
         'jumlah',
-        'kondisi',
+        'status_awal', //  UPDATED: Ganti dari 'kondisi' ke 'status_awal'
     ];
 
     protected $casts = [
-        'jumlah'  => 'integer',
-        'kondisi' => 'string',
+        'jumlah'      => 'integer',
+        'status_awal' => 'string', //  UPDATED
     ];
 
+    // ACCESSORS
+
     /**
-     * Get kondisi badge class untuk UI
+     *  UPDATED: Get status awal badge class untuk UI
+     * Admin input: baik atau bermasalah
      */
-    public function getKondisiBadgeClassAttribute()
+    public function getStatusAwalBadgeClassAttribute()
     {
-        return match ($this->kondisi) {
-            'baik'   => 'success',
-            'rusak'  => 'warning',
-            'hilang' => 'danger',
-            default  => 'secondary',
+        return match ($this->status_awal) {
+            'baik'       => 'success',
+            'bermasalah' => 'warning',
+            default      => 'secondary',
         };
     }
 
     /**
-     * Get kondisi label untuk display
+     *  UPDATED: Get status awal label untuk display
      */
-    public function getKondisiLabelAttribute()
+    public function getStatusAwalLabelAttribute()
     {
-        return match ($this->kondisi) {
-            'baik'   => 'Baik',
-            'rusak'  => 'Rusak',
-            'hilang' => 'Hilang',
-            default  => 'Tidak Diketahui',
+        return match ($this->status_awal) {
+            'baik'       => '✅ Baik',
+            'bermasalah' => '⚠️ Ada Masalah',
+            default      => 'Tidak Diketahui',
         };
     }
+
+    // RELATIONSHIPS
 
     /**
      * Relasi ke PengembalianBarang
@@ -61,27 +64,29 @@ class DetailPengembalianBarang extends Model
         return $this->belongsTo(Barang::class, 'barang_id');
     }
 
+    // HELPER METHODS
+
     /**
-     * Check apakah barang dalam kondisi baik
+     *  UPDATED: Check apakah status awal baik
      */
     public function isGoodCondition()
     {
-        return $this->kondisi === 'baik';
+        return $this->status_awal === 'baik';
     }
 
     /**
-     * Check apakah barang rusak
+     *  UPDATED: Check apakah ada masalah
      */
-    public function isDamaged()
+    public function hasProblems()
     {
-        return $this->kondisi === 'rusak';
+        return $this->status_awal === 'bermasalah';
     }
 
     /**
-     * Check apakah barang hilang
+     *  NEW: Check apakah perlu verifikasi PIC
      */
-    public function isLost()
+    public function needsPicVerification()
     {
-        return $this->kondisi === 'hilang';
+        return $this->hasProblems();
     }
 }

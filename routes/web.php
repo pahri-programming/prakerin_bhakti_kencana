@@ -18,6 +18,7 @@ use App\Http\Controllers\FrontendController;
 use App\Http\Controllers\Pic\PicDashboardController;
 use App\Http\Controllers\Pic\VerifikasiBookingController;
 use App\Http\Controllers\Pic\VerifikasiPeminjamanController;
+use App\Http\Controllers\Pic\VerifikasiPengembalianController; // ✅ TAMBAH INI
 use App\Http\Controllers\User\ProfileController;
 use App\Http\Controllers\User\UserBookingController;
 use App\Http\Controllers\User\UserPeminjamanController;
@@ -85,8 +86,8 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/', [UserPeminjamanController::class, 'store'])->name('store');
     });
 
-                                                                                     // Riwayat (History)
-    Route::get('/riwayat', [FrontendController::class, 'riwayat'])->name('riwayat'); // Alias
+    // Riwayat (History)
+    Route::get('/riwayat', [FrontendController::class, 'riwayat'])->name('riwayat');
     Route::prefix('riwayat')->name('riwayat.')->group(function () {
         Route::get('/', [FrontendController::class, 'riwayat'])->name('index');
         Route::get('/booking/export', [FrontendController::class, 'exportRiwayatBooking'])
@@ -99,7 +100,6 @@ Route::middleware(['auth'])->group(function () {
 /*
 |--------------------------------------------------------------------------
 |  PIC Routes (Person In Charge - Petugas Pengecekan)
-| PERBAIKAN: Tambahkan parameter 'pic' di middleware
 |--------------------------------------------------------------------------
 */
 Route::prefix('pic')->name('pic.')->middleware(['auth', 'pic:pic'])->group(function () {
@@ -108,34 +108,32 @@ Route::prefix('pic')->name('pic.')->middleware(['auth', 'pic:pic'])->group(funct
     Route::get('/', [PicDashboardController::class, 'index'])->name('dashboard');
     Route::get('/dashboard', [PicDashboardController::class, 'index'])->name('dashboard.index');
 
-    // ========================================
+    //
     // Verifikasi Peminjaman Barang
-    // ========================================
+    //
     Route::prefix('verifikasi-peminjaman')->name('verifikasi-peminjaman.')->group(function () {
-        //  List harus paling atas
         Route::get('/', [VerifikasiPeminjamanController::class, 'index'])->name('index');
-
-        //  Route dengan parameter ID harus spesifik dulu (create, show)
         Route::get('/create/{id}', [VerifikasiPeminjamanController::class, 'create'])->name('create');
         Route::get('/show/{id}', [VerifikasiPeminjamanController::class, 'show'])->name('show');
-
-        //  POST untuk store
         Route::post('/store/{id}', [VerifikasiPeminjamanController::class, 'store'])->name('store');
     });
 
-    // ========================================
+    //
     // Verifikasi Booking Ruangan
-    // ========================================
+    //
     Route::prefix('verifikasi-booking')->name('verifikasi-booking.')->group(function () {
-        //  List harus paling atas
         Route::get('/', [VerifikasiBookingController::class, 'index'])->name('index');
-
-        //  Route dengan parameter ID harus spesifik dulu (create, show)
         Route::get('/create/{id}', [VerifikasiBookingController::class, 'create'])->name('create');
         Route::get('/show/{id}', [VerifikasiBookingController::class, 'show'])->name('show');
-
-        //  POST untuk store
         Route::post('/store/{id}', [VerifikasiBookingController::class, 'store'])->name('store');
+    });
+
+    // ✅ TAMBAH INI - Verifikasi Pengembalian Barang (NEW!)
+    Route::prefix('verifikasi-pengembalian')->name('verifikasi-pengembalian.')->group(function () {
+        Route::get('/', [VerifikasiPengembalianController::class, 'index'])->name('index');
+        Route::get('/create/{id}', [VerifikasiPengembalianController::class, 'create'])->name('create');
+        Route::get('/show/{id}', [VerifikasiPengembalianController::class, 'show'])->name('show');
+        Route::post('/store/{id}', [VerifikasiPengembalianController::class, 'store'])->name('store');
     });
 });
 
@@ -202,7 +200,6 @@ Route::prefix('admin')->name('backend.')->middleware(['auth', 'admin'])->group(f
         ->name('booking.export');
 
     Route::resource('booking', BookingController::class);
-   
 
     // Peminjaman Barang Management
     Route::prefix('peminjaman')->name('peminjaman.')->group(function () {
@@ -219,83 +216,71 @@ Route::prefix('admin')->name('backend.')->middleware(['auth', 'admin'])->group(f
 
     /*
     |--------------------------------------------------------------------------
-    | Verifikasi Management (Admin melihat laporan PIC)
+    | Laporan Verifikasi dari PIC (Admin View)
     |--------------------------------------------------------------------------
     */
-    Route::prefix('verifikasi')->name('verifikasi.')->group(function () {
-        // Verifikasi Peminjaman
-        Route::get('/peminjaman', [\App\Http\Controllers\Backend\LaporanVerifikasiController::class, 'laporanPeminjaman'])
-            ->name('peminjaman.index');
-        Route::put('/peminjaman/{id}/tindakan', [\App\Http\Controllers\Backend\LaporanVerifikasiController::class, 'tindakanPeminjaman'])
-            ->name('peminjaman.tindakan');
-
-        // Verifikasi Booking
-        Route::get('/booking', [\App\Http\Controllers\Backend\LaporanVerifikasiController::class, 'laporanBooking'])
-            ->name('booking.index');
-        Route::put('/booking/{id}/tindakan', [\App\Http\Controllers\Backend\LaporanVerifikasiController::class, 'tindakanBooking'])
-            ->name('booking.tindakan');
-    });
-
-    /*
-    |--------------------------------------------------------------------------
-    | Reports (Laporan)
-    |--------------------------------------------------------------------------
-    */
-
-    Route::prefix('laporan-ubk')->name('laporan-ubk.')->group(function () {
-        // Laporan Index
-        Route::get('/', [LaporanUbkController::class, 'index'])->name('index');
-
-        // Laporan Booking PDF
-        Route::get('/booking/pdf', [LaporanUbkController::class, 'pdfBooking'])->name('pdf_booking');
-
-        // Laporan Peminjaman PDF
-        Route::get('/peminjaman/pdf', [LaporanUbkController::class, 'pdfPeminjaman'])->name('pdf_peminjaman');
-
-        // Laporan Pengembalian PDF (NEW)
-        Route::get('/pengembalian/pdf', [LaporanUbkController::class, 'pdfPengembalian'])->name('pdf_pengembalian');
-    });
-
     Route::prefix('verifikasi/laporan')->name('verifikasi.laporan.')->group(function () {
 
-        // ===== LAPORAN PEMINJAMAN =====
+        //  LAPORAN PEMINJAMAN
         Route::get('/peminjaman', [App\Http\Controllers\Backend\LaporanVerifikasiController::class, 'laporanPeminjaman'])
             ->name('peminjaman');
+
+        Route::get('/peminjaman/{id}/detail-barang', [App\Http\Controllers\Backend\LaporanVerifikasiController::class, 'getDetailBarang'])
+            ->name('peminjaman.detail-barang');
 
         Route::get('/peminjaman/{id}/detail', [App\Http\Controllers\Backend\LaporanVerifikasiController::class, 'detailPeminjaman'])
             ->name('peminjaman.detail');
 
-        Route::post('/peminjaman/{id}/tindakan', [App\Http\Controllers\Backend\LaporanVerifikasiController::class, 'tindakanPeminjaman'])
+        Route::put('/peminjaman/{id}/tindakan', [App\Http\Controllers\Backend\LaporanVerifikasiController::class, 'tindakanPeminjaman'])
             ->name('peminjaman.tindakan');
 
         Route::get('/peminjaman/export-pdf', [App\Http\Controllers\Backend\LaporanVerifikasiController::class, 'exportPeminjaman'])
             ->name('peminjaman.export');
 
-        // ===== LAPORAN BOOKING =====
+        //  LAPORAN BOOKING
         Route::get('/booking', [App\Http\Controllers\Backend\LaporanVerifikasiController::class, 'laporanBooking'])
             ->name('booking');
 
         Route::get('/booking/{id}/detail', [App\Http\Controllers\Backend\LaporanVerifikasiController::class, 'detailBooking'])
             ->name('booking.detail');
 
-        Route::post('/booking/{id}/tindakan', [App\Http\Controllers\Backend\LaporanVerifikasiController::class, 'tindakanBooking'])
+        Route::put('/booking/{id}/tindakan', [App\Http\Controllers\Backend\LaporanVerifikasiController::class, 'tindakanBooking'])
             ->name('booking.tindakan');
 
         Route::get('/booking/export-pdf', [App\Http\Controllers\Backend\LaporanVerifikasiController::class, 'exportBooking'])
             ->name('booking.export');
+
+        // ✅ TAMBAH INI - LAPORAN PENGEMBALIAN (NEW!)
+        Route::get('/pengembalian', [App\Http\Controllers\Backend\LaporanVerifikasiController::class, 'laporanPengembalian'])
+            ->name('pengembalian');
+
+        Route::get('/pengembalian/{id}/detail', [App\Http\Controllers\Backend\LaporanVerifikasiController::class, 'detailPengembalian'])
+            ->name('pengembalian.detail');
+
+        Route::put('/pengembalian/{id}/tindakan', [App\Http\Controllers\Backend\LaporanVerifikasiController::class, 'tindakanPengembalian'])
+            ->name('pengembalian.tindakan');
+
+        Route::get('/pengembalian/export-pdf', [App\Http\Controllers\Backend\LaporanVerifikasiController::class, 'exportPengembalian'])
+            ->name('pengembalian.export');
     });
 
+    /*
+    |--------------------------------------------------------------------------
+    | Reports (Laporan UBK)
+    |--------------------------------------------------------------------------
+    */
+    Route::prefix('laporan-ubk')->name('laporan-ubk.')->group(function () {
+        Route::get('/', [LaporanUbkController::class, 'index'])->name('index');
+        Route::get('/booking/pdf', [LaporanUbkController::class, 'pdfBooking'])->name('pdf_booking');
+        Route::get('/peminjaman/pdf', [LaporanUbkController::class, 'pdfPeminjaman'])->name('pdf_peminjaman');
+        Route::get('/pengembalian/pdf', [LaporanUbkController::class, 'pdfPengembalian'])->name('pdf_pengembalian');
+    });
 });
-
-Route::get('/auth/google', [GoogleController::class, 'redirect'])->name('google.login');
-Route::get('/auth/google/callback', [GoogleController::class, 'callback']);
 
 /*
 |--------------------------------------------------------------------------
-| Fallback Route (Optional)
+| Google OAuth Routes
 |--------------------------------------------------------------------------
-| Uncomment if you want to handle 404 with custom page
 */
-// Route::fallback(function () {
-//     return view('errors.404');
-// });
+Route::get('/auth/google', [GoogleController::class, 'redirect'])->name('google.login');
+Route::get('/auth/google/callback', [GoogleController::class, 'callback']);

@@ -67,47 +67,47 @@ class BarangController extends Controller
         $this->middleware('auth');
     }
 
-        public function index(Request $request)
-        {
-            $query = Barang::with('kategori')->orderByDesc('created_at');
+    public function index(Request $request)
+    {
+        $query = Barang::with('kategori')->orderByDesc('created_at');
 
-            // Filter pencarian nama / kode
-            if ($request->filled('search')) {
-                $keyword = trim($request->search);
-                $query->where(function ($q) use ($keyword) {
-                    $q->where('nama', 'like', "%{$keyword}%");
+        // Filter pencarian nama / kode
+        if ($request->filled('search')) {
+            $keyword = trim($request->search);
+            $query->where(function ($q) use ($keyword) {
+                $q->where('nama', 'like', "%{$keyword}%");
 
-                })
-                // juga cari di nama kategori jika user mengetik nama kategori
-                    ->orWhereHas('kategori', function ($q2) use ($keyword) {
-                        $q2->where('nama', 'like', "%{$keyword}%");
-                    });
-            }
-
-            // Filter berdasarkan kategori id (select dropdown mengirim param name="kategori")
-            if ($request->filled('kategori')) {
-                $query->where('kategori_id', $request->kategori);
-            }
-
-            // filter stok (opsional)
-            if ($request->filled('stok')) {
-                if ($request->stok === 'habis') {
-                    $query->where('stok', 0);
-                } elseif ($request->stok === 'rendah') {
-                    $query->whereBetween('stok', [1, 5]);
-                }
-            }
-
-            $barangs = $query->get()->map(function ($b) {
-                $b->created_at_format = Carbon::parse($b->created_at)->translatedFormat('d F Y');
-                return $b;
-            });
-
-            $kategoris = Kategori::orderBy('nama')->get();
-
-            confirmDelete('Data Barang', 'Yakin ingin menghapus barang ini?');
-            return view('backend.barang.index', compact('barangs', 'kategoris'));
+            })
+            // juga cari di nama kategori jika user mengetik nama kategori
+                ->orWhereHas('kategori', function ($q2) use ($keyword) {
+                    $q2->where('nama', 'like', "%{$keyword}%");
+                });
         }
+
+        // Filter berdasarkan kategori id (select dropdown mengirim param name="kategori")
+        if ($request->filled('kategori')) {
+            $query->where('kategori_id', $request->kategori);
+        }
+
+        // filter stok (opsional)
+        if ($request->filled('stok')) {
+            if ($request->stok === 'habis') {
+                $query->where('stok', 0);
+            } elseif ($request->stok === 'rendah') {
+                $query->whereBetween('stok', [1, 5]);
+            }
+        }
+
+        $barangs = $query->get()->map(function ($b) {
+            $b->created_at_format = Carbon::parse($b->created_at)->translatedFormat('d F Y');
+            return $b;
+        });
+
+        $kategoris = Kategori::orderBy('nama')->get();
+
+        confirmDelete('Data Barang', 'Yakin ingin menghapus barang ini?');
+        return view('backend.barang.index', compact('barangs', 'kategoris'));
+    }
 
     public function create()
     {
@@ -124,7 +124,7 @@ class BarangController extends Controller
         ]);
 
         try {
-            $barang = new Barang();
+            $barang              = new Barang();
             $barang->nama        = ucwords(strtolower(trim($request->nama)));
             $barang->kategori_id = $request->kategori_id;
             $barang->keterangan  = $request->keterangan ?: '-';
@@ -160,48 +160,21 @@ class BarangController extends Controller
     {
         $barang = Barang::findOrFail($id);
 
+        // Validasi hanya field yang benar-benar ada di form edit
         $request->validate([
-            'foto' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
-            'kode' => "required|max:50|unique:barangs,kode,{$barang->id}",
             'nama'        => 'required|string|max:255',
             'kategori_id' => 'nullable|exists:kategoris,id',
-            'stok'        => 'required|integer|min:0',
             'keterangan'  => 'nullable|string',
+    
         ]);
 
         try {
-            // handle foto upload
-            if ($request->hasFile('foto')) {
-                // hapus foto lama jika ada
-                if ($barang->foto && \Storage::disk('public')->exists($barang->foto)) {
-                    \Storage::disk('public')->delete($barang->foto);
-                }
-                $file     = $request->file('foto');
-                $ext      = $file->getClientOriginalExtension();
-                $filename = 'barang_' . time() . '_' . uniqid() . '.' . $ext;
-                // menyimpan di storage/app/public/barangs -> dapat diakses via asset('storage/'.$barang->foto)
-                $path         = $file->storeAs('barangs', $filename, 'public');
-                $barang->foto = $path;
-            }
-            // Simpan data lama buat log perubahan
-            $stokLama = $barang->stok;
-
-            // Update manual biar lebih fleksibel
-            $barang->kode        = strtoupper($request->kode);
-            $barang->nama        = ucwords(strtolower($request->nama));
+            // Update field yang ada di form
+            $barang->nama        = ucwords(strtolower(trim($request->nama)));
             $barang->kategori_id = $request->kategori_id;
-            $barang->stok        = (int) $request->stok;
             $barang->keterangan  = $request->keterangan ?: $barang->keterangan;
-            $barang->save();
 
-            // Catat jika stok berubah
-            if ($stokLama != $barang->stok) {
-                $selisih = $barang->stok - $stokLama;
-                $logMsg  = $selisih > 0
-                    ? "Stok barang {$barang->nama} bertambah {$selisih} unit."
-                    : "Stok barang {$barang->nama} berkurang " . abs($selisih) . " unit.";
-                Log::info($logMsg);
-            }
+            $barang->save();
 
             toast('Data barang berhasil diperbarui.', 'success');
             return redirect()->route('backend.barang.index');

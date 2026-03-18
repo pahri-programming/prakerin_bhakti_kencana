@@ -38,6 +38,53 @@
         .table-hover tbody tr:hover {
             background-color: #f8f9fa;
         }
+
+        /* ─── Modal Carousel Styles ─── */
+        .modal-photo-carousel {
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .modal-photo-carousel .carousel-item img {
+            width: 100%;
+            height: 400px;
+            object-fit: contain;
+            background: #f8f9fa;
+        }
+
+        .modal-photo-thumbnails {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 1rem;
+        }
+
+        .modal-photo-thumbnail {
+            width: 70px;
+            height: 70px;
+            border-radius: 6px;
+            overflow: hidden;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .modal-photo-thumbnail:hover {
+            border-color: #2980b9;
+            transform: scale(1.05);
+        }
+
+        .modal-photo-thumbnail.active {
+            border-color: #2980b9;
+            box-shadow: 0 0 0 2px rgba(41, 128, 185, 0.3);
+        }
+
+        .modal-photo-thumbnail img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
     </style>
 @endpush
 
@@ -99,7 +146,7 @@
                 <h5 class="mb-0"><i class="ti ti-filter"></i> Filter Laporan</h5>
             </div>
             <div class="card-body">
-                <form action="{{ route('backend.verifikasi.booking.index') }}" method="GET">
+                <form action="{{ route('backend.verifikasi.laporan.booking') }}" method="GET">
                     <div class="row g-3">
                         <div class="col-md-3">
                             <label class="form-label">Kondisi Ruangan</label>
@@ -141,7 +188,7 @@
                                 <button type="submit" class="btn btn-primary w-100">
                                     <i class="ti ti-search"></i> Filter
                                 </button>
-                                <a href="{{ route('backend.verifikasi.booking.index') }}"
+                                <a href="{{ route('backend.verifikasi.laporan.booking') }}"
                                     class="btn btn-outline-secondary">
                                     <i class="ti ti-x"></i>
                                 </a>
@@ -189,6 +236,9 @@
                                         'perlu_tindakan' => 'danger',
                                         default => 'secondary',
                                     };
+                                    
+                                    // ✅ FIX: Konversi foto_bukti_urls ke JSON string untuk data attribute
+                                    $fotosJson = json_encode($v->foto_bukti_urls);
                                 @endphp
                                 <tr>
                                     <td class="text-center">{{ $verifikasi->firstItem() + $i }}</td>
@@ -221,7 +271,8 @@
                                     </td>
                                     <td>
                                         <button type="button" class="btn btn-sm btn-info btn-detail"
-                                            data-id="{{ $v->id }}" data-kode="{{ $v->booking->kode ?? '–' }}"
+                                            data-id="{{ $v->id }}" 
+                                            data-kode="{{ $v->booking->kode ?? '–' }}"
                                             data-user="{{ $v->booking->user->name ?? 'User Dihapus' }}"
                                             data-email="{{ $v->booking->user->email ?? '–' }}"
                                             data-instansi="{{ $v->booking->user->instansi ?? '–' }}"
@@ -232,7 +283,8 @@
                                             data-waktu-mulai="{{ substr($v->booking->waktu_mulai, 0, 5) }}"
                                             data-waktu-selesai="{{ substr($v->booking->waktu_selesai, 0, 5) }}"
                                             data-keperluan="{{ $v->booking->keperluan ?? '' }}"
-                                            data-pic-name="{{ $v->pic->name }}" data-pic-email="{{ $v->pic->email }}"
+                                            data-pic-name="{{ $v->pic->name }}" 
+                                            data-pic-email="{{ $v->pic->email }}"
                                             data-tanggal-verifikasi="{{ $v->tanggal_verifikasi_format }}"
                                             data-kondisi="{{ $v->kondisi_ruangan }}"
                                             data-kondisi-label="{{ $v->kondisi_label }}"
@@ -241,10 +293,14 @@
                                             data-status-label="{{ $v->status_label }}"
                                             data-status-badge="{{ $statusBadge }}"
                                             data-catatan="{{ $v->catatan_pic ?? '' }}"
-                                            data-foto="{{ $v->foto_bukti ? asset('storage/' . $v->foto_bukti) : '' }}"
+                                            data-fotos='{{ $fotosJson }}'
+                                            data-total-photos="{{ $v->total_photos }}"
                                             data-tindakan="{{ $v->tindakan_admin ?? '' }}"
-                                            data-action-url="{{ route('backend.verifikasi.booking.tindakan', $v->id) }}">
+                                            data-action-url="{{ route('backend.verifikasi.laporan.booking.tindakan', $v->id) }}">
                                             <i class="ti ti-eye"></i> Detail
+                                            @if($v->total_photos > 0)
+                                                <span class="badge bg-white text-info">{{ $v->total_photos }} 📷</span>
+                                            @endif
                                         </button>
                                     </td>
                                 </tr>
@@ -269,12 +325,9 @@
 
     </div>
 
-    {{-- ============================================================
-     SINGLE MODAL — di luar loop, content di-swap via jQuery
-     Exact same pattern sebagai peminjaman yang sudah kerja
-     ============================================================ --}}
+    {{-- SINGLE MODAL WITH CAROUSEL SUPPORT --}}
     <div class="modal fade" id="detailModalBooking" tabindex="-1">
-        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header bg-primary text-white">
                     <h5 class="modal-title">
@@ -284,159 +337,189 @@
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
+                    <div class="row">
+                        <!-- Left Column: Info -->
+                        <div class="col-lg-8">
+                            {{-- Info Booking --}}
+                            <div class="card mb-3">
+                                <div class="card-header bg-light">
+                                    <h6 class="mb-0"><i class="ti ti-info-circle"></i> Informasi Booking</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <table class="table table-sm table-borderless">
+                                                <tr>
+                                                    <td width="40%"><strong>Kode Booking:</strong></td>
+                                                    <td><span class="badge bg-info" id="modal-kode"></span></td>
+                                                </tr>
+                                                <tr>
+                                                    <td><strong>Nama User:</strong></td>
+                                                    <td id="modal-user"></td>
+                                                </tr>
+                                                <tr>
+                                                    <td><strong>Email:</strong></td>
+                                                    <td id="modal-email"></td>
+                                                </tr>
+                                                <tr>
+                                                    <td><strong>Instansi:</strong></td>
+                                                    <td id="modal-instansi"></td>
+                                                </tr>
+                                            </table>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <table class="table table-sm table-borderless">
+                                                <tr>
+                                                    <td width="40%"><strong>Ruangan:</strong></td>
+                                                    <td id="modal-ruangan"></td>
+                                                </tr>
+                                                <tr>
+                                                    <td><strong>Lokasi:</strong></td>
+                                                    <td id="modal-lokasi"></td>
+                                                </tr>
+                                                <tr>
+                                                    <td><strong>Kapasitas:</strong></td>
+                                                    <td id="modal-kapasitas"></td>
+                                                </tr>
+                                                <tr>
+                                                    <td><strong>Tanggal:</strong></td>
+                                                    <td id="modal-tanggal"></td>
+                                                </tr>
+                                                <tr>
+                                                    <td><strong>Waktu:</strong></td>
+                                                    <td id="modal-waktu"></td>
+                                                </tr>
+                                            </table>
+                                        </div>
+                                    </div>
+                                    <div id="modal-keperluan-wrap" class="mt-2" style="display:none;">
+                                        <small class="text-muted"><strong>Keperluan:</strong> <span
+                                                id="modal-keperluan"></span></small>
+                                    </div>
+                                </div>
+                            </div>
 
-                    {{-- Info Booking --}}
-                    <div class="card mb-3">
-                        <div class="card-header bg-light">
-                            <h6 class="mb-0"><i class="ti ti-info-circle"></i> Informasi Booking</h6>
+                            {{-- Hasil Verifikasi PIC --}}
+                            <div class="card mb-3">
+                                <div class="card-header bg-info text-white">
+                                    <h6 class="mb-0"><i class="ti ti-clipboard-check"></i> Hasil Verifikasi dari PIC</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row mb-3">
+                                        <div class="col-md-6">
+                                            <p class="mb-1"><strong>PIC yang Melakukan Pengecekan:</strong></p>
+                                            <p class="text-muted">
+                                                <i class="ti ti-user-check"></i> <span id="modal-pic-name"></span><br>
+                                                <small id="modal-pic-email"></small>
+                                            </p>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <p class="mb-1"><strong>Tanggal & Waktu Verifikasi:</strong></p>
+                                            <p class="text-muted">
+                                                <i class="ti ti-calendar"></i> <span id="modal-tanggal-verifikasi"></span>
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div class="row mb-3">
+                                        <div class="col-md-6">
+                                            <p class="mb-1"><strong>Kondisi Ruangan:</strong></p>
+                                            <h5><span class="badge" id="modal-kondisi-badge"></span></h5>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <p class="mb-1"><strong>Status Verifikasi:</strong></p>
+                                            <h5><span class="badge" id="modal-status-badge"></span></h5>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <p class="mb-1"><strong>Catatan dari PIC:</strong></p>
+                                        <div class="p-3 bg-light border rounded">
+                                            <i class="ti ti-message me-2 text-primary"></i>
+                                            <span class="text-dark" id="modal-catatan"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {{-- Form Tindakan Admin --}}
+                            <div class="card border-warning">
+                                <div class="card-header bg-warning bg-opacity-10">
+                                    <h6 class="mb-0"><i class="ti ti-edit"></i> Tindakan Admin</h6>
+                                </div>
+                                <div class="card-body">
+                                    <form id="formTindakanBooking" method="POST">
+                                        @csrf
+                                        @method('PUT')
+
+                                        <div class="mb-3">
+                                            <label class="form-label">Status Verifikasi <span class="text-danger">*</span></label>
+                                            <select name="status_verifikasi" id="modal-status-select" class="form-select"
+                                                required>
+                                                <option value="">Pilih Status</option>
+                                                <option value="diterima">✅ Diterima (Tidak ada masalah)</option>
+                                                <option value="perlu_tindakan">⚡ Perlu Tindakan Lanjut</option>
+                                            </select>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label class="form-label">Tindakan Lanjut <span class="text-danger">*</span></label>
+                                            <textarea name="tindakan_admin" id="modal-tindakan-input" class="form-control" rows="4"
+                                                placeholder="Contoh: Tagih biaya pembersihan Rp 500.000 ke user …" required></textarea>
+                                            <small class="text-muted">
+                                                💡 Jelaskan tindakan yang akan diambil untuk menindaklanjuti hasil verifikasi dari
+                                                PIC.
+                                            </small>
+                                        </div>
+
+                                        <div class="alert alert-info" id="modal-tindakan-sebelumnya" style="display:none;">
+                                            <strong><i class="ti ti-info-circle"></i> Tindakan Sebelumnya:</strong><br>
+                                            <span id="modal-tindakan-text"></span>
+                                        </div>
+
+                                        <div class="d-grid">
+                                            <button type="submit" class="btn btn-primary">
+                                                <i class="ti ti-device-floppy"></i> Simpan Tindakan
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
                         </div>
-                        <div class="card-body">
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <table class="table table-sm table-borderless">
-                                        <tr>
-                                            <td width="40%"><strong>Kode Booking:</strong></td>
-                                            <td><span class="badge bg-info" id="modal-kode"></span></td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>Nama User:</strong></td>
-                                            <td id="modal-user"></td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>Email:</strong></td>
-                                            <td id="modal-email"></td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>Instansi:</strong></td>
-                                            <td id="modal-instansi"></td>
-                                        </tr>
-                                    </table>
-                                </div>
-                                <div class="col-md-6">
-                                    <table class="table table-sm table-borderless">
-                                        <tr>
-                                            <td width="40%"><strong>Ruangan:</strong></td>
-                                            <td id="modal-ruangan"></td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>Lokasi:</strong></td>
-                                            <td id="modal-lokasi"></td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>Kapasitas:</strong></td>
-                                            <td id="modal-kapasitas"></td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>Tanggal:</strong></td>
-                                            <td id="modal-tanggal"></td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>Waktu:</strong></td>
-                                            <td id="modal-waktu"></td>
-                                        </tr>
-                                    </table>
-                                </div>
-                            </div>
-                            <div id="modal-keperluan-wrap" class="mt-2" style="display:none;">
-                                <small class="text-muted"><strong>Keperluan:</strong> <span
-                                        id="modal-keperluan"></span></small>
-                            </div>
-                        </div>
-                    </div>
 
-                    {{-- Hasil Verifikasi PIC --}}
-                    <div class="card mb-3">
-                        <div class="card-header bg-info text-white">
-                            <h6 class="mb-0"><i class="ti ti-clipboard-check"></i> Hasil Verifikasi dari PIC</h6>
-                        </div>
-                        <div class="card-body">
-                            <div class="row mb-3">
-                                <div class="col-md-6">
-                                    <p class="mb-1"><strong>PIC yang Melakukan Pengecekan:</strong></p>
-                                    <p class="text-muted">
-                                        <i class="ti ti-user-check"></i> <span id="modal-pic-name"></span><br>
-                                        <small id="modal-pic-email"></small>
-                                    </p>
+                        <!-- Right Column: Photos -->
+                        <div class="col-lg-4">
+                            <div class="card" id="modal-foto-section">
+                                <div class="card-header bg-info text-white">
+                                    <h6 class="mb-0">
+                                        <i class="ti ti-photo"></i> Foto Bukti 
+                                        <span class="badge bg-white text-info" id="modal-photo-count"></span>
+                                    </h6>
                                 </div>
-                                <div class="col-md-6">
-                                    <p class="mb-1"><strong>Tanggal & Waktu Verifikasi:</strong></p>
-                                    <p class="text-muted">
-                                        <i class="ti ti-calendar"></i> <span id="modal-tanggal-verifikasi"></span>
-                                    </p>
-                                </div>
-                            </div>
+                                <div class="card-body p-2">
+                                    <!-- Carousel Container -->
+                                    <div id="modalPhotoCarousel" class="carousel slide modal-photo-carousel" data-bs-ride="false">
+                                        <div class="carousel-inner" id="modalCarouselInner"></div>
+                                        
+                                        <button class="carousel-control-prev" type="button" data-bs-target="#modalPhotoCarousel" data-bs-slide="prev">
+                                            <span class="carousel-control-prev-icon"></span>
+                                        </button>
+                                        <button class="carousel-control-next" type="button" data-bs-target="#modalPhotoCarousel" data-bs-slide="next">
+                                            <span class="carousel-control-next-icon"></span>
+                                        </button>
+                                    </div>
 
-                            <div class="row mb-3">
-                                <div class="col-md-6">
-                                    <p class="mb-1"><strong>Kondisi Ruangan:</strong></p>
-                                    <h5><span class="badge" id="modal-kondisi-badge"></span></h5>
-                                </div>
-                                <div class="col-md-6">
-                                    <p class="mb-1"><strong>Status Verifikasi:</strong></p>
-                                    <h5><span class="badge" id="modal-status-badge"></span></h5>
-                                </div>
-                            </div>
+                                    <!-- Thumbnails -->
+                                    <div class="modal-photo-thumbnails" id="modalPhotoThumbnails"></div>
 
-                            <div class="mb-3">
-                                <p class="mb-1"><strong>Catatan dari PIC:</strong></p>
-                                <div class="alert alert-light">
-                                    <i class="ti ti-message"></i> <span id="modal-catatan"></span>
-                                </div>
-                            </div>
-
-                            <div class="mb-3" id="modal-foto-container" style="display:none;">
-                                <p class="mb-1"><strong>Foto Bukti:</strong></p>
-                                <img id="modal-foto" class="img-fluid rounded border" alt="Foto Bukti"
-                                    style="max-height:300px;">
-                            </div>
-                        </div>
-                    </div>
-
-                    {{-- Form Tindakan Admin --}}
-                    <div class="card border-warning">
-                        <div class="card-header bg-warning bg-opacity-10">
-                            <h6 class="mb-0"><i class="ti ti-edit"></i> Tindakan Admin</h6>
-                        </div>
-                        <div class="card-body">
-                            <form id="formTindakanBooking" method="POST">
-                                @csrf
-                                @method('PUT')
-
-                                <div class="mb-3">
-                                    <label class="form-label">Status Verifikasi <span class="text-danger">*</span></label>
-                                    <select name="status_verifikasi" id="modal-status-select" class="form-select"
-                                        required>
-                                        <option value="">Pilih Status</option>
-                                        <option value="diterima">✅ Diterima (Tidak ada masalah)</option>
-                                        <option value="perlu_tindakan">⚡ Perlu Tindakan Lanjut</option>
-                                    </select>
-                                </div>
-
-                                <div class="mb-3">
-                                    <label class="form-label">Tindakan Lanjut <span class="text-danger">*</span></label>
-                                    <textarea name="tindakan_admin" id="modal-tindakan-input" class="form-control" rows="4"
-                                        placeholder="Contoh: Tagih biaya pembersihan Rp 500.000 ke user …" required></textarea>
-                                    <small class="text-muted">
-                                        💡 Jelaskan tindakan yang akan diambil untuk menindaklanjuti hasil verifikasi dari
-                                        PIC.
+                                    <small class="text-muted d-block mt-2 text-center">
+                                        <i class="ti ti-info-circle"></i> Klik thumbnail untuk navigasi
                                     </small>
                                 </div>
-
-                                <div class="alert alert-info" id="modal-tindakan-sebelumnya" style="display:none;">
-                                    <strong><i class="ti ti-info-circle"></i> Tindakan Sebelumnya:</strong><br>
-                                    <span id="modal-tindakan-text"></span>
-                                </div>
-
-                                <div class="d-grid">
-                                    <button type="submit" class="btn btn-primary">
-                                        <i class="ti ti-device-floppy"></i> Simpan Tindakan
-                                    </button>
-                                </div>
-                            </form>
+                            </div>
                         </div>
                     </div>
-
-                </div><!-- /modal-body -->
+                </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                         <i class="ti ti-x"></i> Tutup
@@ -467,7 +550,6 @@
                 $('#modal-tanggal').text(btn.data('tanggal'));
                 $('#modal-waktu').text(btn.data('waktu-mulai') + ' – ' + btn.data('waktu-selesai'));
 
-
                 // Keperluan (optional)
                 if (btn.data('keperluan')) {
                     $('#modal-keperluan').text(btn.data('keperluan'));
@@ -480,8 +562,15 @@
                 $('#modal-pic-name').text(btn.data('pic-name'));
                 $('#modal-pic-email').text(btn.data('pic-email'));
                 $('#modal-tanggal-verifikasi').text(btn.data('tanggal-verifikasi'));
-                const catatan = btn.data('catatan') || 'Tidak ada catatan';
-                $('#modal-catatan').text(catatan);
+                
+                // Catatan
+                const catatan = btn.data('catatan');
+                if (catatan && catatan.trim() !== '') {
+                    $('#modal-catatan').text(catatan);
+                } else {
+                    $('#modal-catatan').text('Tidak ada catatan');
+                }
+                
                 // Kondisi badge
                 $('#modal-kondisi-badge')
                     .removeClass()
@@ -494,15 +583,60 @@
                     .addClass('badge bg-' + btn.data('status-badge'))
                     .text(btn.data('status-label'));
 
-                // Catatan
-                $('#modal-catatan').text(btn.data('catatan') || '–');
+                // ── Handle Multiple Photos ──
+                const fotosData = btn.data('fotos');
+                const totalPhotos = btn.data('total-photos');
 
-                // Foto
-                if (btn.data('foto')) {
-                    $('#modal-foto').attr('src', btn.data('foto'));
-                    $('#modal-foto-container').show();
+                if (fotosData && Array.isArray(fotosData) && fotosData.length > 0) {
+                    $('#modal-photo-count').text(totalPhotos);
+                    $('#modal-foto-section').show();
+
+                    // Clear previous content
+                    $('#modalCarouselInner').empty();
+                    $('#modalPhotoThumbnails').empty();
+
+                    // Build carousel items
+                    fotosData.forEach((url, index) => {
+                        const activeClass = index === 0 ? 'active' : '';
+                        
+                        // Carousel item
+                        $('#modalCarouselInner').append(`
+                            <div class="carousel-item ${activeClass}">
+                                <img src="${url}" alt="Foto ${index + 1}">
+                                <div class="carousel-caption" style="background: rgba(0,0,0,0.6); border-radius: 4px; padding: 5px 10px;">
+                                    <p class="mb-0">Foto ${index + 1} dari ${totalPhotos}</p>
+                                </div>
+                            </div>
+                        `);
+
+                        // Thumbnail
+                        const thumbActiveClass = index === 0 ? 'active' : '';
+                        $('#modalPhotoThumbnails').append(`
+                            <div class="modal-photo-thumbnail ${thumbActiveClass}" data-index="${index}">
+                                <img src="${url}" alt="Thumb ${index + 1}">
+                            </div>
+                        `);
+                    });
+
+                    // Thumbnail click handler
+                    $('.modal-photo-thumbnail').on('click', function() {
+                        const index = $(this).data('index');
+                        const carousel = new bootstrap.Carousel(document.getElementById('modalPhotoCarousel'));
+                        carousel.to(index);
+                        
+                        // Update active thumbnail
+                        $('.modal-photo-thumbnail').removeClass('active');
+                        $(this).addClass('active');
+                    });
+
+                    // Update active thumbnail on carousel slide
+                    $('#modalPhotoCarousel').on('slide.bs.carousel', function (e) {
+                        $('.modal-photo-thumbnail').removeClass('active');
+                        $(`.modal-photo-thumbnail[data-index="${e.to}"]`).addClass('active');
+                    });
+
                 } else {
-                    $('#modal-foto-container').hide();
+                    $('#modal-foto-section').hide();
                 }
 
                 // ── Form Tindakan ──
@@ -518,7 +652,7 @@
                     $('#modal-tindakan-sebelumnya').hide();
                 }
 
-                // Show
+                // Show modal
                 $('#detailModalBooking').modal('show');
             });
         });

@@ -5,18 +5,18 @@ use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class VerifikasiBooking extends Model
+class VerifikasiPengembalian extends Model
 {
     use HasFactory;
 
-    protected $table = 'verifikasi_booking';
+    protected $table = 'verifikasi_pengembalian';
 
     protected $fillable = [
-        'booking_id',
+        'pengembalian_barang_id',
         'pic_id',
-        'kondisi_ruangan',
+        'kondisi',
         'catatan_pic',
-        'foto_bukti', // Sekarang support array
+        'foto_bukti',
         'status_verifikasi',
         'tindakan_admin',
         'tanggal_verifikasi',
@@ -26,53 +26,71 @@ class VerifikasiBooking extends Model
     protected $casts = [
         'tanggal_verifikasi'   => 'datetime',
         'is_reported_to_admin' => 'boolean',
-        'foto_bukti'           => 'array', // 🔥 Cast ke array
+        'foto_bukti'           => 'array', // Cast ke array untuk multiple photos
     ];
 
-    // ================= RELATIONSHIPS =================
-
-    public function booking()
+    // RELATIONSHIPS 
+    /**
+     * Relasi ke PengembalianBarang
+     */
+    public function pengembalianBarang()
     {
-        return $this->belongsTo(Booking::class, 'booking_id');
+        return $this->belongsTo(PengembalianBarang::class, 'pengembalian_barang_id');
     }
 
+    /**
+     * Relasi ke PIC (User)
+     */
     public function pic()
     {
         return $this->belongsTo(User::class, 'pic_id');
     }
 
-    // ================= ACCESSORS =================
-
+    // ACCESSORS 
+    /**
+     * Get kondisi label dengan emoji
+     */
     public function getKondisiLabelAttribute(): string
     {
-        return match ($this->kondisi_ruangan) {
-            'baik'  => '✅ Baik & Bersih',
-            'kotor' => '🧹 Kotor / Perlu Dibersihkan',
-            'rusak' => '🔴 Rusak / Butuh Perbaikan',
-            default => 'Unknown',
+        return match ($this->kondisi) {
+            'baik'         => '✅ Baik',
+            'rusak_ringan' => '⚠️ Rusak Ringan',
+            'rusak_berat'  => '🔴 Rusak Berat',
+            'hilang'       => '❌ Hilang',
+            default        => 'Unknown',
         };
     }
 
+    /**
+     * Get kondisi badge class untuk UI
+     */
     public function getKondisiBadgeAttribute(): string
     {
-        return match ($this->kondisi_ruangan) {
-            'baik'  => 'success',
-            'kotor' => 'warning',
-            'rusak' => 'danger',
-            default => 'secondary',
+        return match ($this->kondisi) {
+            'baik'         => 'success',
+            'rusak_ringan' => 'warning',
+            'rusak_berat'  => 'danger',
+            'hilang'       => 'dark',
+            default        => 'secondary',
         };
     }
 
+    /**
+     * Get status label
+     */
     public function getStatusLabelAttribute(): string
     {
         return match ($this->status_verifikasi) {
-            'pending'        => '⏳ Menunggu Tindakan Admin',
-            'diterima'       => '✅ Diterima',
-            'perlu_tindakan' => '🔴 Perlu Tindakan Lanjut',
+            'pending'        => 'Menunggu Tindakan Admin',
+            'diterima'       => 'Diterima',
+            'perlu_tindakan' => 'Perlu Tindakan Lanjut',
             default          => 'Unknown',
         };
     }
 
+    /**
+     * Get status badge class
+     */
     public function getStatusBadgeAttribute(): string
     {
         return match ($this->status_verifikasi) {
@@ -83,13 +101,8 @@ class VerifikasiBooking extends Model
         };
     }
 
-    public function getTanggalVerifikasiFormatAttribute(): string
-    {
-        return Carbon::parse($this->tanggal_verifikasi)->translatedFormat('d F Y, H:i') . ' WIB';
-    }
-
     /**
-     * 🔥 NEW: Accessor untuk foto bukti URL array (multiple photos)
+     * Get foto bukti URL array (multiple photos)
      */
     public function getFotoBuktiUrlsAttribute(): array
     {
@@ -109,7 +122,7 @@ class VerifikasiBooking extends Model
     }
 
     /**
-     * 🔥 UPDATED: Accessor untuk foto bukti URL (first photo only - backward compatibility)
+     * Get foto bukti URL (first photo only - backward compatibility)
      */
     public function getFotoBuktiUrlAttribute(): ?string
     {
@@ -137,39 +150,71 @@ class VerifikasiBooking extends Model
         return is_array($this->foto_bukti) ? count($this->foto_bukti) : 1;
     }
 
-    // ================= HELPER METHODS =================
+    /**
+     * Format tanggal verifikasi
+     */
+    public function getTanggalVerifikasiFormatAttribute(): string
+    {
+        return Carbon::parse($this->tanggal_verifikasi)->translatedFormat('d F Y, H:i') . ' WIB';
+    }
 
+    // HELPER METHODS 
+    /**
+     * Check apakah perlu tindakan admin segera
+     */
     public function needsAdminAction(): bool
     {
-        return $this->kondisi_ruangan === 'rusak' &&
+        return in_array($this->kondisi, ['rusak_berat', 'hilang']) &&
         $this->status_verifikasi === 'pending';
     }
 
+    /**
+     * Check apakah ada masalah dengan barang
+     */
     public function isProblematic(): bool
     {
-        return in_array($this->kondisi_ruangan, ['kotor', 'rusak']);
+        return in_array($this->kondisi, ['rusak_ringan', 'rusak_berat', 'hilang']);
     }
 
+    /**
+     * Check apakah admin sudah memberi response
+     */
     public function hasAdminResponse(): bool
     {
         return ! empty($this->tindakan_admin);
     }
 
-    // ================= SCOPES =================
-
+    // SCOPES 
+    /**
+     * Scope untuk verifikasi yang perlu tindakan admin
+     */
     public function scopeNeedsAction($query)
     {
-        return $query->where('kondisi_ruangan', 'rusak')
+        return $query->whereIn('kondisi', ['rusak_berat', 'hilang'])
             ->where('status_verifikasi', '!=', 'diterima');
     }
 
+    /**
+     * Scope untuk verifikasi bermasalah
+     */
     public function scopeProblematic($query)
     {
-        return $query->whereIn('kondisi_ruangan', ['kotor', 'rusak']);
+        return $query->whereIn('kondisi', ['rusak_ringan', 'rusak_berat', 'hilang']);
     }
 
+    /**
+     * Scope berdasarkan PIC
+     */
     public function scopeByPic($query, $picId)
     {
         return $query->where('pic_id', $picId);
+    }
+
+    /**
+     * Scope berdasarkan status verifikasi
+     */
+    public function scopeByStatus($query, $status)
+    {
+        return $query->where('status_verifikasi', $status);
     }
 }

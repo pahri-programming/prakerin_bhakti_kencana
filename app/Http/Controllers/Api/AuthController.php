@@ -16,10 +16,8 @@ class AuthController extends Controller
      */
     public function register(Request $request)
     {
-        // 🔍 DEBUG: Log semua data yang masuk
         Log::info('Register Request Data:', $request->all());
 
-        // Validasi input - PALING SIMPLE DULU
         $validator = Validator::make($request->all(), [
             'name'     => 'required|string|max:255',
             'email'    => 'required|string|email|max:255|unique:users,email',
@@ -27,11 +25,8 @@ class AuthController extends Controller
             'instansi' => 'nullable|string|max:255',
         ]);
 
-        // Jika validasi gagal
         if ($validator->fails()) {
-            // 🔍 DEBUG: Log error validasi
             Log::error('Validation Failed:', $validator->errors()->toArray());
-
             return response()->json([
                 'success' => false,
                 'message' => 'Validation error',
@@ -40,23 +35,19 @@ class AuthController extends Controller
         }
 
         try {
-            // Buat user baru
             $user = User::create([
                 'name'     => $request->name,
                 'email'    => $request->email,
                 'password' => Hash::make($request->password),
                 'instansi' => $request->instansi,
-                'role'     => 'user', // Default role
+                'role'     => 'user',
                 'isAdmin'  => false,
             ]);
 
-            // 🔍 DEBUG: Log user yang berhasil dibuat
             Log::info('User Created:', ['id' => $user->id, 'email' => $user->email]);
 
-            // Buat token untuk user
             $token = $user->createToken('auth_token')->plainTextToken;
 
-            // Response sukses
             return response()->json([
                 'success' => true,
                 'message' => 'User registered successfully',
@@ -68,7 +59,6 @@ class AuthController extends Controller
             ], 201);
 
         } catch (\Exception $e) {
-            // 🔍 DEBUG: Log error saat create user
             Log::error('Register Error:', [
                 'message' => $e->getMessage(),
                 'file'    => $e->getFile(),
@@ -88,13 +78,11 @@ class AuthController extends Controller
      */
     public function login(Request $request)
     {
-        // Validasi input
         $validator = Validator::make($request->all(), [
             'email'    => 'required|email',
             'password' => 'required',
         ]);
 
-        // Jika validasi gagal
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
@@ -103,7 +91,6 @@ class AuthController extends Controller
             ], 422);
         }
 
-        // Cek email & password
         if (! Auth::attempt($request->only('email', 'password'))) {
             return response()->json([
                 'success' => false,
@@ -111,18 +98,20 @@ class AuthController extends Controller
             ], 401);
         }
 
-        // Ambil data user
-        $user = User::where('email', $request->email)->firstOrFail();
-
-        // Buat token
+        $user  = User::where('email', $request->email)->firstOrFail();
         $token = $user->createToken('auth_token')->plainTextToken;
 
-        // Response sukses
         return response()->json([
             'success' => true,
             'message' => 'Login successful',
             'data'    => [
-                'user'         => $user,
+                'user'         => [
+                    'id'       => $user->id,
+                    'name'     => $user->name,
+                    'email'    => $user->email,
+                    'instansi' => $user->instansi,
+                    'role'     => $user->role,
+                ],
                 'access_token' => $token,
                 'token_type'   => 'Bearer',
             ],
@@ -134,12 +123,31 @@ class AuthController extends Controller
      */
     public function logout(Request $request)
     {
-        // Hapus token yang sedang dipakai
         $request->user()->currentAccessToken()->delete();
 
         return response()->json([
             'success' => true,
             'message' => 'Logged out successfully',
+        ], 200);
+    }
+
+    /**
+     * ME - Ambil data user yang sedang login
+     * Dipakai Flutter untuk tampilkan profil & cek role
+     */
+    public function me(Request $request)
+    {
+        $user = $request->user();
+
+        return response()->json([
+            'success' => true,
+            'data'    => [
+                'id'       => $user->id,
+                'name'     => $user->name,
+                'email'    => $user->email,
+                'instansi' => $user->instansi,
+                'role'     => $user->role,
+            ],
         ], 200);
     }
 }

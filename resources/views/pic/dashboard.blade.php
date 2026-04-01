@@ -64,11 +64,6 @@
         padding-bottom: 0.5rem;
         border-bottom: 3px solid #ff9800;
     }
-
-    .barang-list {
-        font-size: 0.9rem;
-        color: #6c757d;
-    }
 </style>
 @endpush
 
@@ -97,44 +92,12 @@
 
     <!-- Statistics Cards -->
     <div class="row mb-4">
-        <!-- Peminjaman Stats -->
-        <div class="col-md-6 col-lg-2 mb-3">
-            <div class="stats-card bg-white border-start-warning">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <p class="text-muted mb-1 small">Peminjaman Perlu Verifikasi</p>
-                        <h2 class="fw-bold mb-0 text-warning">{{ $stats['peminjaman_perlu_verifikasi'] }}</h2>
-                    </div>
-                    <div class="stats-icon text-warning">
-                        <i class="ti ti-package"></i>
-                    </div>
-                </div>
-                <a href="{{ route('pic.verifikasi-peminjaman.index') }}" class="btn btn-sm btn-warning mt-3 w-100">
-                    <i class="ti ti-arrow-right"></i> Lihat
-                </a>
-            </div>
-        </div>
-
-        <div class="col-md-6 col-lg-2 mb-3">
-            <div class="stats-card bg-white border-start-success">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <p class="text-muted mb-1 small">Peminjaman Sudah Diverifikasi</p>
-                        <h2 class="fw-bold mb-0 text-success">{{ $stats['peminjaman_sudah_verifikasi'] }}</h2>
-                    </div>
-                    <div class="stats-icon text-success">
-                        <i class="ti ti-check"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-
         <!-- Booking Stats -->
-        <div class="col-md-6 col-lg-2 mb-3">
+        <div class="col-md-6 col-lg-3 mb-3">
             <div class="stats-card bg-white border-start-primary">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <p class="text-muted mb-1 small">Booking Perlu Verifikasi</p>
+                        <p class="text-muted mb-1">Booking Perlu Verifikasi</p>
                         <h2 class="fw-bold mb-0 text-primary">{{ $stats['booking_perlu_verifikasi'] }}</h2>
                     </div>
                     <div class="stats-icon text-primary">
@@ -142,16 +105,16 @@
                     </div>
                 </div>
                 <a href="{{ route('pic.verifikasi-booking.index') }}" class="btn btn-sm btn-primary mt-3 w-100">
-                    <i class="ti ti-arrow-right"></i> Lihat
+                    <i class="ti ti-arrow-right"></i> Lihat Detail
                 </a>
             </div>
         </div>
 
-        <div class="col-md-6 col-lg-2 mb-3">
+        <div class="col-md-6 col-lg-3 mb-3">
             <div class="stats-card bg-white border-start-info">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <p class="text-muted mb-1 small">Booking Sudah Diverifikasi</p>
+                        <p class="text-muted mb-1">Booking Sudah Diverifikasi</p>
                         <h2 class="fw-bold mb-0 text-info">{{ $stats['booking_sudah_verifikasi'] }}</h2>
                     </div>
                     <div class="stats-icon text-info">
@@ -161,12 +124,12 @@
             </div>
         </div>
 
-        <!-- Pengembalian Stats (NEW!) -->
-        <div class="col-md-6 col-lg-2 mb-3">
+        <!-- Pengembalian Stats -->
+        <div class="col-md-6 col-lg-3 mb-3">
             <div class="stats-card bg-white border-start-danger">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <p class="text-muted mb-1 small">Pengembalian Perlu Verifikasi</p>
+                        <p class="text-muted mb-1">Pengembalian Perlu Verifikasi</p>
                         <h2 class="fw-bold mb-0 text-danger">{{ $stats['pengembalian_perlu_verifikasi'] }}</h2>
                     </div>
                     <div class="stats-icon text-danger">
@@ -174,19 +137,19 @@
                     </div>
                 </div>
                 <a href="{{ route('pic.verifikasi-pengembalian.index') }}" class="btn btn-sm btn-danger mt-3 w-100">
-                    <i class="ti ti-arrow-right"></i> Lihat
+                    <i class="ti ti-arrow-right"></i> Lihat Detail
                 </a>
             </div>
         </div>
 
-        <div class="col-md-6 col-lg-2 mb-3">
-            <div class="stats-card bg-white border-start-secondary">
+        <div class="col-md-6 col-lg-3 mb-3">
+            <div class="stats-card bg-white border-start-success">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <p class="text-muted mb-1 small">Pengembalian Sudah Diverifikasi</p>
-                        <h2 class="fw-bold mb-0 text-secondary">{{ $stats['pengembalian_sudah_verifikasi'] }}</h2>
+                        <p class="text-muted mb-1">Pengembalian Sudah Diverifikasi</p>
+                        <h2 class="fw-bold mb-0 text-success">{{ $stats['pengembalian_sudah_verifikasi'] }}</h2>
                     </div>
-                    <div class="stats-icon text-secondary">
+                    <div class="stats-icon text-success">
                         <i class="ti ti-check"></i>
                     </div>
                 </div>
@@ -195,7 +158,7 @@
     </div>
 
     <!-- Alert untuk Item Bermasalah -->
-    @if($stats['peminjaman_bermasalah'] > 0 || $stats['booking_bermasalah'] > 0 || $stats['pengembalian_bermasalah'] > 0)
+    @if($stats['booking_bermasalah'] > 0 || $stats['pengembalian_bermasalah'] > 0)
     <div class="row mb-4">
         <div class="col-12">
             <div class="alert alert-danger d-flex align-items-center">
@@ -203,7 +166,6 @@
                 <div>
                     <h5 class="mb-1">⚠️ Perhatian: Ada Item Bermasalah!</h5>
                     <p class="mb-0">
-                        <strong>{{ $stats['peminjaman_bermasalah'] }}</strong> peminjaman barang bermasalah &bull; 
                         <strong>{{ $stats['booking_bermasalah'] }}</strong> booking ruangan bermasalah &bull;
                         <strong>{{ $stats['pengembalian_bermasalah'] }}</strong> pengembalian barang bermasalah
                     </p>
@@ -214,66 +176,14 @@
     @endif
 
     <div class="row">
-        <!-- Pending Verifikasi Peminjaman -->
-        <div class="col-lg-4 mb-4">
-            <div class="recent-card">
-                <h5 class="section-title">
-                    <i class="ti ti-package"></i> Peminjaman Perlu Verifikasi
-                </h5>
-
-                @forelse($pendingPeminjaman->take(5) as $item)
-                <div class="recent-item">
-                    <div class="d-flex justify-content-between align-items-start mb-2">
-                        <div class="flex-grow-1">
-                            <h6 class="mb-1 fw-bold">{{ $item->barang_summary }}</h6>
-                            <small class="text-muted">
-                                <i class="ti ti-user"></i> {{ $item->user->name }}
-                            </small>
-                            <br>
-                            <small class="text-muted">
-                                <i class="ti ti-building"></i> {{ $item->instansi ?? $item->user->instansi }}
-                            </small>
-                        </div>
-                        <span class="badge-custom pending-badge">
-                            <i class="ti ti-clock"></i> Pending
-                        </span>
-                    </div>
-                    <div class="d-flex justify-content-between align-items-center">
-                        <small class="text-muted">
-                            <i class="ti ti-calendar"></i> 
-                            {{ \Carbon\Carbon::parse($item->tanggal_kembali)->format('d/m/Y') }}
-                        </small>
-                        <a href="{{ route('pic.verifikasi-peminjaman.create', $item->id) }}" 
-                           class="btn btn-sm btn-warning">
-                            <i class="ti ti-check"></i> Verifikasi
-                        </a>
-                    </div>
-                </div>
-                @empty
-                <div class="text-center text-muted py-4">
-                    <i class="ti ti-check-circle fs-1"></i>
-                    <p class="mb-0 mt-2">Tidak ada peminjaman yang perlu diverifikasi</p>
-                </div>
-                @endforelse
-
-                @if($pendingPeminjaman->count() > 5)
-                <div class="text-center mt-3">
-                    <a href="{{ route('pic.verifikasi-peminjaman.index') }}" class="btn btn-outline-warning btn-sm">
-                        Lihat Semua <i class="ti ti-arrow-right"></i>
-                    </a>
-                </div>
-                @endif
-            </div>
-        </div>
-
         <!-- Pending Verifikasi Booking -->
-        <div class="col-lg-4 mb-4">
+        <div class="col-lg-6 mb-4">
             <div class="recent-card">
                 <h5 class="section-title">
                     <i class="ti ti-door"></i> Booking Perlu Verifikasi
                 </h5>
 
-                @forelse($pendingBooking->take(5) as $item)
+                @forelse($pendingBooking as $item)
                 <div class="recent-item">
                     <div class="d-flex justify-content-between align-items-start mb-2">
                         <div class="flex-grow-1">
@@ -318,14 +228,14 @@
             </div>
         </div>
 
-        <!-- Pending Verifikasi Pengembalian (NEW!) -->
-        <div class="col-lg-4 mb-4">
+        <!-- Pending Verifikasi Pengembalian -->
+        <div class="col-lg-6 mb-4">
             <div class="recent-card">
                 <h5 class="section-title">
                     <i class="ti ti-rotate-clockwise"></i> Pengembalian Perlu Verifikasi
                 </h5>
 
-                @forelse($pendingPengembalian->take(5) as $item)
+                @forelse($pendingPengembalian as $item)
                 <div class="recent-item">
                     <div class="d-flex justify-content-between align-items-start mb-2">
                         <div class="flex-grow-1">
@@ -375,41 +285,8 @@
 
     <!-- Recent Verifikasi -->
     <div class="row">
-        <!-- Recent Verifikasi Peminjaman -->
-        <div class="col-lg-4 mb-4">
-            <div class="recent-card">
-                <h5 class="section-title">
-                    <i class="ti ti-history"></i> Verifikasi Peminjaman Terbaru
-                </h5>
-
-                @forelse($recentVerifikasiPeminjaman as $verif)
-                <div class="recent-item border-start-{{ $verif->kondisi == 'baik' ? 'success' : 'danger' }}">
-                    <div class="d-flex justify-content-between align-items-start mb-2">
-                        <div>
-                            <h6 class="mb-1 fw-bold">{{ $verif->peminjaman->barang_summary }}</h6>
-                            <small class="text-muted">
-                                {{ $verif->peminjaman->user->name }}
-                            </small>
-                        </div>
-                        <span class="badge bg-{{ $verif->kondisi_badge }}">
-                            {!! $verif->kondisi_label !!}
-                        </span>
-                    </div>
-                    <small class="text-muted">
-                        <i class="ti ti-clock"></i> {{ $verif->tanggal_verifikasi_format }}
-                    </small>
-                </div>
-                @empty
-                <div class="text-center text-muted py-4">
-                    <i class="ti ti-inbox fs-1"></i>
-                    <p class="mb-0 mt-2">Belum ada riwayat verifikasi</p>
-                </div>
-                @endforelse
-            </div>
-        </div>
-
         <!-- Recent Verifikasi Booking -->
-        <div class="col-lg-4 mb-4">
+        <div class="col-lg-6 mb-4">
             <div class="recent-card">
                 <h5 class="section-title">
                     <i class="ti ti-history"></i> Verifikasi Booking Terbaru
@@ -424,8 +301,8 @@
                                 {{ $verif->booking->user->name }}
                             </small>
                         </div>
-                        <span class="badge bg-{{ $verif->kondisi_badge }}">
-                            {!! $verif->kondisi_label !!}
+                        <span class="badge bg-{{ $verif->kondisi_ruangan == 'baik' ? 'success' : 'danger' }}">
+                            {{ ucfirst(str_replace('_', ' ', $verif->kondisi_ruangan)) }}
                         </span>
                     </div>
                     <small class="text-muted">
@@ -441,8 +318,8 @@
             </div>
         </div>
 
-        <!-- Recent Verifikasi Pengembalian (NEW!) -->
-        <div class="col-lg-4 mb-4">
+        <!-- Recent Verifikasi Pengembalian -->
+        <div class="col-lg-6 mb-4">
             <div class="recent-card">
                 <h5 class="section-title">
                     <i class="ti ti-history"></i> Verifikasi Pengembalian Terbaru
@@ -457,9 +334,15 @@
                                 {{ $verif->pengembalianBarang->peminjamanBarang->nama_peminjam ?? $verif->pengembalianBarang->peminjamanBarang->user->name }}
                             </small>
                         </div>
-                        <span class="badge bg-{{ $verif->kondisi_badge }}">
-                            {!! $verif->kondisi_label !!}
-                        </span>
+                        @if($verif->kondisi == 'baik')
+                            <span class="badge bg-success">Baik</span>
+                        @elseif($verif->kondisi == 'rusak_ringan')
+                            <span class="badge bg-warning">Rusak Ringan</span>
+                        @elseif($verif->kondisi == 'rusak_berat')
+                            <span class="badge bg-danger">Rusak Berat</span>
+                        @else
+                            <span class="badge bg-dark">Hilang</span>
+                        @endif
                     </div>
                     <small class="text-muted">
                         <i class="ti ti-clock"></i> {{ $verif->tanggal_verifikasi_format }}

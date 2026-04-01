@@ -41,6 +41,11 @@ class VerifikasiBooking extends Model
         return $this->belongsTo(User::class, 'pic_id');
     }
 
+    public function denda()
+    {
+        return $this->hasOne(DendaBooking::class, 'verifikasi_booking_id');
+    }
+
     // ================= ACCESSORS =================
 
     public function getKondisiLabelAttribute(): string

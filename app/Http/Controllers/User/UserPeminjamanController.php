@@ -2,107 +2,162 @@
 namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
-use App\Models\Barang;
+use App\Models\BarangRuangan;
+use App\Models\DetailPeminjamanBarang;
 use App\Models\PeminjamanBarang;
-use App\Services\AvailabilityService;
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class UserPeminjamanController extends Controller
 {
-    protected $avail;
-
-    public function __construct(AvailabilityService $avail)
+    /**
+     *
+     */
+    public function index()
     {
-        $this->avail = $avail;
+        $peminjamans = PeminjamanBarang::with([
+            'details.barangRuangan.barang',
+            'details.barangRuangan.ruangan',
+        ])
+            ->where('user_id', Auth::id())
+            ->latest()
+            ->get();
+
+        return view('user.peminjaman.index', compact('peminjamans'));
     }
 
-    //create peminjaman
+    /**
+     * FORM CREATE
+     */
     public function create()
     {
-        $barang = Barang::orderBy('nama', 'asc')->get();
-        return view('peminjaman_create', compact('barang'));
+        $barangRuangans = BarangRuangan::with(['barang', 'ruangan'])
+            ->where('status', 'tersedia')
+            ->where('qty', '>', 0)
+            ->orderBy('id', 'asc')
+            ->get();
+
+        $barangData = $barangRuangans->map(fn($br) => [
+            'id'           => $br->id,
+            'ruangan_id'   => $br->ruangan_id,
+            'ruangan_nama' => $br->ruangan->nama_ruangan ?? '-',
+            'barang_nama'  => $br->barang->nama ?? '-',
+            'qty'          => $br->qty,
+        ])->values();
+
+        return view('user.peminjaman.create', compact('barangRuangans','barangData'));
     }
 
+    /**
+     * STORE PEMINJAMAN (MULTI BARANG)
+     */
     public function store(Request $request)
     {
         $request->validate([
-            'barang_id'       => 'required|exists:barangs,id',
-            'jumlah'          => 'required|integer|min:1',
-            'tanggal_pinjam'  => 'required|date|after_or_equal:today',
-            'tanggal_kembali' => 'required|date|after_or_equal:tanggal_pinjam',
-            'waktu_mulai'     => 'required|date_format:H:i',
-            'waktu_selesai'   => 'required|date_format:H:i',
-            'keterangan'      => 'nullable|string|max:255',
+            'tanggal_pinjam'      => 'required|date',
+            'tanggal_kembali'     => 'required|date|after_or_equal:tanggal_pinjam',
+            'keterangan'          => 'nullable|string',
+
+            'barang_ruangan_id'   => 'required|array|min:1',
+            'barang_ruangan_id.*' => 'required|exists:barang_ruangans,id',
+
+            'jumlah'              => 'required|array|min:1',
+            'jumlah.*'            => 'required|integer|min:1',
         ]);
 
-        // parse
-        $tanggalPinjam  = $request->tanggal_pinjam;
-        $tanggalKembali = $request->tanggal_kembali;
-        $waktuMulai     = $request->waktu_mulai;
-        $waktuSelesai   = $request->waktu_selesai;
+        $detailBarangs = [];
 
-        $start = Carbon::parse("$tanggalPinjam $waktuMulai");
-        $end   = Carbon::parse("$tanggalKembali $waktuSelesai");
+        foreach ($request->barang_ruangan_id as $index => $barangRuanganId) {
+            $jumlah = $request->jumlah[$index];
 
-        // if start in past
-        if ($start->lt(now())) {
-            toast('Waktu mulai sudah lewat! Pilih waktu yang valid.', 'error');
-            return back()->withInput();
-        }
+            $barangRuangan = BarangRuangan::with(['barang', 'ruangan'])
+                ->findOrFail($barangRuanganId);
 
-        // if end <= start
-        if ($end->lte($start)) {
-            toast('Waktu selesai harus setelah waktu mulai.', 'error');
-            return back()->withInput();
-        }
-
-        // tambahan: kalau pinjam **hari ini**, waktu_mulai harus >= sekarang (plus tolerance)
-        if ($start->toDateString() === now()->toDateString()) {
-            // compare times (H:i)
-            $nowTime = now()->format('H:i');
-            if ($waktuMulai <= $nowTime) {
-                toast('Untuk peminjaman hari ini, waktu mulai harus lebih besar dari waktu sekarang.', 'error');
-                return back()->withInput();
+            // ❗ VALIDASI STATUS
+            if ($barangRuangan->status !== 'tersedia') {
+                return back()->withErrors([
+                    'barang' => "{$barangRuangan->barang->nama} sedang tidak tersedia",
+                ])->withInput();
             }
+
+            // ❗ VALIDASI STOK
+            if ($jumlah > $barangRuangan->qty) {
+                return back()->withErrors([
+                    'jumlah' => "Stok {$barangRuangan->barang->nama} tidak cukup. Sisa {$barangRuangan->qty}",
+                ])->withInput();
+            }
+
+            $detailBarangs[] = [
+                'barang_ruangan_id' => $barangRuanganId,
+                'jumlah'            => $jumlah,
+            ];
         }
 
-        $barang = Barang::findOrFail($request->barang_id);
+        DB::beginTransaction();
 
-        // check availability (MODE A: only approved/dipinjam considered)
-        $cek = $this->avail->check(
-            $barang->id,
-            $tanggalPinjam,
-            $tanggalKembali,
-            $waktuMulai,
-            $waktuSelesai
-        );
+        try {
+            $peminjaman = PeminjamanBarang::create([
+                'user_id'         => Auth::id(),
+                'tanggal_pinjam'  => $request->tanggal_pinjam,
+                'tanggal_kembali' => $request->tanggal_kembali,
+                'keterangan'      => $request->keterangan,
+                'status'          => 'menunggu',
+            ]);
 
-        if (! $cek['status']) {
-            toast($cek['message'], 'error');
-            return back()->withInput();
+            foreach ($detailBarangs as $detail) {
+                DetailPeminjamanBarang::create([
+                    'peminjaman_barang_id' => $peminjaman->id,
+                    'barang_ruangan_id'    => $detail['barang_ruangan_id'],
+                    'jumlah'               => $detail['jumlah'],
+                ]);
+            }
+
+            DB::commit();
+
+            return redirect()->route('user.peminjaman.index')
+                ->with('success', 'Peminjaman berhasil diajukan');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return back()->withErrors([
+                'error' => 'Terjadi kesalahan: ' . $e->getMessage(),
+            ])->withInput();
+        }
+    }
+
+    /**
+     *
+     */
+    public function show($id)
+    {
+        $peminjaman = PeminjamanBarang::with([
+            'details.barangRuangan.barang',
+            'details.barangRuangan.ruangan',
+        ])
+            ->where('user_id', Auth::id())
+            ->findOrFail($id);
+
+        return view('user.peminjaman.show', compact('peminjaman'));
+    }
+
+    /**
+     *
+     */
+    public function destroy($id)
+    {
+        $peminjaman = PeminjamanBarang::where('user_id', Auth::id())
+            ->findOrFail($id);
+
+        if ($peminjaman->status !== 'menunggu') {
+            return back()->withErrors([
+                'error' => 'Peminjaman tidak bisa dibatalkan',
+            ]);
         }
 
-        if ((int) $request->jumlah > (int) $cek['available']) {
-            toast("Hanya tersedia {$cek['available']} unit.", 'error');
-            return back()->withInput();
-        }
+        $peminjaman->delete();
 
-        PeminjamanBarang::create([
-            'user_id'         => Auth::id(),
-            'barang_id'       => $barang->id,
-            'jumlah'          => (int) $request->jumlah,
-            'tanggal_pinjam'  => $tanggalPinjam,
-            'tanggal_kembali' => $tanggalKembali,
-            'waktu_mulai'     => $waktuMulai,
-            'waktu_selesai'   => $waktuSelesai,
-            'keterangan'      => $request->keterangan ?? '-',
-            'status'          => 'menunggu', // IMPORTANT: sesuai migration
-        ]);
-
-        toast('Peminjaman berhasil diajukan, menunggu persetujuan.', 'success');
-        return redirect()->route('peminjaman.create');
+        return back()->with('success', 'Peminjaman dibatalkan');
     }
 }
-

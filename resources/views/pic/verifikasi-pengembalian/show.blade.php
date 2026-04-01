@@ -21,10 +21,27 @@
             <i class="fas fa-{{ $pengembalian->verifikasi->status_verifikasi == 'diterima' ? 'check-circle' : ($pengembalian->verifikasi->status_verifikasi == 'pending' ? 'clock' : 'exclamation-triangle') }} fa-2x me-3"></i>
             <div>
                 <h5 class="mb-1">
-                    Status: {{ $pengembalian->verifikasi->status_label }}
+                    Status: 
+                    @if($pengembalian->verifikasi->status_verifikasi == 'diterima')
+                        Diterima
+                    @elseif($pengembalian->verifikasi->status_verifikasi == 'pending')
+                        Menunggu Tindakan Admin
+                    @else
+                        Perlu Tindakan Lanjut
+                    @endif
                 </h5>
                 <p class="mb-0">
-                    Kondisi: <strong>{{ $pengembalian->verifikasi->kondisi_label }}</strong>
+                    Kondisi: <strong>
+                        @if($pengembalian->verifikasi->kondisi == 'baik')
+                            ✅ Baik
+                        @elseif($pengembalian->verifikasi->kondisi == 'rusak_ringan')
+                            ⚠️ Rusak Ringan
+                        @elseif($pengembalian->verifikasi->kondisi == 'rusak_berat')
+                            🔴 Rusak Berat
+                        @else
+                            ❌ Hilang
+                        @endif
+                    </strong>
                 </p>
             </div>
         </div>
@@ -110,7 +127,7 @@
                         <tr>
                             <td class="text-muted">Tanggal Verifikasi</td>
                             <td>:</td>
-                            <td>{{ $pengembalian->verifikasi->tanggal_verifikasi_format }}</td>
+                            <td>{{ \Carbon\Carbon::parse($pengembalian->verifikasi->tanggal_verifikasi)->translatedFormat('d F Y, H:i') }} WIB</td>
                         </tr>
                         @endif
                     </table>
@@ -180,9 +197,23 @@
             <!-- Kondisi -->
             <div class="mb-4">
                 <h6 class="text-muted mb-2">Kondisi Detail</h6>
-                <span class="badge {{ $pengembalian->verifikasi->kondisi_badge }} px-4 py-3 fs-6">
-                    {{ $pengembalian->verifikasi->kondisi_label }}
-                </span>
+                @if($pengembalian->verifikasi->kondisi == 'baik')
+                    <span class="badge bg-success px-4 py-3 fs-6">
+                        <i class="fas fa-check-circle me-1"></i>Baik
+                    </span>
+                @elseif($pengembalian->verifikasi->kondisi == 'rusak_ringan')
+                    <span class="badge bg-warning px-4 py-3 fs-6">
+                        <i class="fas fa-exclamation-triangle me-1"></i>Rusak Ringan
+                    </span>
+                @elseif($pengembalian->verifikasi->kondisi == 'rusak_berat')
+                    <span class="badge bg-danger px-4 py-3 fs-6">
+                        <i class="fas fa-times-circle me-1"></i>Rusak Berat
+                    </span>
+                @else
+                    <span class="badge bg-dark px-4 py-3 fs-6">
+                        <i class="fas fa-ban me-1"></i>Hilang
+                    </span>
+                @endif
             </div>
 
             <!-- Catatan PIC -->
@@ -198,22 +229,27 @@
             <!-- Foto Bukti -->
             @if($pengembalian->verifikasi->foto_bukti && count($pengembalian->verifikasi->foto_bukti) > 0)
             <div class="mb-4">
-                <h6 class="text-muted mb-3">Foto Bukti ({{ count($pengembalian->verifikasi->foto_bukti) }} foto)</h6>
+                <h6 class="text-muted mb-3">
+                    <i class="fas fa-images me-1"></i>Foto Bukti 
+                    <span class="badge bg-primary">{{ count($pengembalian->verifikasi->foto_bukti) }} foto</span>
+                </h6>
                 <div class="row g-3">
                     @foreach($pengembalian->verifikasi->foto_bukti as $index => $foto)
                     <div class="col-6 col-md-4 col-lg-2">
-                        <a href="{{ asset('storage/' . $foto) }}" 
-                           data-lightbox="verifikasi-{{ $pengembalian->id }}" 
-                           data-title="Foto {{ $index + 1 }}">
+                        <div class="position-relative">
                             <img src="{{ asset('storage/' . $foto) }}" 
-                                 class="img-thumbnail rounded-3" 
+                                 class="img-thumbnail rounded-3 foto-bukti" 
                                  alt="Foto {{ $index + 1 }}"
+                                 data-index="{{ $index }}"
                                  style="width: 100%; height: 150px; object-fit: cover; cursor: pointer;">
-                        </a>
+                            <div class="position-absolute top-0 start-0 m-2">
+                                <span class="badge bg-dark bg-opacity-75">Foto {{ $index + 1 }}</span>
+                            </div>
+                        </div>
                     </div>
                     @endforeach
                 </div>
-                <p class="text-muted small mt-2 mb-0">
+                <p class="text-muted small mt-3 mb-0">
                     <i class="fas fa-info-circle me-1"></i>Klik foto untuk memperbesar
                 </p>
             </div>
@@ -222,9 +258,19 @@
             <!-- Status Verifikasi -->
             <div class="mb-4">
                 <h6 class="text-muted mb-2">Status Verifikasi</h6>
-                <span class="badge {{ $pengembalian->verifikasi->status_badge }} px-4 py-3 fs-6">
-                    {{ $pengembalian->verifikasi->status_label }}
-                </span>
+                @if($pengembalian->verifikasi->status_verifikasi == 'diterima')
+                    <span class="badge bg-success px-4 py-3 fs-6">
+                        <i class="fas fa-check-circle me-1"></i>Diterima
+                    </span>
+                @elseif($pengembalian->verifikasi->status_verifikasi == 'pending')
+                    <span class="badge bg-warning px-4 py-3 fs-6">
+                        <i class="fas fa-clock me-1"></i>Menunggu Tindakan Admin
+                    </span>
+                @else
+                    <span class="badge bg-danger px-4 py-3 fs-6">
+                        <i class="fas fa-exclamation-triangle me-1"></i>Perlu Tindakan Lanjut
+                    </span>
+                @endif
             </div>
 
             <!-- Tindakan Admin -->
@@ -255,22 +301,111 @@
     </div>
 </div>
 
-<!-- Lightbox CSS -->
-<link href="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/css/lightbox.min.css" rel="stylesheet">
+<!-- Modal Lightbox -->
+<div class="modal fade" id="fotoModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content bg-dark">
+            <div class="modal-header border-0">
+                <h5 class="modal-title text-white">
+                    <span id="fotoTitle">Foto Bukti</span>
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center p-0">
+                <img id="fotoImage" src="" class="img-fluid" alt="Foto Bukti" style="max-height: 70vh;">
+            </div>
+            <div class="modal-footer border-0 justify-content-between">
+                <button type="button" class="btn btn-secondary" id="btnPrev">
+                    <i class="fas fa-chevron-left"></i> Sebelumnya
+                </button>
+                <span class="text-white" id="fotoCounter"></span>
+                <button type="button" class="btn btn-secondary" id="btnNext">
+                    Selanjutnya <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Get all foto bukti
+    const allFotos = @json(collect($pengembalian->verifikasi->foto_bukti ?? [])->map(function($foto) {
+        return asset('storage/' . $foto);
+    })->values());
+    
+    let currentIndex = 0;
+    const modal = new bootstrap.Modal(document.getElementById('fotoModal'));
+    
+    // Click event on images
+    document.querySelectorAll('.foto-bukti').forEach(img => {
+        img.addEventListener('click', function() {
+            currentIndex = parseInt(this.dataset.index);
+            showFoto(currentIndex);
+            modal.show();
+        });
+    });
+    
+    // Previous button
+    document.getElementById('btnPrev').addEventListener('click', function() {
+        currentIndex = (currentIndex - 1 + allFotos.length) % allFotos.length;
+        showFoto(currentIndex);
+    });
+    
+    // Next button
+    document.getElementById('btnNext').addEventListener('click', function() {
+        currentIndex = (currentIndex + 1) % allFotos.length;
+        showFoto(currentIndex);
+    });
+    
+    // Keyboard navigation
+    document.addEventListener('keydown', function(e) {
+        if (document.getElementById('fotoModal').classList.contains('show')) {
+            if (e.key === 'ArrowLeft') {
+                document.getElementById('btnPrev').click();
+            } else if (e.key === 'ArrowRight') {
+                document.getElementById('btnNext').click();
+            } else if (e.key === 'Escape') {
+                modal.hide();
+            }
+        }
+    });
+    
+    function showFoto(index) {
+        document.getElementById('fotoImage').src = allFotos[index];
+        document.getElementById('fotoTitle').textContent = `Foto Bukti ${index + 1}`;
+        document.getElementById('fotoCounter').textContent = `${index + 1} dari ${allFotos.length}`;
+        
+        // Update button states
+        document.getElementById('btnPrev').disabled = (allFotos.length === 1);
+        document.getElementById('btnNext').disabled = (allFotos.length === 1);
+    }
+});
+</script>
+@endpush
 
 <style>
 .table tbody tr:hover {
     background-color: #f8f9fa;
 }
-</style>
 
-<!-- Lightbox JS -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/js/lightbox.min.js"></script>
-<script>
-    lightbox.option({
-        'resizeDuration': 200,
-        'wrapAround': true,
-        'albumLabel': 'Foto %1 dari %2'
-    });
-</script>
+.foto-bukti {
+    transition: all 0.3s ease;
+}
+
+.foto-bukti:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+.modal-content {
+    border-radius: 15px;
+    overflow: hidden;
+}
+
+.modal-body img {
+    border-radius: 10px;
+}
+</style>
 @endsection

@@ -22,6 +22,7 @@ class VerifikasiPengembalianController extends Controller
      */
     public function index(Request $request)
     {
+        // Base query - ambil SEMUA yang ada barang bermasalah
         $query = PengembalianBarang::with([
             'peminjamanBarang.user',
             'barangRuangan.barang',
@@ -29,27 +30,40 @@ class VerifikasiPengembalianController extends Controller
             'detailpengembalians.barang',
             'verifikasi.pic',
         ])
-            ->where('status', 'menunggu_pic');
+            ->whereHas('detailpengembalians', function ($q) {
+                $q->where('status_awal', 'bermasalah');
+            });
 
-        // Filter by status verifikasi
+        // Filter by status verifikasi (HANYA kalau user pilih)
         if ($request->filled('status_verifikasi')) {
             if ($request->status_verifikasi === 'belum_verifikasi') {
-                $query->doesntHave('verifikasi');
-            } else {
-                $query->whereHas('verifikasi', function ($q) use ($request) {
-                    $q->where('status_verifikasi', $request->status_verifikasi);
+                $query->where('status', 'menunggu_pic')->doesntHave('verifikasi');
+            } elseif ($request->status_verifikasi === 'pending') {
+                $query->whereHas('verifikasi', function ($q) {
+                    $q->where('status_verifikasi', 'pending');
+                });
+            } elseif ($request->status_verifikasi === 'diterima') {
+                $query->whereHas('verifikasi', function ($q) {
+                    $q->where('status_verifikasi', 'diterima');
+                });
+            } elseif ($request->status_verifikasi === 'perlu_tindakan') {
+                $query->whereHas('verifikasi', function ($q) {
+                    $q->where('status_verifikasi', 'perlu_tindakan');
                 });
             }
         }
+        // NO DEFAULT FILTER - tampilkan SEMUA data dengan barang bermasalah
 
         // Search
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->whereHas('peminjamanBarang', function ($q2) use ($search) {
-                    $q2->where('kode', 'like', "%{$search}%")
-                        ->orWhere('nama_peminjam', 'like', "%{$search}%");
+                    $q2->where('kode', 'like', "%{$search}%");
                 })
+                    ->orWhereHas('peminjamanBarang', function ($q2) use ($search) {
+                        $q2->where('nama_peminjam', 'like', "%{$search}%");
+                    })
                     ->orWhereHas('peminjamanBarang.user', function ($q2) use ($search) {
                         $q2->where('name', 'like', "%{$search}%");
                     })
@@ -76,17 +90,14 @@ class VerifikasiPengembalianController extends Controller
             'barangRuangan.ruangan',
             'detailpengembalians.barang',
             'verifikasi',
-        ])
-            ->findOrFail($id);
+        ])->findOrFail($id);
 
-        // Check if already verified
         if ($pengembalian->isVerified()) {
             return redirect()
                 ->route('pic.verifikasi-pengembalian.show', $id)
                 ->with('info', 'Pengembalian ini sudah diverifikasi');
         }
 
-        // Check if status is menunggu_pic
         if ($pengembalian->status !== 'menunggu_pic') {
             return redirect()
                 ->route('pic.verifikasi-pengembalian.index')
@@ -121,7 +132,6 @@ class VerifikasiPengembalianController extends Controller
 
             $pengembalian = PengembalianBarang::findOrFail($id);
 
-            // Check if already verified
             if ($pengembalian->isVerified()) {
                 return back()->with('error', 'Pengembalian ini sudah diverifikasi');
             }
@@ -155,10 +165,12 @@ class VerifikasiPengembalianController extends Controller
                 'is_reported_to_admin'   => true,
             ]);
 
+            //  Commit dulu sebelum panggil updateStatusFromVerifikasi
+            // supaya data verifikasi sudah tersimpan saat method itu query ke DB
+            DB::commit();
+
             // Call admin controller method to update status & stok
             app(PengembalianBarangController::class)->updateStatusFromVerifikasi($id);
-
-            DB::commit();
 
             Log::info('Verifikasi Pengembalian Created by PIC', [
                 'verifikasi_id'     => $verifikasi->id,
@@ -205,8 +217,7 @@ class VerifikasiPengembalianController extends Controller
             'barangRuangan.ruangan',
             'detailpengembalians.barang',
             'verifikasi.pic',
-        ])
-            ->findOrFail($id);
+        ])->findOrFail($id);
 
         if (! $pengembalian->isVerified()) {
             return redirect()

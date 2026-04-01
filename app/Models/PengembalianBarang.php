@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Models;
 
 use Carbon\Carbon;
@@ -21,67 +22,12 @@ class PengembalianBarang extends Model
         'status'          => 'string',
     ];
 
-    // ACCESSORS
-
-    /**
-     * Format tanggal kembali untuk display
-     */
-    public function getTanggalKembaliFormatAttribute()
-    {
-        return Carbon::parse($this->tanggal_kembali)->translatedFormat('d F Y');
-    }
-
-    /**
-     * ✅ UPDATED: Get ringkasan status awal (bukan kondisi detail)
-     * Admin cek: baik atau bermasalah
-     */
-    public function getStatusAwalSummaryAttribute()
-    {
-        $baik       = $this->detailpengembalians->where('status_awal', 'baik')->count();
-        $bermasalah = $this->detailpengembalians->where('status_awal', 'bermasalah')->count();
-
-        $summary = [];
-        if ($baik > 0) {
-            $summary[] = "{$baik} baik";
-        }
-
-        if ($bermasalah > 0) {
-            $summary[] = "{$bermasalah} bermasalah";
-        }
-
-        return implode(', ', $summary) ?: 'Tidak ada data';
-    }
-
-    /**
-     * Get status label
-     */
-    public function getStatusLabelAttribute(): string
-    {
-        return match ($this->status) {
-            'menunggu_pic'   => '⏳ Menunggu Verifikasi PIC',
-            'dikembalikan'   => '✅ Dikembalikan',
-            'perlu_tindakan' => '🚨 Perlu Tindakan Admin',
-            default          => 'Unknown',
-        };
-    }
-
-    /**
-     * Get status badge class
-     */
-    public function getStatusBadgeAttribute(): string
-    {
-        return match ($this->status) {
-            'menunggu_pic'   => 'info',
-            'dikembalikan'   => 'success',
-            'perlu_tindakan' => 'danger',
-            default          => 'secondary',
-        };
-    }
-
+    // ==========================================
     // RELATIONSHIPS
+    // ==========================================
 
     /**
-     * Relasi ke PeminjamanBarang
+     * Relasi ke Peminjaman Barang
      */
     public function peminjamanBarang()
     {
@@ -89,7 +35,7 @@ class PengembalianBarang extends Model
     }
 
     /**
-     * Relasi ke BarangRuangan
+     * Relasi ke Barang Ruangan
      */
     public function barangRuangan()
     {
@@ -97,7 +43,7 @@ class PengembalianBarang extends Model
     }
 
     /**
-     * Relasi ke DetailPengembalianBarang (many)
+     * Relasi ke Detail Pengembalian (many)
      */
     public function detailpengembalians()
     {
@@ -105,11 +51,19 @@ class PengembalianBarang extends Model
     }
 
     /**
-     * ✅ NEW: Relasi ke VerifikasiPengembalian (PIC verifikasi)
+     * Relasi ke Verifikasi PIC (one) - OPSI 1
      */
     public function verifikasi()
     {
         return $this->hasOne(VerifikasiPengembalian::class, 'pengembalian_barang_id');
+    }
+
+    /**
+     * Relasi ke Denda (one) - Sistem Denda
+     */
+    public function denda()
+    {
+        return $this->hasOne(DendaPengembalian::class);
     }
 
     /**
@@ -127,32 +81,78 @@ class PengembalianBarang extends Model
         );
     }
 
-    // BOOT METHOD
-
-    protected static function boot()
-    {
-        parent::boot();
-
-        // Auto set tanggal kembali ke hari ini jika tidak diisi
-        static::creating(function ($pengembalian) {
-            if (empty($pengembalian->tanggal_kembali)) {
-                $pengembalian->tanggal_kembali = now()->toDateString();
-            }
-        });
-    }
-
-    // HELPER METHODS
+    // ==========================================
+    // ACCESSORS (Display Formatting)
+    // ==========================================
 
     /**
-     * Check apakah semua barang sudah dikembalikan (status final)
+     * Format tanggal kembali untuk display
      */
-    public function isFullyReturned()
+    public function getTanggalKembaliFormatAttribute()
     {
-        return $this->status === 'dikembalikan';
+        return Carbon::parse($this->tanggal_kembali)->translatedFormat('d F Y');
     }
 
     /**
-     * ✅ NEW: Check apakah ada barang bermasalah (status awal admin)
+     * Ringkasan status awal barang (admin check)
+     * Example: "2 baik, 1 bermasalah"
+     */
+    public function getStatusAwalSummaryAttribute()
+    {
+        $baik       = $this->detailpengembalians->where('status_awal', 'baik')->count();
+        $bermasalah = $this->detailpengembalians->where('status_awal', 'bermasalah')->count();
+
+        $summary = [];
+        if ($baik > 0) {
+            $summary[] = "{$baik} baik";
+        }
+        if ($bermasalah > 0) {
+            $summary[] = "{$bermasalah} bermasalah";
+        }
+
+        return implode(', ', $summary) ?: 'Tidak ada data';
+    }
+
+    /**
+     * Get status label (readable)
+     */
+    public function getStatusLabelAttribute(): string
+    {
+        return match ($this->status) {
+            'menunggu_pic'   => '⏳ Menunggu Verifikasi PIC',
+            'dikembalikan'   => '✅ Dikembalikan',
+            'perlu_tindakan' => '🚨 Perlu Tindakan Admin',
+            default          => 'Unknown',
+        };
+    }
+
+    /**
+     * Get status badge class (untuk UI)
+     */
+    public function getStatusBadgeAttribute(): string
+    {
+        return match ($this->status) {
+            'menunggu_pic'   => 'info',
+            'dikembalikan'   => 'success',
+            'perlu_tindakan' => 'danger',
+            default          => 'secondary',
+        };
+    }
+
+    /**
+     * Total barang yang dikembalikan
+     */
+    public function getTotalItemsAttribute()
+    {
+        return $this->detailpengembalians->sum('jumlah');
+    }
+
+    // ==========================================
+    // HELPER METHODS - Verifikasi
+    // ==========================================
+
+    /**
+     * Check apakah ada barang bermasalah
      */
     public function hasProblematicItems()
     {
@@ -162,7 +162,7 @@ class PengembalianBarang extends Model
     }
 
     /**
-     * ✅ NEW: Check apakah sudah diverifikasi oleh PIC
+     * Check apakah sudah diverifikasi oleh PIC
      */
     public function isVerified(): bool
     {
@@ -170,16 +170,15 @@ class PengembalianBarang extends Model
     }
 
     /**
-     * ✅ NEW: Check apakah perlu verifikasi PIC
-     * (Ada barang bermasalah tapi belum diverifikasi)
+     * Check apakah perlu verifikasi PIC
      */
     public function needsVerification(): bool
     {
-        return $this->hasProblematicItems() && ! $this->isVerified();
+        return $this->hasProblematicItems() && !$this->isVerified();
     }
 
     /**
-     * ✅ NEW: Check apakah menunggu PIC
+     * Check apakah menunggu PIC
      */
     public function isWaitingForPic(): bool
     {
@@ -187,7 +186,7 @@ class PengembalianBarang extends Model
     }
 
     /**
-     * ✅ NEW: Check apakah perlu tindakan admin
+     * Check apakah perlu tindakan admin
      */
     public function needsAdminAction(): bool
     {
@@ -195,17 +194,47 @@ class PengembalianBarang extends Model
     }
 
     /**
-     * Hitung total barang yang dikembalikan
+     * Check apakah sudah selesai dikembalikan
      */
-    public function getTotalItemsAttribute()
+    public function isFullyReturned()
     {
-        return $this->detailpengembalians->sum('jumlah');
+        return $this->status === 'dikembalikan';
     }
 
-    // SCOPES
+    // ==========================================
+    // HELPER METHODS - Denda
+    // ==========================================
 
     /**
-     * Scope untuk pengembalian yang menunggu verifikasi PIC
+     * Check apakah ada denda
+     */
+    public function hasDenda()
+    {
+        return $this->denda()->exists();
+    }
+
+    /**
+     * Check apakah denda sudah dibayar
+     */
+    public function isDendaBayar()
+    {
+        return $this->hasDenda() && $this->denda->isBayar();
+    }
+
+    /**
+     * Get total denda (return 0 jika tidak ada)
+     */
+    public function getTotalDenda()
+    {
+        return $this->hasDenda() ? $this->denda->jumlah_denda : 0;
+    }
+
+    // ==========================================
+    // SCOPES (Query Shortcuts)
+    // ==========================================
+
+    /**
+     * Scope: Pengembalian yang menunggu verifikasi PIC
      */
     public function scopeWaitingForPic($query)
     {
@@ -213,7 +242,7 @@ class PengembalianBarang extends Model
     }
 
     /**
-     * Scope untuk pengembalian yang perlu tindakan admin
+     * Scope: Pengembalian yang perlu tindakan admin
      */
     public function scopeNeedsAction($query)
     {
@@ -221,10 +250,26 @@ class PengembalianBarang extends Model
     }
 
     /**
-     * Scope untuk pengembalian yang sudah selesai
+     * Scope: Pengembalian yang sudah selesai
      */
     public function scopeCompleted($query)
     {
         return $query->where('status', 'dikembalikan');
+    }
+
+    // ==========================================
+    // BOOT (Auto-fill defaults)
+    // ==========================================
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        // Auto set tanggal kembali ke hari ini jika kosong
+        static::creating(function ($pengembalian) {
+            if (empty($pengembalian->tanggal_kembali)) {
+                $pengembalian->tanggal_kembali = now()->toDateString();
+            }
+        });
     }
 }

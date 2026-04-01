@@ -1,52 +1,68 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
-use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\BarangApiController;
+use App\Http\Controllers\Api\BookingApiController;
+use App\Http\Controllers\Api\DendaApiController;
+use App\Http\Controllers\Api\PeminjamanApiController;
 use App\Http\Controllers\Api\RuanganController;
+use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
-| API Routes 
-|--------------------------------------------------------------------------
-| 
-| Here is where you can register API routes for your application. These
-| are loaded by the RouteServiceProvider within a group which
+| API Routes
 | Base URL: http://localhost:8000/api
-|
+|--------------------------------------------------------------------------
 */
 
-// ========================================
-// Auth Routes (Register & Login)
-// ========================================
+// ============================================================
+// PUBLIC ROUTES (tidak perlu login)
+// ============================================================
 
 Route::prefix('auth')->group(function () {
-
-    // Register - Daftar user baru
-    // POST http://localhost:8000/api/auth/register
     Route::post('/register', [AuthController::class, 'register']);
-
-    // Login - Masuk ke sistem
-    // POST http://localhost:8000/api/auth/login
     Route::post('/login', [AuthController::class, 'login']);
-
 });
 
-// Get All Ruangan - Ambil semua data ruangan
-// GET http://localhost:8000/api/ruangan
+// Barang & Ruangan (bisa dilihat tanpa login)
+Route::get('/barang', [BarangApiController::class, 'index']);
+Route::get('/barang/{id}', [BarangApiController::class, 'show']);
 Route::get('/ruangan', [RuanganController::class, 'index']);
-
-// Get Single Ruangan - Ambil 1 data ruangan
-// GET http://localhost:8000/api/ruangan/{id}
 Route::get('/ruangan/{id}', [RuanganController::class, 'show']);
 
-// Create Ruangan - Buat data ruangan baru
-// POST http://localhost:8000/api/ruangan
-Route::post('/ruangan/create', [RuanganController::class, 'store']);
+// ============================================================
+// PROTECTED ROUTES (wajib login, pakai token Sanctum)
+// ============================================================
 
 Route::middleware('auth:sanctum')->group(function () {
 
-    // Logout - Keluar dari sistem
-    // POST http://localhost:8000/api/auth/logout
+    // ── Auth ─────────────────────────────────────────────────
     Route::post('/auth/logout', [AuthController::class, 'logout']);
+    Route::get('/auth/me', [AuthController::class, 'me']);
+
+    // ── Peminjaman Barang ────────────────────────────────────
+    Route::prefix('peminjaman')->group(function () {
+        Route::get('/', [PeminjamanApiController::class, 'index']);
+        Route::post('/', [PeminjamanApiController::class, 'store']);
+        Route::get('/{id}', [PeminjamanApiController::class, 'show']);
+        Route::delete('/{id}', [PeminjamanApiController::class, 'destroy']);
+    });
+
+    // ── Booking Ruangan ──────────────────────────────────────
+    Route::prefix('booking')->group(function () {
+        Route::get('/', [BookingApiController::class, 'index']);
+        Route::post('/', [BookingApiController::class, 'store']);
+        Route::get('/ruangan-tersedia', [BookingApiController::class, 'ruanganTersedia']);
+        Route::get('/{id}', [BookingApiController::class, 'show']);
+        Route::delete('/{id}', [BookingApiController::class, 'destroy']);
+
+    });
+
+    // ── Denda ────────────────────────────────────────────────
+    Route::prefix('denda')->group(function () {
+        Route::get('/', [DendaApiController::class, 'index']);
+        Route::get('/{id}', [DendaApiController::class, 'show']);
+        Route::post('/{id}/upload-bukti', [DendaApiController::class, 'uploadBukti']);
+    });
 
 });

@@ -81,6 +81,16 @@ class Booking extends Model
         return $this->status === 'Selesai' && ! $this->isVerified();
     }
 
+    public function denda()
+    {
+        return $this->hasOne(DendaBooking::class);
+    }
+
+    public function hasDenda(): bool
+    {
+        return $this->denda()->exists();
+    }
+
     /**
      * Get status badge untuk verifikasi
      */

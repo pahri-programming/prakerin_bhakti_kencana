@@ -2,7 +2,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Barang;
+use App\Models\barangruangan;
 use App\Models\booking;
+use App\Models\DendaPengembalian;
 use App\Models\jadwal;
 use App\Models\PeminjamanBarang;
 use App\Models\ruangan;
@@ -81,8 +83,10 @@ class FrontendController extends Controller
         }
 
         // Data untuk tampilan beranda
-        $ruangans = ruangan::orderBy('nama_ruangan')->get();
-        $barangs  = Barang::with('kategori')->orderBy('nama')->get();
+        $barangRuangans = barangruangan::with(['barang.kategori', 'ruangan'])
+            ->orderBy('id', 'asc')
+            ->get();
+        $ruangans = Ruangan::orderBy('nama_ruangan')->get();
 
         // DEBUG: Log final events array
         \Log::info('=== FINAL CALENDAR EVENTS ===', [
@@ -93,22 +97,16 @@ class FrontendController extends Controller
         ]);
 
         return view('welcome', [
-            'jadwals'  => $events, // Kirim SEMUA events (booking + jadwal admin)
-            'ruangans' => $ruangans,
-            'barangs'  => $barangs,
+            'jadwals'        => $events, // Kirim SEMUA events (booking + jadwal admin)
+            'ruangans'       => $ruangans,
+            'barangRuangans' => $barangRuangans,
         ]);
-    }
-
-    public function booking()
-    {
-        return view('booking_create');
     }
 
     public function riwayat(Request $request)
     {
-        //booking
-        $bookingQuery = booking::where('user_id', Auth::id())
-            ->with('ruangan');
+        // ── Booking ──────────────────────────────────────────────────
+        $bookingQuery = Booking::where('user_id', Auth::id())->with('ruangan');
 
         if ($request->filled('ruang_id')) {
             $bookingQuery->where('ruang_id', $request->ruang_id);
@@ -122,70 +120,45 @@ class FrontendController extends Controller
 
         $booking = $bookingQuery->orderBy('tanggal', 'desc')->get();
 
-        //peminjaman
-        $peminjamanQuery = PeminjamanBarang::with('barang')
-            ->where('user_id', Auth::id());
+        // ── Peminjaman ────────────────────────────────────────────────
+        $peminjamanQuery = PeminjamanBarang::with([
+            'detailbarangs.barangRuangan.barang',
+            'detailbarangs.barangRuangan.ruangan',
+        ])->where('user_id', Auth::id());
 
         if ($request->filled('barang_id')) {
-            $peminjamanQuery->where('barang_id', $request->barang_id);
+            $peminjamanQuery->whereHas('detailbarangs.barangRuangan', function ($q) use ($request) {
+                $q->where('barang_id', $request->barang_id);
+            });
         }
-
         if ($request->filled('status_peminjaman')) {
             $peminjamanQuery->where('status', $request->status_peminjaman);
         }
-
         if ($request->filled('tanggal_pinjam')) {
             $peminjamanQuery->whereDate('tanggal_pinjam', $request->tanggal_pinjam);
         }
-
         if ($request->filled('tanggal_kembali')) {
             $peminjamanQuery->whereDate('tanggal_kembali', $request->tanggal_kembali);
         }
 
-        $peminjaman = $peminjamanQuery
-            ->orderBy('tanggal_pinjam', 'desc')
+        $peminjaman = $peminjamanQuery->orderBy('tanggal_pinjam', 'desc')->get();
+
+        // ── Denda ─────────────────────────────────────────────────────
+        $denda = DendaPengembalian::with([
+            'pengembalianBarang.peminjamanBarang',
+            'verifikasiPengembalian',
+        ])
+            ->whereHas('pengembalianBarang.peminjamanBarang', function ($q) {
+                $q->where('user_id', Auth::id());
+            })
+            ->latest()
             ->get();
 
-        $ruangan = ruangan::orderBy('nama_ruangan')->get();
+        // ── Master data untuk filter ──────────────────────────────────
+        $ruangan = Ruangan::orderBy('nama_ruangan')->get();
         $barang  = Barang::orderBy('nama')->get();
 
-        return view('riwayat', compact(
-            'booking',
-            'peminjaman',
-            'ruangan',
-            'barang'
-        ));
-    }
-
-    public function ruanganIndex()
-    {
-        $ruangans = ruangan::orderBy('id', 'asc')->get();
-
-        $title = 'Hapus Data!';
-        $text  = "Apakah anda yakin ingin menghapus ruangan ini?";
-        confirmDelete($title, $text);
-
-        return view('ruangan', compact('ruangans'));
-    }
-
-    public function ruanganShow(string $id)
-    {
-        $ruangan = ruangan::findOrFail($id);
-        return view('ruangan_detail', compact('ruangan'));
-    }
-
-    public function barangIndex()
-    {
-        $barangs   = Barang::with('kategori')->orderBy('nama', 'asc')->get();
-        $kategoris = \App\Models\Kategori::orderBy('nama', 'asc')->get();
-
-        return view('barang_index', compact('barangs', 'kategoris'));
-    }
-
-    public function barangShow($id)
-    {
-        $barang = Barang::with('kategori')->findOrFail($id);
-        return view('barang_detail', compact('barang'));
+        return view('riwayat', compact('booking', 'peminjaman', 'denda', 'ruangan', 'barang'));
     }
 
     public function exportRiwayatBooking()

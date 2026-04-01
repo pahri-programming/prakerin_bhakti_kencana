@@ -34,7 +34,8 @@
                 </div>
 
                 <div class="card-body">
-                    <form action="{{ route('riwayat.index') }}" method="GET" class="row g-3 mb-4 bg-light p-3 rounded shadow-sm">
+                    <form action="{{ route('riwayat.index') }}" method="GET"
+                        class="row g-3 mb-4 bg-light p-3 rounded shadow-sm">
 
                         <div class="col-md-4">
                             <div class="form-floating">
@@ -165,10 +166,10 @@
                             <i class="bi bi-box-seam me-2"></i> Riwayat Peminjaman Barang
                         </span>
                         <a href="{{ route('riwayat.peminjaman.export', [
-                            'barang_id'         => request('barang_id'),
+                            'barang_id' => request('barang_id'),
                             'status_peminjaman' => request('status_peminjaman'),
-                            'tanggal_pinjam'    => request('tanggal_pinjam'),
-                            'tanggal_kembali'   => request('tanggal_kembali'),
+                            'tanggal_pinjam' => request('tanggal_pinjam'),
+                            'tanggal_kembali' => request('tanggal_kembali'),
                         ]) }}"
                             class="btn btn-danger btn-sm">
                             <i class="bi bi-file-earmark-pdf me-1"></i> Export PDF
@@ -326,6 +327,94 @@
                     </div>
                 @endif
 
+                {{-- ── Riwayat Denda ── --}}
+                @if ($denda->count())
+                    <div class="card shadow rounded-4 border-0 mb-5">
+                        <div class="card-header text-white d-flex justify-content-between align-items-center"
+                            style="background: linear-gradient(90deg, #c0392b, #922b21);">
+                            <span>
+                                <i class="bi bi-file-invoice-dollar me-2"></i> Riwayat Denda Peminjaman
+                            </span>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive shadow-sm rounded-4">
+                                <table class="table table-hover align-middle text-center mb-0">
+                                    <thead class="table-light">
+                                        <tr class="fw-semibold text-uppercase small text-secondary">
+                                            <th>#</th>
+                                            <th>Kode Peminjaman</th>
+                                            <th>Kondisi Barang</th>
+                                            <th>Jumlah Denda</th>
+                                            <th>Tanggal Ditetapkan</th>
+                                            <th>Status</th>
+                                            <th>Aksi</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach ($denda as $d)
+                                            <tr>
+                                                <td class="text-muted">{{ $loop->iteration }}</td>
+                                                <td>
+                                                    <span class="badge bg-primary bg-opacity-10 text-primary px-3 py-2">
+                                                        {{ $d->pengembalianBarang->peminjamanBarang->kode ?? '-' }}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    @php $kondisi = $d->verifikasiPengembalian->kondisi ?? '-' @endphp
+                                                    @if ($kondisi == 'rusak_ringan')
+                                                        <span class="badge bg-warning text-dark">Rusak Ringan</span>
+                                                    @elseif($kondisi == 'rusak_berat')
+                                                        <span class="badge bg-danger">Rusak Berat</span>
+                                                    @elseif($kondisi == 'hilang')
+                                                        <span class="badge bg-dark">Hilang</span>
+                                                    @else
+                                                        <span class="text-muted">-</span>
+                                                    @endif
+                                                </td>
+                                                <td class="fw-bold text-danger">
+                                                    Rp {{ number_format($d->jumlah_denda, 0, ',', '.') }}
+                                                </td>
+                                                <td>
+                                                    {{ $d->tanggal_tindakan ? \Carbon\Carbon::parse($d->tanggal_tindakan)->translatedFormat('d F Y') : '-' }}
+                                                </td>
+                                                <td>
+                                                    @switch($d->status_pembayaran)
+                                                        @case('belum_bayar')
+                                                            <span class="badge bg-danger px-3 py-2">Belum Bayar</span>
+                                                        @break
+
+                                                        @case('menunggu_verifikasi')
+                                                            <span class="badge bg-warning text-dark px-3 py-2">Menunggu Verifikasi</span>
+                                                        @break
+
+                                                        @case('sudah_bayar')
+                                                            <span class="badge bg-success px-3 py-2">Lunas</span>
+                                                        @break
+
+                                                        @case('dibebaskan')
+                                                            <span class="badge bg-secondary px-3 py-2">Dibebaskan</span>
+                                                        @break
+                                                    @endswitch
+                                                </td>
+                                                <td>
+                                                    <a href="{{ route('user.denda.show', $d->id) }}"
+                                                        class="btn btn-sm btn-outline-danger">
+                                                        <i class="bi bi-eye me-1"></i>
+                                                        {{ $d->status_pembayaran === 'belum_bayar' ? 'Bayar' : 'Detail' }}
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                @else
+                    <div class="alert alert-success text-center mt-4">
+                        <i class="bi bi-check-circle-fill me-2"></i> Tidak ada tagihan denda. Semua peminjaman berjalan baik!
+                    </div>
+                @endif
 
                 @push('scripts')
                     <script>

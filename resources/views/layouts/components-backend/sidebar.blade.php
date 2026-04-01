@@ -50,10 +50,6 @@
 
 <aside class="left-sidebar with-vertical">
     <div>
-        <!-- ================================== -->
-        <!-- Start Vertical Layout Sidebar -->
-        <!-- ================================== -->
-
         <!-- Brand Logo -->
         <div class="brand-logo d-flex align-items-center justify-content-between px-3 py-2">
             @if (Auth::user()->role == 'pic')
@@ -78,7 +74,6 @@
                     {{-- SIDEBAR UNTUK PIC --}}
                     {{-- ================================== --}}
 
-                    <!-- HOME SECTION -->
                     <li class="nav-small-cap">
                         <i class="ti ti-dots nav-small-cap-icon fs-4"></i>
                         <span class="hide-menu">Home</span>
@@ -96,30 +91,33 @@
                         </a>
                     </li>
 
-                    <!-- VERIFIKASI SECTION -->
                     <li class="nav-small-cap">
                         <i class="ti ti-dots nav-small-cap-icon fs-4"></i>
                         <span class="hide-menu">Verifikasi</span>
                     </li>
 
-                    <!-- Verifikasi Peminjaman Barang -->
-                    <li class="sidebar-item pic-menu {{ request()->is('pic/verifikasi-pengembalian*') ? 'active' : '' }}">
+                    <!-- Verifikasi Pengembalian -->
+                    <li
+                        class="sidebar-item pic-menu {{ request()->is('pic/verifikasi-pengembalian*') ? 'active' : '' }}">
                         <a class="sidebar-link" href="{{ route('pic.verifikasi-pengembalian.index') }}"
                             aria-expanded="false">
                             <span><i class="ti ti-package"></i></span>
-                            <span class="hide-menu">Verifikasi Peminjaman</span>
+                            <span class="hide-menu">Verifikasi Pengembalian</span>
                             @php
-                                $pendingPeminjaman = \App\Models\PeminjamanBarang::where('status', 'dikembalikan')
+                                $pendingPengembalian = \App\Models\PengembalianBarang::where('status', 'menunggu_pic')
                                     ->doesntHave('verifikasi')
+                                    ->whereHas('detailpengembalians', function ($q) {
+                                        $q->where('status_awal', 'bermasalah');
+                                    })
                                     ->count();
                             @endphp
-                            @if ($pendingPeminjaman > 0)
-                                <span class="badge bg-warning rounded-pill ms-auto">{{ $pendingPeminjaman }}</span>
+                            @if ($pendingPengembalian > 0)
+                                <span class="badge bg-warning rounded-pill ms-auto">{{ $pendingPengembalian }}</span>
                             @endif
                         </a>
                     </li>
 
-                    <!-- Verifikasi Booking Ruangan -->
+                    <!-- Verifikasi Booking -->
                     <li class="sidebar-item pic-menu {{ request()->is('pic/verifikasi-booking*') ? 'active' : '' }}">
                         <a class="sidebar-link" href="{{ route('pic.verifikasi-booking.index') }}"
                             aria-expanded="false">
@@ -140,7 +138,6 @@
                     {{-- SIDEBAR UNTUK ADMIN --}}
                     {{-- ================================== --}}
 
-                    <!-- HOME SECTION -->
                     <li class="nav-small-cap">
                         <i class="ti ti-dots nav-small-cap-icon fs-4"></i>
                         <span class="hide-menu">Home</span>
@@ -157,13 +154,13 @@
                         </a>
                     </li>
 
-                    <!-- MASTER DATA SECTION -->
+                    <!-- MASTER DATA -->
                     <li class="nav-small-cap">
                         <i class="ti ti-dots nav-small-cap-icon fs-4"></i>
                         <span class="hide-menu">Master Data</span>
                     </li>
 
-                    <!-- User Management -->
+                    <!-- Manajemen Akun -->
                     <li class="sidebar-item {{ request()->is('admin/user*') ? 'active' : '' }}">
                         <a class="sidebar-link" href="{{ route('backend.user.index') }}" aria-expanded="false">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
@@ -216,13 +213,13 @@
                         </a>
                     </li>
 
-                    <!-- TRANSAKSI SECTION -->
+                    <!-- TRANSAKSI -->
                     <li class="nav-small-cap">
                         <i class="ti ti-dots nav-small-cap-icon fs-4"></i>
                         <span class="hide-menu">Transaksi</span>
                     </li>
 
-                    <!-- Booking -->
+                    <!-- Booking Ruangan -->
                     <li class="sidebar-item {{ request()->is('admin/booking*') ? 'active' : '' }}">
                         <a class="sidebar-link" href="{{ route('backend.booking.index') }}" aria-expanded="false">
                             <span><i class="ti ti-bookmark"></i></span>
@@ -249,7 +246,45 @@
                         </a>
                     </li>
 
-                    <!-- LAPORAN SECTION -->
+                    <!-- Denda -->
+                    <li class="sidebar-item {{ request()->is('admin/denda*') ? 'active' : '' }}">
+                        <a class="sidebar-link" href="{{ route('backend.denda.index') }}" aria-expanded="false">
+                            <span><i class="ti ti-cash"></i></span>
+                            <span class="hide-menu">Denda</span>
+                            @php
+                                $pendingDenda = \App\Models\PengembalianBarang::where('status', 'perlu_denda')
+                                    ->whereDoesntHave('denda')
+                                    ->count();
+                            @endphp
+                            @if ($pendingDenda > 0)
+                                <span class="badge bg-danger rounded-pill ms-auto">{{ $pendingDenda }}</span>
+                            @endif
+                        </a>
+                    </li>
+
+                    {{-- Denda Booking Ruangan --}}
+                    <li class="sidebar-item {{ request()->is('admin/denda-booking*') ? 'active' : '' }}">
+                        <a class="sidebar-link" href="{{ route('backend.denda-booking.index') }}"
+                            aria-expanded="false">
+                            <span><i class="ti ti-building-bank"></i></span>
+                            <span class="hide-menu">Denda Booking</span>
+                            @php
+                                $pendingDendaBooking = \App\Models\DendaBooking::where(
+                                    'status_pembayaran',
+                                    'belum_bayar',
+                                )
+                                    ->whereHas('booking', function ($q) {
+                                        $q->where('status', 'Selesai');
+                                    })
+                                    ->count();
+                            @endphp
+                            @if ($pendingDendaBooking > 0)
+                                <span class="badge bg-danger rounded-pill ms-auto">{{ $pendingDendaBooking }}</span>
+                            @endif
+                        </a>
+                    </li>
+
+                    <!-- LAPORAN -->
                     <li class="nav-small-cap">
                         <i class="ti ti-dots nav-small-cap-icon fs-4"></i>
                         <span class="hide-menu">Laporan</span>
@@ -266,7 +301,8 @@
 
                     <!-- Laporan Verifikasi PIC -->
                     <li class="sidebar-item {{ request()->is('admin/verifikasi/laporan*') ? 'active' : '' }}">
-                        <a class="sidebar-link has-arrow" href="javascript:void(0)" aria-expanded="false">
+                        <a class="sidebar-link has-arrow" href="javascript:void(0)"
+                            aria-expanded="{{ request()->is('admin/verifikasi/laporan*') ? 'true' : 'false' }}">
                             <span><i class="ti ti-clipboard-check"></i></span>
                             <span class="hide-menu">Laporan Verifikasi PIC</span>
                             @php
@@ -276,6 +312,9 @@
                                         ->count() +
                                     \App\Models\VerifikasiBooking::where('kondisi_ruangan', 'rusak')
                                         ->where('status_verifikasi', 'pending')
+                                        ->count() +
+                                    \App\Models\VerifikasiPengembalian::whereIn('kondisi', ['rusak_berat', 'hilang'])
+                                        ->where('status_verifikasi', 'pending')
                                         ->count();
                             @endphp
                             @if ($totalPerluTindakan > 0)
@@ -284,24 +323,7 @@
                         </a>
                         <ul
                             class="sidebar-submenu collapse {{ request()->is('admin/verifikasi/laporan*') ? 'show' : '' }}">
-                            <li
-                                class="sidebar-item {{ request()->is('admin/verifikasi/laporan/peminjaman*') ? 'active' : '' }}">
-                                <a class="sidebar-link" href="{{ route('backend.verifikasi.laporan.peminjaman') }}">
-                                    <span class="hide-menu">Laporan Peminjaman</span>
-                                    @php
-                                        $perluTindakanPeminjaman = \App\Models\VerifikasiPeminjaman::whereIn(
-                                            'kondisi',
-                                            ['rusak_berat', 'hilang'],
-                                        )
-                                            ->where('status_verifikasi', 'pending')
-                                            ->count();
-                                    @endphp
-                                    @if ($perluTindakanPeminjaman > 0)
-                                        <span
-                                            class="badge bg-danger rounded-pill ms-auto">{{ $perluTindakanPeminjaman }}</span>
-                                    @endif
-                                </a>
-                            </li>
+                            <!-- Laporan Booking -->
                             <li
                                 class="sidebar-item {{ request()->is('admin/verifikasi/laporan/booking*') ? 'active' : '' }}">
                                 <a class="sidebar-link" href="{{ route('backend.verifikasi.laporan.booking') }}">
@@ -320,8 +342,10 @@
                                     @endif
                                 </a>
                             </li>
+
                         </ul>
                     </li>
+
                 @endif
 
             </ul>
@@ -340,7 +364,7 @@
                     <span class="fs-2 text-muted">
                         @if (Auth::user()->isAdmin == 1)
                             Administrator
-                        @elseif(Auth::user()->role == 'pic')
+                        @elseif (Auth::user()->role == 'pic')
                             PIC Pengecekan BKU
                         @else
                             Member
@@ -354,34 +378,28 @@
                     data-bs-placement="top" data-bs-title="Logout">
                     <i class="ti ti-power fs-6"></i>
                 </a>
-
                 <form action="{{ route('logout') }}" method="POST" id="logout-form" class="d-none">
                     @csrf
                 </form>
             </div>
         </div>
 
-        <!-- ================================== -->
-        <!-- End Vertical Layout Sidebar -->
-        <!-- ================================== -->
     </div>
 </aside>
 
 @push('scripts')
     <script>
-        // Auto active menu based on current URL
         $(document).ready(function() {
-            // Get current URL path
             var currentPath = window.location.pathname;
 
-            // Find matching sidebar link
+            // Auto-highlight active menu item
             $('#sidebarnav .sidebar-link').each(function() {
                 var linkHref = $(this).attr('href');
                 if (linkHref && linkHref !== 'javascript:void(0)' && currentPath.includes(linkHref.split(
                         '/').pop())) {
                     $(this).closest('.sidebar-item').addClass('active');
 
-                    // If it's a submenu item, show parent menu
+                    // If submenu item, expand parent
                     if ($(this).closest('.sidebar-submenu').length) {
                         $(this).closest('.sidebar-submenu').addClass('show');
                         $(this).closest('.sidebar-submenu').prev('.sidebar-link').attr('aria-expanded',
@@ -390,22 +408,18 @@
                 }
             });
 
-            // Handle submenu toggle
+            // Toggle submenu on click
             $('.sidebar-link.has-arrow').click(function(e) {
                 e.preventDefault();
                 var $submenu = $(this).next('.sidebar-submenu');
-
-                // Toggle submenu
                 $submenu.toggleClass('show');
-
-                // Toggle arrow
                 $(this).attr('aria-expanded', $submenu.hasClass('show'));
             });
 
             // Initialize tooltips
             var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-            var tooltipList = tooltipTriggerList.map(function(tooltipTriggerEl) {
-                return new bootstrap.Tooltip(tooltipTriggerEl);
+            tooltipTriggerList.map(function(el) {
+                return new bootstrap.Tooltip(el);
             });
         });
     </script>

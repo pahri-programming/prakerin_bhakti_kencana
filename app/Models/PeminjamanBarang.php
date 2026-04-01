@@ -19,6 +19,7 @@ class PeminjamanBarang extends Model
         'tanggal_pinjam',
         'tanggal_kembali',
         'status',
+        'alasan_tolak',
         'keterangan',
     ];
 
@@ -28,18 +29,79 @@ class PeminjamanBarang extends Model
         'status'          => 'string',
     ];
 
-    // Accessors untuk format tanggal
+    // ==========================================
+    // RELATIONSHIPS
+    // ==========================================
+
+    /**
+     * Relasi ke User (peminjam)
+     */
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Relasi ke Detail Peminjaman (many)
+     */
+    public function detailbarangs()
+    {
+        return $this->hasMany(DetailPeminjamanBarang::class, 'peminjaman_barang_id');
+    }
+
+    /**
+     * Relasi ke Pengembalian (many) - untuk history
+     */
+    public function pengembalianbarangs()
+    {
+        return $this->hasMany(PengembalianBarang::class, 'peminjaman_barang_id');
+    }
+
+    public function details()
+    {
+        return $this->hasMany(DetailPeminjamanBarang::class, 'peminjaman_barang_id');
+    }
+
+    /**
+     * Relasi ke Pengembalian (one) - untuk current return
+     */
+    public function pengembalian()
+    {
+        return $this->hasOne(PengembalianBarang::class, 'peminjaman_barang_id');
+    }
+
+    /**
+     * Relasi ke Verifikasi Peminjaman (OPSI 2 - jika dipakai)
+     */
+    public function verifikasi()
+    {
+        return $this->hasOne(VerifikasiPeminjaman::class, 'peminjaman_id');
+    }
+
+    // ==========================================
+    // ACCESSORS (Display Formatting)
+    // ==========================================
+
+    /**
+     * Format tanggal pinjam untuk display
+     */
     public function getTanggalPinjamFormatAttribute()
     {
         return Carbon::parse($this->tanggal_pinjam)->translatedFormat('d F Y');
     }
 
+    /**
+     * Format tanggal kembali untuk display
+     */
     public function getTanggalKembaliFormatAttribute()
     {
         return Carbon::parse($this->tanggal_kembali)->translatedFormat('d F Y');
     }
 
-    //  Accessor untuk ringkasan barang (dashboard)
+    /**
+     * Ringkasan barang untuk dashboard
+     * Example: "Laptop Asus dan 2 lainnya"
+     */
     public function getBarangSummaryAttribute()
     {
         $count = $this->detailbarangs->count();
@@ -58,42 +120,29 @@ class PeminjamanBarang extends Model
         return $firstName;
     }
 
-    //  Accessor untuk total jumlah barang
+    /**
+     * Total jumlah barang (semua detail dijumlahkan)
+     */
     public function getTotalJumlahAttribute()
     {
         return $this->detailbarangs->sum('jumlah');
     }
 
-    // ================= RELASI =================
+    // ==========================================
+    // HELPER METHODS - Pengembalian
+    // ==========================================
 
-    public function user()
-    {
-        return $this->belongsTo(User::class);
-    }
-
-    public function detailbarangs()
-    {
-        return $this->hasMany(DetailPeminjamanBarang::class, 'peminjaman_barang_id');
-    }
-
-    public function pengembalianbarangs()
-    {
-        return $this->hasMany(PengembalianBarang::class, 'peminjaman_barang_id');
-    }
-
-    // 🔥 RELASI KE VERIFIKASI PIC (TAMBAHAN BARU)
-    public function verifikasi()
-    {
-        return $this->hasOne(VerifikasiPeminjaman::class, 'peminjaman_id');
-    }
-
-    // ================= HELPER METHODS =================
-
+    /**
+     * Check apakah sudah pernah dikembalikan
+     */
     public function hasReturn()
     {
         return $this->pengembalianbarangs()->exists();
     }
 
+    /**
+     * Check apakah sudah dikembalikan dengan status final
+     */
     public function isReturned()
     {
         return $this->pengembalianbarangs()
@@ -101,10 +150,12 @@ class PeminjamanBarang extends Model
             ->exists();
     }
 
-    // 🔥 HELPER METHODS VERIFIKASI (TAMBAHAN BARU)
+    // ==========================================
+    // HELPER METHODS - Verifikasi (OPSI 2)
+    // ==========================================
 
     /**
-     * Cek apakah sudah diverifikasi oleh PIC
+     * Check apakah sudah diverifikasi oleh PIC
      */
     public function isVerified(): bool
     {
@@ -112,8 +163,7 @@ class PeminjamanBarang extends Model
     }
 
     /**
-     * Cek apakah perlu verifikasi
-     * (status dikembalikan tapi belum diverifikasi)
+     * Check apakah perlu verifikasi
      */
     public function needsVerification(): bool
     {
@@ -121,7 +171,7 @@ class PeminjamanBarang extends Model
     }
 
     /**
-     * Get status badge untuk verifikasi
+     * Get status badge class untuk verifikasi
      */
     public function getStatusVerifikasiBadgeAttribute(): string
     {
@@ -153,7 +203,10 @@ class PeminjamanBarang extends Model
         return '-';
     }
 
-    // Boot method untuk auto generate kode
+    // ==========================================
+    // BOOT (Auto-generate kode)
+    // ==========================================
+
     protected static function boot()
     {
         parent::boot();

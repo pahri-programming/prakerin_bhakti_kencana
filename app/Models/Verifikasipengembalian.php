@@ -26,12 +26,15 @@ class VerifikasiPengembalian extends Model
     protected $casts = [
         'tanggal_verifikasi'   => 'datetime',
         'is_reported_to_admin' => 'boolean',
-        'foto_bukti'           => 'array', // Cast ke array untuk multiple photos
+        'foto_bukti'           => 'array', // Multiple photos support
     ];
 
-    // RELATIONSHIPS 
+    // ==========================================
+    // RELATIONHIPS
+    // ==========================================
+
     /**
-     * Relasi ke PengembalianBarang
+     * Relasi ke Pengembalian Barang
      */
     public function pengembalianBarang()
     {
@@ -46,7 +49,26 @@ class VerifikasiPengembalian extends Model
         return $this->belongsTo(User::class, 'pic_id');
     }
 
-    // ACCESSORS 
+    /**
+     * Relasi ke Denda (one)
+     */
+    public function denda()
+    {
+        return $this->hasOne(DendaPengembalian::class);
+    }
+
+    // ==========================================
+    // ACCESSORS (Display Formatting)
+    // ==========================================
+
+    /**
+     * Format tanggal verifikasi untuk display
+     */
+    public function getTanggalVerifikasiFormatAttribute(): string
+    {
+       return Carbon::parse($this->tanggal_verifikasi)->translatedFormat('d F Y, H:i') . ' WIB';
+    }
+
     /**
      * Get kondisi label dengan emoji
      */
@@ -76,14 +98,14 @@ class VerifikasiPengembalian extends Model
     }
 
     /**
-     * Get status label
+     * Get status verifikasi label
      */
     public function getStatusLabelAttribute(): string
     {
         return match ($this->status_verifikasi) {
-            'pending'        => 'Menunggu Tindakan Admin',
-            'diterima'       => 'Diterima',
-            'perlu_tindakan' => 'Perlu Tindakan Lanjut',
+            'pending'        => '⏳ Menunggu Tindakan Admin',
+            'diterima'       => '✅ Diterima',
+            'perlu_tindakan' => '🚨 Perlu Tindakan Lanjut',
             default          => 'Unknown',
         };
     }
@@ -102,7 +124,7 @@ class VerifikasiPengembalian extends Model
     }
 
     /**
-     * Get foto bukti URL array (multiple photos)
+     * Get foto bukti URLs (array - multiple photos)
      */
     public function getFotoBuktiUrlsAttribute(): array
     {
@@ -117,25 +139,17 @@ class VerifikasiPengembalian extends Model
             }, $this->foto_bukti);
         }
 
-        // Backward compatibility: jika foto_bukti masih string (single upload lama)
+        // Backward compatibility: single upload (string)
         return [asset('storage/' . $this->foto_bukti)];
     }
 
     /**
-     * Get foto bukti URL (first photo only - backward compatibility)
+     * Get foto bukti URL (first photo - backward compatibility)
      */
     public function getFotoBuktiUrlAttribute(): ?string
     {
         $urls = $this->foto_bukti_urls;
         return ! empty($urls) ? $urls[0] : null;
-    }
-
-    /**
-     * Check if has multiple photos
-     */
-    public function hasMultiplePhotos(): bool
-    {
-        return is_array($this->foto_bukti) && count($this->foto_bukti) > 1;
     }
 
     /**
@@ -150,23 +164,9 @@ class VerifikasiPengembalian extends Model
         return is_array($this->foto_bukti) ? count($this->foto_bukti) : 1;
     }
 
-    /**
-     * Format tanggal verifikasi
-     */
-    public function getTanggalVerifikasiFormatAttribute(): string
-    {
-        return Carbon::parse($this->tanggal_verifikasi)->translatedFormat('d F Y, H:i') . ' WIB';
-    }
-
-    // HELPER METHODS 
-    /**
-     * Check apakah perlu tindakan admin segera
-     */
-    public function needsAdminAction(): bool
-    {
-        return in_array($this->kondisi, ['rusak_berat', 'hilang']) &&
-        $this->status_verifikasi === 'pending';
-    }
+    // ==========================================
+    // HELPER METHODS - Verifikasi
+    // ==========================================
 
     /**
      * Check apakah ada masalah dengan barang
@@ -177,16 +177,56 @@ class VerifikasiPengembalian extends Model
     }
 
     /**
-     * Check apakah admin sudah memberi response
+     * Check apakah perlu tindakan admin segera
      */
-    public function hasAdminResponse(): bool
+    public function needsAdminAction(): bool
+    {
+        return in_array($this->kondisi, ['rusak_berat', 'hilang']) &&
+        $this->status_verifikasi === 'pending';
+    }
+
+    /**
+     * Check apakah admin sudah memberi respone
+     */
+    public function hasAdminRespone(): bool
     {
         return ! empty($this->tindakan_admin);
     }
 
-    // SCOPES 
     /**
-     * Scope untuk verifikasi yang perlu tindakan admin
+     * Check apakah punya multiple photos
+     */
+    public function hasMultiplePhotos(): bool
+    {
+        return is_array($this->foto_bukti) && count($this->foto_bukti) > 1;
+    }
+
+    // ==========================================
+    // HELPER METHODS - Denda
+    // ==========================================
+
+    /**
+     * Check apakah butuh denda (kondisi rusak/hilang)
+     */
+    public function needsDenda()
+    {
+        return in_array($this->kondisi, ['rusak_ringan', 'rusak_berat', 'hilang']);
+    }
+
+    /**
+     * Check apakah sudah ada denda
+     */
+    public function hasDenda()
+    {
+        return $this->denda()->exists();
+    }
+
+    // ==========================================
+    // SCOPES (Query Shortcuts)
+    // ==========================================
+
+    /**
+     * Scope: Verifikasi yang perlu tindakan admin
      */
     public function scopeNeedsAction($query)
     {
@@ -195,7 +235,7 @@ class VerifikasiPengembalian extends Model
     }
 
     /**
-     * Scope untuk verifikasi bermasalah
+     * Scope: Verifikasi bermasalah (rusak/hilang)
      */
     public function scopeProblematic($query)
     {
@@ -203,7 +243,7 @@ class VerifikasiPengembalian extends Model
     }
 
     /**
-     * Scope berdasarkan PIC
+     * Scope: Filter by PIC
      */
     public function scopeByPic($query, $picId)
     {
@@ -211,7 +251,7 @@ class VerifikasiPengembalian extends Model
     }
 
     /**
-     * Scope berdasarkan status verifikasi
+     * Scope: Filter by status verifikasi
      */
     public function scopeByStatus($query, $status)
     {

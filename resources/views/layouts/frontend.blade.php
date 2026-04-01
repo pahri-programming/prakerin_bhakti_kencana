@@ -41,7 +41,7 @@
     <main>
         @yield('content')
     </main>
-
+ 
     <!-- Footer -->
     <footer>
         @include('layouts.components-frontend.footer')
@@ -52,6 +52,10 @@
         class="top-btn btn btn-primary d-flex align-items-center justify-content-center round-54 p-0 rounded-circle">
         <i class="ti ti-arrow-up fs-7"></i>
     </a>
+
+    {{-- js scan --}}
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.2.0/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/blazeface@0.0.7/dist/blazeface.min.js"></script>
 
     <!-- Vendor JS (Modernize needs this) -->
     <script src="{{ asset('assets/backend/js/vendor.min.js') }}"></script>
@@ -71,7 +75,7 @@
     <script src="{{ asset('assets/backend/libs/owl.carousel/dist/owl.carousel.min.js') }}"></script>
     <script src="{{ asset('assets/backend/js/frontend-landingpage/homepage.js') }}"></script>
 
-  
+
 
 
     <!-- Iconify -->
@@ -82,7 +86,6 @@
 
     <!-- SweetAlert -->
     @include('sweetalert::alert')
-
     @stack('scripts')
 
 

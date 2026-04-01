@@ -303,20 +303,33 @@ class PeminjamanBarangController extends Controller
      */
     public function edit($id)
     {
-        $peminjaman     = PeminjamanBarang::with(['detailbarangs.barangRuangan.barang', 'detailbarangs.barangRuangan.ruangan', 'user'])->findOrFail($id);
-        $barangs        = Barang::all();
-        $users          = User::all();
+        $peminjaman = PeminjamanBarang::with([
+            'detailbarangs.barangRuangan.barang',
+            'detailbarangs.barangRuangan.ruangan',
+            'user',
+        ])->findOrFail($id);
+
+        $barangs = Barang::all();
+        $users   = User::all();
+
+        // Ambil semua barang ruangan yang tersedia PLUS yang sedang dipakai peminjaman ini
+        $currentBarangRuanganIds = $peminjaman->detailbarangs->pluck('barang_ruangan_id')->toArray();
+
         $barangRuangans = BarangRuangan::with(['barang', 'ruangan'])
-            ->where('status', 'tersedia')
-            ->where('qty', '>', 0)
+            ->where(function ($q) use ($currentBarangRuanganIds) {
+                $q->where(function ($q2) {
+                    // Yang tersedia normal
+                    $q2->where('status', 'tersedia')->where('qty', '>', 0);
+                })->orWhereIn('id', $currentBarangRuanganIds); // ATAU yang sedang dipinjam peminjaman ini
+            })
             ->get();
 
         return view('backend.peminjaman.edit', compact('peminjaman', 'barangs', 'users', 'barangRuangans'));
     }
 
-/**
- * Update peminjaman with dynamic barang
- */
+    /**
+     * Update peminjaman with dynamic barang
+     */
     public function update(Request $request, $id)
     {
         try {
@@ -334,6 +347,7 @@ class PeminjamanBarangController extends Controller
                 'tanggal_pinjam'      => 'required|date',
                 'tanggal_kembali'     => 'required|date|after_or_equal:tanggal_pinjam',
                 'status'              => 'required|in:menunggu,disetujui,ditolak,dikembalikan',
+                'alasan_tolak'        => 'required_if: status, ditolak | nullable|string | max: 500',
                 'keterangan'          => 'nullable|string|max:500',
             ], [
                 'required'       => ':attribute harus diisi',
@@ -345,8 +359,14 @@ class PeminjamanBarangController extends Controller
                 'after_or_equal' => ':attribute harus setelah atau sama dengan :date',
             ]);
 
-            $oldStatus = $peminjaman->status;
-            $newStatus = $validated['status'];
+            $oldStatus  = $peminjaman->status;
+            $newStatus  = $validated['status'];
+            $updateData = ['status' => $newStatus];
+            if ($newStatus === 'ditolak') {
+                $updateData['alasan_tolak'] = $validated['alasan_tolak'] ?? null;
+            } else {
+                $updateData['alasan_tolak'] = null; // Clear alasan_tolak jika tidak ditolak
+            }
 
             // Validasi ketersediaan untuk setiap barang ruangan baru
             $detailBarangs = [];
@@ -365,20 +385,20 @@ class PeminjamanBarangController extends Controller
 
                 // Cek status ketersediaan hanya jika status baru adalah 'disetujui'
                 if ($newStatus === 'disetujui') {
-                    if ($barangRuangan->status !== 'tersedia') {
-                        toast(
-                            "{$barangRuangan->barang->nama} di {$barangRuangan->ruangan->nama_ruangan}: Sedang dipinjam.",
-                            'error'
-                        );
+                    // Kumpulkan barang lama yang masih sama
+                    $oldBarangIds = $peminjaman->detailbarangs->pluck('barang_ruangan_id')->toArray();
+
+                    if ($barangRuangan->status !== 'tersedia' && ! in_array($barangRuanganId, $oldBarangIds)) {
+                        toast("{$barangRuangan->barang->nama}: Sedang dipinjam.", 'error');
                         return back()->withInput();
                     }
 
-                    // Cek qty/stok
-                    if ($jumlah > $barangRuangan->qty) {
-                        toast(
-                            "{$barangRuangan->barang->nama} di {$barangRuangan->ruangan->nama_ruangan}: Qty tidak mencukupi. Tersedia {$barangRuangan->qty} unit.",
-                            'error'
-                        );
+                    // Untuk qty, tambahkan qty lama jika barang sama
+                    $oldDetail    = $peminjaman->detailbarangs->firstWhere('barang_ruangan_id', $barangRuanganId);
+                    $effectiveQty = $barangRuangan->qty + ($oldDetail ? $oldDetail->jumlah : 0);
+
+                    if ($jumlah > $effectiveQty) {
+                        toast("{$barangRuangan->barang->nama}: Qty tidak mencukupi. Tersedia {$effectiveQty} unit.", 'error');
                         return back()->withInput();
                     }
                 }
@@ -420,6 +440,7 @@ class PeminjamanBarangController extends Controller
                 'tanggal_pinjam'  => $validated['tanggal_pinjam'],
                 'tanggal_kembali' => $validated['tanggal_kembali'],
                 'status'          => $validated['status'],
+                'alasan_tolak'    => $validated['alasan_tolak'] ?? null,
                 'keterangan'      => $validated['keterangan'] ?? null,
             ]);
 
@@ -605,7 +626,8 @@ class PeminjamanBarangController extends Controller
     public function updateStatus(Request $request, $id)
     {
         $validated = $request->validate([
-            'status' => 'required|in:menunggu,disetujui,ditolak,dikembalikan',
+            'status'       => 'required|in:menunggu,disetujui,ditolak,dikembalikan',
+            'alasan_tolak' => 'required_if:status,ditolak|nullable|string|max:500',
         ]);
 
         try {
@@ -660,7 +682,10 @@ class PeminjamanBarangController extends Controller
                 }
             }
 
-            $peminjaman->update(['status' => $newStatus]);
+            $peminjaman->update([
+                'status'       => $newStatus,
+                'alasan_tolak' => $validated['alasan_tolak'] ?? null,
+            ]);
 
             DB::commit();
 

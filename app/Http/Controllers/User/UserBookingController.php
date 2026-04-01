@@ -2,49 +2,50 @@
 namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
-use App\Models\booking;
-use App\Models\jadwal;
-use App\Models\ruangan;
+use App\Models\Booking;
+use App\Models\Jadwal;
+use App\Models\Ruangan;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class UserBookingController extends Controller
 {
-
-    public function export()
-    {
-        $query = booking::where('user_id', Auth::id())->with('ruangan');
-
-        if (request()->filled('ruang_id')) {
-            $query->where('ruang_id', request('ruang_id'));
-        }
-
-        if (request()->filled('status')) {
-            $query->where('status', request('status'));
-        }
-
-        if (request()->filled('tanggal')) {
-            $query->whereDate('tanggal', request('tanggal'));
-        }
-
-        $bookings = $query->orderBy('tanggal', 'desc')->get();
-
-        $pdf = Pdf::loadView('riwayat_booking_pdf', ['bookings' => $bookings]);
-        return $pdf->download('riwayat-booking-' . Auth::user()->name . '.pdf');
-    }
     /**
-     * Display a listing of the resource.
+     * LIST BOOKING MILIK USER
+     */
+    public function index()
+    {
+        $bookings = Booking::with(['ruangan'])
+            ->where('user_id', Auth::id())
+            ->orderBy('tanggal', 'DESC')
+            ->orderBy('created_at', 'DESC')
+            ->get()
+            ->map(function ($b) {
+                $b->tanggal_format = Carbon::parse($b->tanggal)->translatedFormat('d F Y');
+                $b->hari           = Carbon::parse($b->tanggal)->translatedFormat('l');
+                return $b;
+            });
+
+        return view('user.booking.index', compact('bookings'));
+    }
+
+    /**
+     * FORM BUAT BOOKING
      */
     public function create()
     {
-        $ruangans = ruangan::orderBy('nama_ruangan', 'asc')->get();
-        return view('booking_create', compact('ruangans'));
+        $ruangan = Ruangan::where('status', 'tersedia')
+            ->orderBy('nama_ruangan')
+            ->get();
+
+        return view('user.booking.create', compact('ruangan'));
     }
 
     /**
-     * Store booking
+     * STORE BOOKING
      */
     public function store(Request $request)
     {
@@ -53,71 +54,185 @@ class UserBookingController extends Controller
             'tanggal'       => 'required|date|after_or_equal:today',
             'waktu_mulai'   => 'required|date_format:H:i',
             'waktu_selesai' => 'required|date_format:H:i|after:waktu_mulai',
+        ], [
+            'ruang_id.required'      => 'Ruangan harus dipilih.',
+            'tanggal.after_or_equal' => 'Tanggal booking tidak boleh sebelum hari ini.',
+            'waktu_selesai.after'    => 'Waktu selesai harus lebih besar dari waktu mulai.',
         ]);
 
-        $tanggal    = Carbon::parse($request->tanggal);
-        $jamMulai   = Carbon::parse($request->tanggal . ' ' . $request->waktu_mulai);
-        $jamSelesai = Carbon::parse($request->tanggal . ' ' . $request->waktu_selesai);
-
-        // Cek jam mulai < waktu sekarang (kalau tanggal hari ini)
-        if ($tanggal->isToday() && $jamMulai->lt(now())) {
-            return back()->withInput()->with('error', 'Jam mulai harus setelah waktu sekarang.');
-        }
-
-        // Cek bentrok dengan jadwal tetap
-        $jadwalTetaps = Jadwal::where('ruang_id', $request->ruang_id)->get();
-        foreach ($jadwalTetaps as $jadwal) {
-            if (
-                ($request->waktu_mulai >= $jadwal->waktu_mulai && $request->waktu_mulai < $jadwal->waktu_selesai) ||
-                ($request->waktu_selesai > $jadwal->waktu_mulai && $request->waktu_selesai <= $jadwal->waktu_selesai) ||
-                ($request->waktu_mulai <= $jadwal->waktu_mulai && $request->waktu_selesai >= $jadwal->waktu_selesai)
-            ) {
-                return back()->withInput()->with('error', 'Jadwal bentrok dengan jadwal tetap ruangan.');
+        // Validasi waktu sudah lewat (untuk hari ini)
+        if (Carbon::parse($request->tanggal)->isToday()) {
+            $waktuMulai = Carbon::parse($request->tanggal . ' ' . $request->waktu_mulai);
+            if ($waktuMulai->isPast()) {
+                return back()->withErrors(['waktu_mulai' => 'Waktu mulai sudah lewat!'])->withInput();
             }
         }
 
-        // Cek bentrok booking lain
-        $cekBentrok = booking::where('ruang_id', $request->ruang_id)
-            ->where('tanggal', $request->tanggal)
-            ->where(function ($query) use ($request) {
-                $query->whereBetween('waktu_mulai', [$request->waktu_mulai, $request->waktu_selesai])
-                    ->orWhereBetween('waktu_selesai', [$request->waktu_mulai, $request->waktu_selesai])
-                    ->orWhere(function ($q) use ($request) {
-                        $q->where('waktu_mulai', '<=', $request->waktu_mulai)
-                            ->where('waktu_selesai', '>=', $request->waktu_selesai);
+        // Validasi bentrok dengan booking lain (status Diterima)
+        if ($this->checkBookingConflict(
+            $request->ruang_id,
+            $request->tanggal,
+            $request->waktu_mulai,
+            $request->waktu_selesai
+        )) {
+            return back()->withErrors([
+                'waktu_mulai' => 'Waktu booking bentrok dengan booking lain yang sudah diterima.',
+            ])->withInput();
+        }
+
+        // Validasi bentrok dengan jadwal tetap
+        if ($this->checkJadwalConflict(
+            $request->ruang_id,
+            $request->tanggal,
+            $request->waktu_mulai,
+            $request->waktu_selesai
+        )) {
+            return back()->withErrors([
+                'waktu_mulai' => 'Waktu booking bentrok dengan jadwal tetap ruangan.',
+            ])->withInput();
+        }
+
+        // Validasi jeda minimal 30 menit dari booking user yang sama
+        if (! $this->checkMinimalGap(
+            $request->ruang_id,
+            $request->tanggal,
+            $request->waktu_mulai
+        )) {
+            return back()->withErrors([
+                'waktu_mulai' => 'Harus ada jeda minimal 30 menit dari booking Anda sebelumnya.',
+            ])->withInput();
+        }
+
+        DB::beginTransaction();
+
+        try {
+            $booking = Booking::create([
+                'user_id'       => Auth::id(),
+                'ruang_id'      => $request->ruang_id,
+                'tanggal'       => $request->tanggal,
+                'waktu_mulai'   => $request->waktu_mulai,
+                'waktu_selesai' => $request->waktu_selesai,
+                'status'        => 'Pending',
+            ]);
+
+            DB::commit();
+
+            Log::info("Booking baru #{$booking->kode} dibuat oleh user #" . Auth::id());
+
+            return redirect()->route('user.booking.index')
+                ->with('success', "Booking berhasil diajukan! Kode booking: {$booking->kode}");
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error store booking user: ' . $e->getMessage());
+
+            return back()->withErrors([
+                'error' => 'Terjadi kesalahan: ' . $e->getMessage(),
+            ])->withInput();
+        }
+    }
+
+    /**
+     * DETAIL BOOKING
+     */
+    public function show($id)
+    {
+        $booking = Booking::with(['ruangan'])
+            ->where('user_id', Auth::id())
+            ->findOrFail($id);
+
+        $booking->tanggal_format = Carbon::parse($booking->tanggal)->translatedFormat('d F Y');
+        $booking->hari           = Carbon::parse($booking->tanggal)->translatedFormat('l');
+
+        return view('user.booking.show', compact('booking'));
+    }
+
+    /**
+     * BATALKAN BOOKING (hanya status Pending)
+     */
+    public function destroy($id)
+    {
+        $booking = Booking::where('user_id', Auth::id())
+            ->findOrFail($id);
+
+        if ($booking->status !== 'Pending') {
+            return back()->withErrors([
+                'error' => 'Booking tidak bisa dibatalkan karena sudah diproses.',
+            ]);
+        }
+
+        $booking->delete();
+
+        return back()->with('success', 'Booking berhasil dibatalkan.');
+    }
+
+    // ─── HELPER METHODS ──────────────────────────────────────────────────────
+
+    /**
+     * Cek bentrok dengan booking lain yang sudah Diterima
+     */
+    private function checkBookingConflict($ruangId, $tanggal, $waktuMulai, $waktuSelesai, $excludeId = null)
+    {
+        $query = Booking::where('ruang_id', $ruangId)
+            ->where('tanggal', $tanggal)
+            ->where('status', 'Diterima')
+            ->where(function ($q) use ($waktuMulai, $waktuSelesai) {
+                $q->whereBetween('waktu_mulai', [$waktuMulai, $waktuSelesai])
+                    ->orWhereBetween('waktu_selesai', [$waktuMulai, $waktuSelesai])
+                    ->orWhere(function ($q2) use ($waktuMulai, $waktuSelesai) {
+                        $q2->where('waktu_mulai', '<=', $waktuMulai)
+                            ->where('waktu_selesai', '>=', $waktuSelesai);
+                    });
+            });
+
+        if ($excludeId) {
+            $query->where('id', '!=', $excludeId);
+        }
+
+        return $query->exists();
+    }
+
+    /**
+     * Cek bentrok dengan jadwal tetap
+     */
+    private function checkJadwalConflict($ruangId, $tanggal, $waktuMulai, $waktuSelesai)
+    {
+        return Jadwal::where('ruang_id', $ruangId)
+            ->where('tanggal', $tanggal)
+            ->where(function ($q) use ($waktuMulai, $waktuSelesai) {
+                $q->whereBetween('waktu_mulai', [$waktuMulai, $waktuSelesai])
+                    ->orWhereBetween('waktu_selesai', [$waktuMulai, $waktuSelesai])
+                    ->orWhere(function ($q2) use ($waktuMulai, $waktuSelesai) {
+                        $q2->where('waktu_mulai', '<=', $waktuMulai)
+                            ->where('waktu_selesai', '>=', $waktuSelesai);
                     });
             })
             ->exists();
+    }
 
-        if ($cekBentrok) {
-            return back()->withInput()->with('error', 'Jadwal bentrok dengan booking lain.');
+    /**
+     * Cek jeda minimal 30 menit dari booking user yang sama di ruangan yang sama
+     */
+    private function checkMinimalGap($ruangId, $tanggal, $waktuMulai, $excludeId = null)
+    {
+        $query = Booking::where('ruang_id', $ruangId)
+            ->where('tanggal', $tanggal)
+            ->where('user_id', Auth::id())
+            ->where('waktu_selesai', '<=', $waktuMulai)
+            ->orderBy('waktu_selesai', 'desc');
+
+        if ($excludeId) {
+            $query->where('id', '!=', $excludeId);
         }
 
-        // Jeda 30 menit
-        $lastBooking = booking::where('ruang_id', $request->ruang_id)
-            ->where('tanggal', $request->tanggal)
-            ->where('waktu_selesai', '<=', $request->waktu_mulai)
-            ->orderBy('waktu_selesai', 'desc')
-            ->first();
+        $lastBooking = $query->first();
 
         if ($lastBooking) {
-            $lastEnd = Carbon::parse($request->tanggal . ' ' . $lastBooking->waktu_selesai);
-            if ($lastEnd->gt($jamMulai->subMinutes(30))) {
-                return back()->withInput()->with('error', 'Harus ada jeda 30 menit setelah pemakaian sebelumnya.');
-            }
+            $waktuKosong      = Carbon::parse($tanggal . ' ' . $lastBooking->waktu_selesai);
+            $waktuMulaiBarang = Carbon::parse($tanggal . ' ' . $waktuMulai);
+            return $waktuMulaiBarang->diffInMinutes($waktuKosong) >= 30;
         }
 
-        // Simpan booking
-        booking::create([
-            'user_id'       => Auth::id(),
-            'ruang_id'      => $request->ruang_id,
-            'tanggal'       => $request->tanggal,
-            'waktu_mulai'   => $request->waktu_mulai,
-            'waktu_selesai' => $request->waktu_selesai,
-            'status'        => 'Pending',
-        ]);
-
-
-        return redirect()->route('bookings.create')->with('success', 'booking berhasil diajukan.');
+        return true;
     }
 }

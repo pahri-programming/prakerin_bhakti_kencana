@@ -3,10 +3,8 @@ namespace App\Http\Controllers\Pic;
 
 use App\Http\Controllers\Controller;
 use App\Models\Booking;
-use App\Models\PeminjamanBarang;
 use App\Models\PengembalianBarang;
 use App\Models\VerifikasiBooking;
-use App\Models\VerifikasiPeminjaman;
 use App\Models\VerifikasiPengembalian;
 use Illuminate\Support\Facades\Auth;
 
@@ -21,18 +19,6 @@ class PicDashboardController extends Controller
     {
         // Statistics
         $stats = [
-            // Peminjaman Stats
-            'peminjaman_perlu_verifikasi'   => PeminjamanBarang::whereHas('pengembalian', function ($q) {
-                $q->where('status', 'menunggu_pic')
-                    ->doesntHave('verifikasi');
-            })->count(),
-
-            'peminjaman_sudah_verifikasi'   => VerifikasiPeminjaman::where('pic_id', Auth::id())->count(),
-
-            'peminjaman_bermasalah'         => VerifikasiPeminjaman::where('pic_id', Auth::id())
-                ->whereIn('kondisi', ['rusak_ringan', 'rusak_berat', 'hilang'])
-                ->count(),
-
             // Booking Stats
             'booking_perlu_verifikasi'      => Booking::where('status', 'selesai')
                 ->doesntHave('verifikasi')
@@ -44,7 +30,7 @@ class PicDashboardController extends Controller
                 ->whereIn('kondisi_ruangan', ['rusak_ringan', 'rusak_berat'])
                 ->count(),
 
-            // Pengembalian Stats (NEW!)
+            // Pengembalian Stats
             'pengembalian_perlu_verifikasi' => PengembalianBarang::where('status', 'menunggu_pic')
                 ->doesntHave('verifikasi')
                 ->whereHas('detailpengembalians', function ($q) {
@@ -59,16 +45,6 @@ class PicDashboardController extends Controller
                 ->count(),
         ];
 
-        // Pending Items - Peminjaman
-        $pendingPeminjaman = PeminjamanBarang::with(['user', 'detailbarangs.barangRuangan.barang', 'pengembalian.verifikasi'])
-            ->whereHas('pengembalian', function ($q) {
-                $q->where('status', 'menunggu_pic')
-                    ->doesntHave('verifikasi');
-            })
-            ->orderBy('tanggal_kembali', 'asc')
-            ->take(5)
-            ->get();
-
         // Pending Items - Booking
         $pendingBooking = Booking::with(['user', 'ruangan', 'verifikasi'])
             ->where('status', 'selesai')
@@ -77,7 +53,7 @@ class PicDashboardController extends Controller
             ->take(5)
             ->get();
 
-        // Pending Items - Pengembalian (NEW!)
+        // Pending Items - Pengembalian
         $pendingPengembalian = PengembalianBarang::with([
             'peminjamanBarang.user',
             'detailpengembalians.barang',
@@ -92,13 +68,6 @@ class PicDashboardController extends Controller
             ->take(5)
             ->get();
 
-        // Recent Verifikasi - Peminjaman
-        $recentVerifikasiPeminjaman = VerifikasiPeminjaman::with(['peminjaman.user', 'peminjaman.detailbarangs.barangRuangan.barang'])
-            ->where('pic_id', Auth::id())
-            ->orderBy('tanggal_verifikasi', 'desc')
-            ->take(5)
-            ->get();
-
         // Recent Verifikasi - Booking
         $recentVerifikasiBooking = VerifikasiBooking::with(['booking.user', 'booking.ruangan'])
             ->where('pic_id', Auth::id())
@@ -106,7 +75,7 @@ class PicDashboardController extends Controller
             ->take(5)
             ->get();
 
-        // Recent Verifikasi - Pengembalian (NEW!)
+        // Recent Verifikasi - Pengembalian
         $recentVerifikasiPengembalian = VerifikasiPengembalian::with([
             'pengembalianBarang.peminjamanBarang.user',
             'pengembalianBarang.detailpengembalians.barang',
@@ -118,10 +87,8 @@ class PicDashboardController extends Controller
 
         return view('pic.dashboard', compact(
             'stats',
-            'pendingPeminjaman',
             'pendingBooking',
             'pendingPengembalian',
-            'recentVerifikasiPeminjaman',
             'recentVerifikasiBooking',
             'recentVerifikasiPengembalian'
         ));

@@ -5,6 +5,7 @@ use App\Models\Barang;
 use App\Models\barangruangan;
 use App\Models\booking;
 use App\Models\DendaPengembalian;
+use App\Models\DendaBooking;
 use App\Models\jadwal;
 use App\Models\PeminjamanBarang;
 use App\Models\ruangan;
@@ -101,115 +102,5 @@ class FrontendController extends Controller
             'ruangans'       => $ruangans,
             'barangRuangans' => $barangRuangans,
         ]);
-    }
-
-    public function riwayat(Request $request)
-    {
-        // ── Booking ──────────────────────────────────────────────────
-        $bookingQuery = Booking::where('user_id', Auth::id())->with('ruangan');
-
-        if ($request->filled('ruang_id')) {
-            $bookingQuery->where('ruang_id', $request->ruang_id);
-        }
-        if ($request->filled('status_booking')) {
-            $bookingQuery->where('status', $request->status_booking);
-        }
-        if ($request->filled('tanggal')) {
-            $bookingQuery->whereDate('tanggal', $request->tanggal);
-        }
-
-        $booking = $bookingQuery->orderBy('tanggal', 'desc')->get();
-
-        // ── Peminjaman ────────────────────────────────────────────────
-        $peminjamanQuery = PeminjamanBarang::with([
-            'detailbarangs.barangRuangan.barang',
-            'detailbarangs.barangRuangan.ruangan',
-        ])->where('user_id', Auth::id());
-
-        if ($request->filled('barang_id')) {
-            $peminjamanQuery->whereHas('detailbarangs.barangRuangan', function ($q) use ($request) {
-                $q->where('barang_id', $request->barang_id);
-            });
-        }
-        if ($request->filled('status_peminjaman')) {
-            $peminjamanQuery->where('status', $request->status_peminjaman);
-        }
-        if ($request->filled('tanggal_pinjam')) {
-            $peminjamanQuery->whereDate('tanggal_pinjam', $request->tanggal_pinjam);
-        }
-        if ($request->filled('tanggal_kembali')) {
-            $peminjamanQuery->whereDate('tanggal_kembali', $request->tanggal_kembali);
-        }
-
-        $peminjaman = $peminjamanQuery->orderBy('tanggal_pinjam', 'desc')->get();
-
-        // ── Denda ─────────────────────────────────────────────────────
-        $denda = DendaPengembalian::with([
-            'pengembalianBarang.peminjamanBarang',
-            'verifikasiPengembalian',
-        ])
-            ->whereHas('pengembalianBarang.peminjamanBarang', function ($q) {
-                $q->where('user_id', Auth::id());
-            })
-            ->latest()
-            ->get();
-
-        // ── Master data untuk filter ──────────────────────────────────
-        $ruangan = Ruangan::orderBy('nama_ruangan')->get();
-        $barang  = Barang::orderBy('nama')->get();
-
-        return view('riwayat', compact('booking', 'peminjaman', 'denda', 'ruangan', 'barang'));
-    }
-
-    public function exportRiwayatBooking()
-    {
-        $query = booking::with('ruangan')
-            ->where('user_id', Auth::id());
-
-        if (request()->filled('ruang_id')) {
-            $query->where('ruang_id', request('ruang_id'));
-        }
-        if (request()->filled('status_booking')) {
-            $query->where('status', request('status_booking'));
-        }
-        if (request()->filled('tanggal')) {
-            $query->whereDate('tanggal', request('tanggal'));
-        }
-
-        $booking = $query->orderBy('tanggal', 'desc')->get();
-
-        $pdf = Pdf::loadView('riwayat_booking_pdf', compact('booking'));
-
-        return $pdf->download('riwayat-booking-' . Auth::user()->name . '.pdf');
-    }
-
-    public function exportRiwayatPeminjaman()
-    {
-        $query = PeminjamanBarang::with('barang')
-            ->where('user_id', Auth::id());
-
-        if (request()->filled('barang_id')) {
-            $query->where('barang_id', request('barang_id'));
-        }
-
-        if (request()->filled('status_peminjaman')) {
-            $query->where('status', request('status_peminjaman'));
-        }
-
-        if (request()->filled('tanggal_pinjam')) {
-            $query->whereDate('tanggal_pinjam', request('tanggal_pinjam'));
-        }
-
-        if (request()->filled('tanggal_kembali')) {
-            $query->whereDate('tanggal_kembali', request('tanggal_kembali'));
-        }
-
-        $peminjaman = $query->orderBy('tanggal_pinjam', 'desc')->get();
-
-        $pdf = Pdf::loadView('riwayat_peminjaman_pdf', compact('peminjaman'));
-
-        return $pdf->download(
-            'riwayat-peminjaman-' . Auth::user()->name . '-' . now()->format('d-m-Y') . '.pdf'
-        );
     }
 }

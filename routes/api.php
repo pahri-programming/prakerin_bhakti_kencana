@@ -40,7 +40,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/auth/logout', [AuthController::class, 'logout']);
     Route::get('/auth/me', [AuthController::class, 'me']);
 
-    // ── Peminjaman Barang ────────────────────────────────────
+    // ── Peminjaman Barang ────────────────────────────────────6
     Route::prefix('peminjaman')->group(function () {
         Route::get('/', [PeminjamanApiController::class, 'index']);
         Route::post('/', [PeminjamanApiController::class, 'store']);
@@ -60,9 +60,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // ── Denda ────────────────────────────────────────────────
     Route::prefix('denda')->group(function () {
-        Route::get('/', [DendaApiController::class, 'index']);
-        Route::get('/{id}', [DendaApiController::class, 'show']);
-        Route::post('/{id}/upload-bukti', [DendaApiController::class, 'uploadBukti']);
+        Route::get('/', [DendaApiController::class, 'index']);                                // semua denda user
+        Route::get('/{type}/{id}', [DendaApiController::class, 'show']);                      // detail (type: barang/booking)
+        Route::post('/{type}/{id}/upload-bukti', [DendaApiController::class, 'uploadBukti']); // upload bukti pembayaran denda
     });
 
 });

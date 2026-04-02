@@ -21,12 +21,12 @@ use App\Http\Controllers\Pic\PicDashboardController;
 use App\Http\Controllers\Pic\VerifikasiBookingController;
 use App\Http\Controllers\Pic\VerifikasiPeminjamanController;
 use App\Http\Controllers\Pic\VerifikasiPengembalianController;
+use App\Http\Controllers\RiwayatController;
 use App\Http\Controllers\User\ProfileController;
 use App\Http\Controllers\User\UserBookingController;
 use App\Http\Controllers\User\UserDendaBookingController;
 use App\Http\Controllers\User\UserDendaController;
 use App\Http\Controllers\User\UserPeminjamanController;
-use App\Http\Controllers\RiwayatController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -78,6 +78,7 @@ Route::middleware(['auth'])->group(function () {
 
     // User Profile
     Route::get('/profile', [ProfileController::class, 'index'])->name('profile');
+    Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
 
     // User Booking
     Route::prefix('bookings')->name('user.booking.')->group(function () {

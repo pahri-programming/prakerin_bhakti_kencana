@@ -250,7 +250,7 @@
                     <li class="sidebar-item {{ request()->is('admin/denda*') ? 'active' : '' }}">
                         <a class="sidebar-link" href="{{ route('backend.denda.index') }}" aria-expanded="false">
                             <span><i class="ti ti-cash"></i></span>
-                            <span class="hide-menu">Denda</span>
+                            <span class="hide-menu">Denda Peminjaman</span>
                             @php
                                 $pendingDenda = \App\Models\PengembalianBarang::where('status', 'perlu_denda')
                                     ->whereDoesntHave('denda')

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 use App\Models\Barang;
 use App\Models\Booking;
 use App\Models\DendaPengembalian;
+use App\Models\DendaBooking;
 use App\Models\PeminjamanBarang;
 use App\Models\Ruangan;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -75,14 +76,23 @@ class RiwayatController extends Controller
             })
             ->latest()
             ->get();
+        // ── Denda Booking ─────────────────────────────────────────
+        $dendaBooking = DendaBooking::with([
+            'booking.ruangan',
+            'verifikasiBooking',
+        ])
+            ->whereHas('booking', fn($q) => $q->where('user_id', Auth::id()))
+            ->latest()
+            ->get();
 
         // ── Master data untuk filter ──────────────────────────────
         $ruangan = Ruangan::orderBy('nama_ruangan')->get();
         $barang  = Barang::orderBy('nama')->get();
 
         return view('user.riwayat.index', compact(
-            'booking', 'peminjaman', 'denda', 'ruangan', 'barang'
+            'booking', 'peminjaman', 'denda', 'dendaBooking', 'ruangan', 'barang'
         ));
+
     }
 
     /**

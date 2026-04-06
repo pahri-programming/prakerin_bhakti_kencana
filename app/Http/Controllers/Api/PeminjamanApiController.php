@@ -187,7 +187,7 @@ class PeminjamanApiController extends Controller
     private function formatPeminjaman($p)
     {
         return [
-            'id'              => $p->id,
+            'id'              => $p->id,    
             'kode'            => $p->kode,
             'status'          => $p->status,
             'alasan_tolak'    => $p->alasan_tolak,

@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\BarangApiController;
 use App\Http\Controllers\Api\BookingApiController;
 use App\Http\Controllers\Api\DendaApiController;
 use App\Http\Controllers\Api\PeminjamanApiController;
+use App\Http\Controllers\Api\RiwayatApiController;
 use App\Http\Controllers\Api\RuanganController;
 use Illuminate\Support\Facades\Route;
 
@@ -57,6 +58,14 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/{id}', [BookingApiController::class, 'destroy']);
 
     });
+
+    // Riwayat
+    Route::get('/riwayat', [RiwayatApiController::class, 'index']);
+
+    // Profile
+    Route::get('/profile', [ProfileApiController::class, 'index']);
+    Route::put('/profile', [ProfileApiController::class, 'update']);
+    Route::put('/profile/password', [ProfileApiController::class, 'updatePassword']);
 
     // ── Denda ────────────────────────────────────────────────
     Route::prefix('denda')->group(function () {

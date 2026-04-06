@@ -68,6 +68,17 @@ class BookingApiController extends Controller
             'keterangan'    => 'nullable|string|max:500',
         ]);
 
+        // Cek waktu sudah lewat (untuk hari ini)
+        if (\Carbon\Carbon::parse($request->tanggal)->isToday()) {
+            $waktuMulai = \Carbon\Carbon::parse($request->tanggal . ' ' . $request->waktu_mulai);
+            if ($waktuMulai->isPast()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Waktu mulai sudah lewat, tidak bisa booking',
+                ], 422);
+            }
+        }
+
         // Cek ruangan tersedia
         $ruangan = Ruangan::find($request->ruang_id);
         if ($ruangan->status !== 'tersedia') {

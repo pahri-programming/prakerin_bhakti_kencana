@@ -205,7 +205,7 @@ class BookingController extends Controller
         ]);
 
         try {
-            //  Validasi waktu sudah lewat (untuk hari ini)
+            // Validasi waktu sudah lewat (untuk hari ini)
             if (Carbon::parse($request->tanggal)->isToday()) {
                 $waktuMulai = Carbon::parse($request->tanggal . ' ' . $request->waktu_mulai);
 
@@ -424,7 +424,7 @@ class BookingController extends Controller
         return $pdf->download('laporan-BookingRuangan-' . now()->format('Y-m-d') . '.pdf');
     }
 
-    //  HELPER METHODS 
+    //  HELPER METHODS
 
     /**
      *  CEK BENTROK DENGAN BOOKING LAIN
@@ -476,7 +476,7 @@ class BookingController extends Controller
         // Dapatkan user_id dari request (untuk create) atau booking yang sedang diedit
         $userId = request()->user_id ?? Booking::find($excludeId)?->user_id;
 
-        if (!$userId) {
+        if (! $userId) {
             return true; // Tidak bisa validasi tanpa user_id
         }
 

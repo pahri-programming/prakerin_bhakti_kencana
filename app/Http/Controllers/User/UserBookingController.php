@@ -64,7 +64,17 @@ class UserBookingController extends Controller
         if (Carbon::parse($request->tanggal)->isToday()) {
             $waktuMulai = Carbon::parse($request->tanggal . ' ' . $request->waktu_mulai);
             if ($waktuMulai->isPast()) {
-                return back()->withErrors(['waktu_mulai' => 'Waktu mulai sudah lewat!'])->withInput();
+                return back()->withErrors([
+                    'waktu_mulai' => 'Waktu mulai sudah lewat, tidak bisa booking.',
+                ])->withInput();
+            }
+
+            // Tambahan: waktu selesai juga tidak boleh sudah lewat
+            $waktuSelesai = Carbon::parse($request->tanggal . ' ' . $request->waktu_selesai);
+            if ($waktuSelesai->isPast()) {
+                return back()->withErrors([
+                    'waktu_selesai' => 'Waktu selesai sudah lewat, tidak bisa booking.',
+                ])->withInput();
             }
         }
 

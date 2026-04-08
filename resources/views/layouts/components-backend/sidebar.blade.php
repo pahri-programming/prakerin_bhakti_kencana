@@ -313,7 +313,7 @@
                                     \App\Models\VerifikasiBooking::where('kondisi_ruangan', 'rusak')
                                         ->where('status_verifikasi', 'pending')
                                         ->count() +
-                                    \App\Models\VerifikasiPengembalian::whereIn('kondisi', ['rusak_berat', 'hilang'])
+                                    \App\Models\Verifikasipengembalian::whereIn('kondisi', ['rusak_berat', 'hilang'])
                                         ->where('status_verifikasi', 'pending')
                                         ->count();
                             @endphp

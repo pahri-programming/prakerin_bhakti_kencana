@@ -4,8 +4,6 @@ use App\Models\booking;
 use App\Models\jadwal;
 use App\Models\PeminjamanBarang;
 use App\Models\ruangan;
-use App\Models\User;
-
 use Illuminate\Http\Request;
 
 
@@ -47,9 +45,7 @@ class BackendController extends Controller
             'kategoris'         => \App\Models\Kategori::count(),
             'peminjaman'        => \App\Models\PeminjamanBarang::count(),
             'bookings'          => \App\Models\booking::count(),
-            'ruangans'          => \App\Models\ruangan:
-            use App\Models\User;
-            :count(),
+            'ruangans'          => \App\Models\ruangan::count(),
             'jadwals'           => \App\Models\jadwal::count(),
 
             'bookingHariIni'    => \App\Models\booking::whereDate('tanggal', now()->toDateString())

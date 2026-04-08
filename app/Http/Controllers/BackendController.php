@@ -1,7 +1,7 @@
 <?php
 namespace App\Http\Controllers;
-use App\Models\Booking;
-use App\Models\Jadwal;
+use App\Models\booking;
+use App\Models\jadwal;
 use App\Models\PeminjamanBarang;
 use Illuminate\Http\Request;
 
@@ -13,8 +13,8 @@ class BackendController extends Controller
      */
     public function index()
     {
-        // Booking data
-        $booking = \App\Models\Booking::with(['user', 'ruangan'])
+        // booking data
+        $booking = \App\Models\booking::with(['user', 'ruangan'])
             ->orderByDesc('tanggal')
             ->limit(6)
             ->get()
@@ -43,14 +43,14 @@ class BackendController extends Controller
             'barangs'           => \App\Models\Barang::count(),
             'kategoris'         => \App\Models\Kategori::count(),
             'peminjaman'        => \App\Models\PeminjamanBarang::count(),
-            'bookings'          => \App\Models\Booking::count(),
+            'bookings'          => \App\Models\booking::count(),
             'ruangans'          => \App\Models\Ruangan::count(),
-            'jadwals'           => \App\Models\Jadwal::count(),
+            'jadwals'           => \App\Models\jadwal::count(),
 
-            'bookingHariIni'    => \App\Models\Booking::whereDate('tanggal', now()->toDateString())
+            'bookingHariIni'    => \App\Models\booking::whereDate('tanggal', now()->toDateString())
                 ->count(),
 
-            'bookingPending'    => \App\Models\Booking::where('status', 'Pending')->count(),
+            'bookingPending'    => \App\Models\booking::where('status', 'Pending')->count(),
 
             'peminjamanHariIni' => \App\Models\PeminjamanBarang::whereDate('tanggal_pinjam', now()->toDateString())->count(),
             'PeminjamanPending' => \App\Models\PeminjamanBarang::where('status', 'menunggu')->count(),

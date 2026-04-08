@@ -2,9 +2,9 @@
 namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
-use App\Models\Booking;
-use App\Models\Jadwal;
-use App\Models\Ruangan;
+use App\Models\booking;
+use App\Models\jadwal;
+use App\Models\ruangan;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -18,7 +18,7 @@ class UserBookingController extends Controller
      */
     public function index()
     {
-        $bookings = Booking::with(['ruangan'])
+        $bookings = booking::with(['ruangan'])
             ->where('user_id', Auth::id())
             ->orderBy('tanggal', 'DESC')
             ->orderBy('created_at', 'DESC')
@@ -37,7 +37,7 @@ class UserBookingController extends Controller
      */
     public function create()
     {
-        $ruangan = Ruangan::where('status', 'tersedia')
+        $ruangan = ruangan::where('status', 'tersedia')
             ->orderBy('nama_ruangan')
             ->get();
 
@@ -55,7 +55,7 @@ class UserBookingController extends Controller
             'waktu_mulai'   => 'required|date_format:H:i',
             'waktu_selesai' => 'required|date_format:H:i|after:waktu_mulai',
         ], [
-            'ruang_id.required'      => 'Ruangan harus dipilih.',
+            'ruang_id.required'      => 'ruangan harus dipilih.',
             'tanggal.after_or_equal' => 'Tanggal booking tidak boleh sebelum hari ini.',
             'waktu_selesai.after'    => 'Waktu selesai harus lebih besar dari waktu mulai.',
         ]);
@@ -116,7 +116,7 @@ class UserBookingController extends Controller
         DB::beginTransaction();
 
         try {
-            $booking = Booking::create([
+            $booking = booking::create([
                 'user_id'       => Auth::id(),
                 'ruang_id'      => $request->ruang_id,
                 'tanggal'       => $request->tanggal,
@@ -127,10 +127,10 @@ class UserBookingController extends Controller
 
             DB::commit();
 
-            Log::info("Booking baru #{$booking->kode} dibuat oleh user #" . Auth::id());
+            Log::info("booking baru #{$booking->kode} dibuat oleh user #" . Auth::id());
 
             return redirect()->route('user.booking.index')
-                ->with('success', "Booking berhasil diajukan! Kode booking: {$booking->kode}");
+                ->with('success', "booking berhasil diajukan! Kode booking: {$booking->kode}");
 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -147,7 +147,7 @@ class UserBookingController extends Controller
      */
     public function show($id)
     {
-        $booking = Booking::with(['ruangan'])
+        $booking = booking::with(['ruangan'])
             ->where('user_id', Auth::id())
             ->findOrFail($id);
 
@@ -162,18 +162,18 @@ class UserBookingController extends Controller
      */
     public function destroy($id)
     {
-        $booking = Booking::where('user_id', Auth::id())
+        $booking = booking::where('user_id', Auth::id())
             ->findOrFail($id);
 
         if ($booking->status !== 'Pending') {
             return back()->withErrors([
-                'error' => 'Booking tidak bisa dibatalkan karena sudah diproses.',
+                'error' => 'booking tidak bisa dibatalkan karena sudah diproses.',
             ]);
         }
 
         $booking->delete();
 
-        return back()->with('success', 'Booking berhasil dibatalkan.');
+        return back()->with('success', 'booking berhasil dibatalkan.');
     }
 
     // ─── HELPER METHODS ──────────────────────────────────────────────────────
@@ -183,7 +183,7 @@ class UserBookingController extends Controller
      */
     private function checkBookingConflict($ruangId, $tanggal, $waktuMulai, $waktuSelesai, $excludeId = null)
     {
-        $query = Booking::where('ruang_id', $ruangId)
+        $query = booking::where('ruang_id', $ruangId)
             ->where('tanggal', $tanggal)
             ->where('status', 'Diterima')
             ->where(function ($q) use ($waktuMulai, $waktuSelesai) {
@@ -207,7 +207,7 @@ class UserBookingController extends Controller
      */
     private function checkJadwalConflict($ruangId, $tanggal, $waktuMulai, $waktuSelesai)
     {
-        return Jadwal::where('ruang_id', $ruangId)
+        return jadwal::where('ruang_id', $ruangId)
             ->where('tanggal', $tanggal)
             ->where(function ($q) use ($waktuMulai, $waktuSelesai) {
                 $q->whereBetween('waktu_mulai', [$waktuMulai, $waktuSelesai])
@@ -225,7 +225,7 @@ class UserBookingController extends Controller
      */
     private function checkMinimalGap($ruangId, $tanggal, $waktuMulai, $excludeId = null)
     {
-        $query = Booking::where('ruang_id', $ruangId)
+        $query = booking::where('ruang_id', $ruangId)
             ->where('tanggal', $tanggal)
             ->where('user_id', Auth::id())
             ->where('waktu_selesai', '<=', $waktuMulai)

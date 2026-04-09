@@ -2,9 +2,9 @@
 namespace App\Http\Controllers\Backend;
 
 use App\Http\Controllers\Controller;
-use App\Models\Booking;
-use App\Models\Jadwal;
-use App\Models\Ruangan;
+use App\Models\booking;
+use App\Models\jadwal;
+use App\Models\ruangan;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -22,7 +22,7 @@ class JadwalController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Jadwal::with('ruangan');
+        $query = jadwal::with('ruangan');
 
         // Filter by search
         if ($request->filled('search')) {
@@ -66,7 +66,7 @@ class JadwalController extends Controller
             });
 
         // Data untuk filter
-        $ruangans = Ruangan::orderBy('nama_ruangan')->get();
+        $ruangans = ruangan::orderBy('nama_ruangan')->get();
         $bulan    = [
             1 => 'Januari', 2    => 'Februari', 3 => 'Maret', 4     => 'April',
             5 => 'Mei', 6        => 'Juni', 7     => 'Juli', 8      => 'Agustus',
@@ -87,7 +87,7 @@ class JadwalController extends Controller
      */
     public function create()
     {
-        $ruangans = Ruangan::orderBy('nama_ruangan')->get(); //  Tampilkan semua ruangan
+        $ruangans = ruangan::orderBy('nama_ruangan')->get(); //  Tampilkan semua ruangan
         return view('backend.jadwal.create', compact('ruangans'));
     }
 
@@ -137,7 +137,7 @@ class JadwalController extends Controller
 
             DB::beginTransaction();
 
-            $jadwal = Jadwal::create($validated);
+            $jadwal = jadwal::create($validated);
 
             DB::commit();
 
@@ -171,8 +171,8 @@ class JadwalController extends Controller
      */
     public function edit(string $id)
     {
-        $jadwal   = Jadwal::findOrFail($id);
-        $ruangans = Ruangan::orderBy('nama_ruangan')->get();
+        $jadwal   = jadwal::findOrFail($id);
+        $ruangans = ruangan::orderBy('nama_ruangan')->get();
 
         return view('backend.jadwal.edit', compact('jadwal', 'ruangans'));
     }
@@ -198,7 +198,7 @@ class JadwalController extends Controller
         ]);
 
         try {
-            $jadwal = Jadwal::findOrFail($id);
+            $jadwal = jadwal::findOrFail($id);
 
             //  Cek konflik dengan jadwal lain (kecuali jadwal ini sendiri)
             if ($this->checkJadwalConflict(
@@ -260,7 +260,7 @@ class JadwalController extends Controller
     public function destroy(string $id)
     {
         try {
-            $jadwal = Jadwal::findOrFail($id);
+            $jadwal = jadwal::findOrFail($id);
 
             $kegiatan = $jadwal->kegiatan;
             $tanggal  = $jadwal->tanggal_format;
@@ -317,7 +317,7 @@ class JadwalController extends Controller
      */
     private function checkJadwalConflict($ruangId, $tanggal, $waktuMulai, $waktuSelesai, $excludeId = null)
     {
-        $query = Jadwal::where('ruang_id', $ruangId)
+        $query = jadwal::where('ruang_id', $ruangId)
             ->where('tanggal', $tanggal)
             ->where(function ($q) use ($waktuMulai, $waktuSelesai) {
                 $q->whereBetween('waktu_mulai', [$waktuMulai, $waktuSelesai])
@@ -340,7 +340,7 @@ class JadwalController extends Controller
      */
     private function checkBookingConflict($ruangId, $tanggal, $waktuMulai, $waktuSelesai)
     {
-        return Booking::where('ruang_id', $ruangId)
+        return booking::where('ruang_id', $ruangId)
             ->where('tanggal', $tanggal)
             ->where('status', 'Diterima')
             ->where(function ($q) use ($waktuMulai, $waktuSelesai) {

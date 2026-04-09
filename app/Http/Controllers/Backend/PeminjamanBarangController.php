@@ -3,7 +3,7 @@ namespace App\Http\Controllers\Backend;
 
 use App\Http\Controllers\Controller;
 use App\Models\Barang;
-use App\Models\BarangRuangan;
+use App\Models\barangruangan;
 use App\Models\DetailPeminjamanBarang;
 use App\Models\PeminjamanBarang;
 use App\Models\User;
@@ -89,7 +89,7 @@ class PeminjamanBarangController extends Controller
     {
         $barangs        = Barang::all();
         $users          = User::all();
-        $barangRuangans = BarangRuangan::with(['barang', 'ruangan'])
+        $barangRuangans = barangruangan::with(['barang', 'ruangan'])
             ->where('status', 'tersedia')
             ->where('qty', '>', 0)
             ->get();
@@ -131,7 +131,7 @@ class PeminjamanBarangController extends Controller
             foreach ($validated['barang_ruangan_id'] as $index => $barangRuanganId) {
                 $jumlah = $validated['jumlah'][$index];
 
-                $barangRuangan = BarangRuangan::with(['barang', 'ruangan'])
+                $barangRuangan = barangruangan::with(['barang', 'ruangan'])
                     ->find($barangRuanganId);
 
                 // Cek apakah barang ruangan ditemukan
@@ -315,7 +315,7 @@ class PeminjamanBarangController extends Controller
         // Ambil semua barang ruangan yang tersedia PLUS yang sedang dipakai peminjaman ini
         $currentBarangRuanganIds = $peminjaman->detailbarangs->pluck('barang_ruangan_id')->toArray();
 
-        $barangRuangans = BarangRuangan::with(['barang', 'ruangan'])
+        $barangRuangans = barangruangan::with(['barang', 'ruangan'])
             ->where(function ($q) use ($currentBarangRuanganIds) {
                 $q->where(function ($q2) {
                     // Yang tersedia normal
@@ -374,7 +374,7 @@ class PeminjamanBarangController extends Controller
             foreach ($validated['barang_ruangan_id'] as $index => $barangRuanganId) {
                 $jumlah = $validated['jumlah'][$index];
 
-                $barangRuangan = BarangRuangan::with(['barang', 'ruangan'])
+                $barangRuangan = barangruangan::with(['barang', 'ruangan'])
                     ->find($barangRuanganId);
 
                 // Cek apakah barang ruangan ditemukan
@@ -416,7 +416,7 @@ class PeminjamanBarangController extends Controller
             // Kembalikan stok barang lama jika status sebelumnya 'disetujui'
             if ($oldStatus === 'disetujui') {
                 foreach ($peminjaman->detailbarangs as $detail) {
-                    $barangRuangan = BarangRuangan::where('id', $detail->barang_ruangan_id)
+                    $barangRuangan = barangruangan::where('id', $detail->barang_ruangan_id)
                         ->lockForUpdate()
                         ->first();
 
@@ -474,7 +474,7 @@ class PeminjamanBarangController extends Controller
             // Kurangi stok jika status baru adalah 'disetujui'
             if ($newStatus === 'disetujui') {
                 foreach ($detailBarangs as $detail) {
-                    $barangRuangan = BarangRuangan::where('id', $detail['barang_ruangan_id'])
+                    $barangRuangan = barangruangan::where('id', $detail['barang_ruangan_id'])
                         ->lockForUpdate()
                         ->first();
 
@@ -585,7 +585,7 @@ class PeminjamanBarangController extends Controller
             // Jika status disetujui, kembalikan qty
             if ($peminjaman->status === 'disetujui') {
                 foreach ($peminjaman->detailbarangs as $detail) {
-                    $barangRuangan = BarangRuangan::where('id', $detail->barang_ruangan_id)
+                    $barangRuangan = barangruangan::where('id', $detail->barang_ruangan_id)
                         ->lockForUpdate()
                         ->first();
 
@@ -642,7 +642,7 @@ class PeminjamanBarangController extends Controller
                 // Jika status berubah dari menunggu ke disetujui, kurangi qty & ubah status
                 if ($oldStatus === 'menunggu' && $newStatus === 'disetujui') {
                     foreach ($peminjaman->detailbarangs as $detail) {
-                        $barangRuangan = BarangRuangan::where('id', $detail->barang_ruangan_id)
+                        $barangRuangan = barangruangan::where('id', $detail->barang_ruangan_id)
                             ->lockForUpdate()
                             ->first();
 
@@ -665,7 +665,7 @@ class PeminjamanBarangController extends Controller
                 // Jika status berubah ke dikembalikan atau ditolak, kembalikan qty & ubah status
                 if (in_array($oldStatus, ['disetujui']) && in_array($newStatus, ['dikembalikan', 'ditolak'])) {
                     foreach ($peminjaman->detailbarangs as $detail) {
-                        $barangRuangan = BarangRuangan::where('id', $detail->barang_ruangan_id)
+                        $barangRuangan = barangruangan::where('id', $detail->barang_ruangan_id)
                             ->lockForUpdate()
                             ->first();
 

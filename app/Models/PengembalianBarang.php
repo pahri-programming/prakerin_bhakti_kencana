@@ -55,7 +55,7 @@ class PengembalianBarang extends Model
      */
     public function verifikasi()
     {
-        return $this->hasOne(VerifikasiPengembalian::class, 'pengembalian_barang_id');
+        return $this->hasOne(Verifikasipengembalian::class, 'pengembalian_barang_id');
     }
 
     /**

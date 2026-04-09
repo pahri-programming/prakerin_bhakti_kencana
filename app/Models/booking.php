@@ -53,7 +53,7 @@ class Booking extends Model
 
     public function ruangan()
     {
-        return $this->belongsTo(Ruangan::class, 'ruang_id');
+        return $this->belongsTo(ruangan::class, 'ruang_id');
     }
 
     //  RELASI KE VERIFIKASI PIC (TAMBAHAN BARU)
@@ -153,7 +153,7 @@ class Booking extends Model
                 // Jika status booking jadi "Selesai", "Ditolak", atau "Pending"
                 if (in_array($booking->status, ['Selesai', 'Ditolak', 'Pending'])) {
                     // Cek apakah masih ada booking lain dengan status "Diterima" di ruangan yang sama
-                    $adaBookingAktif = Booking::where('ruang_id', $booking->ruang_id)
+                    $adaBookingAktif =booking::where('ruang_id', $booking->ruang_id)
                         ->where('id', '!=', $booking->id)
                         ->where('status', 'Diterima')
                         ->exists();
@@ -177,7 +177,7 @@ class Booking extends Model
                 $ruangan = $booking->ruangan;
 
                 // Cek apakah masih ada booking lain dengan status "Diterima"
-                $adaBookingAktif = Booking::where('ruang_id', $booking->ruang_id)
+                $adaBookingAktif =booking::where('ruang_id', $booking->ruang_id)
                     ->where('status', 'Diterima')
                     ->exists();
 

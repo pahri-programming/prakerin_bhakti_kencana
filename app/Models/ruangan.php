@@ -16,17 +16,17 @@ class Ruangan extends Model
     // Relasi
     public function booking()
     {
-        return $this->hasMany(Booking::class, 'ruang_id');
+        return $this->hasMany(booking::class, 'ruang_id');
     }
 
     public function jadwal()
     {
-        return $this->hasMany(Jadwal::class, 'ruang_id');
+        return $this->hasMany(jadwal::class, 'ruang_id');
     }
 
     public function barangRuangan()
     {
-        return $this->hasMany(BarangRuangan::class);
+        return $this->hasMany(barangruangan::class);
     }
 
     //  Helper Method: Cek apakah ruangan sedang dipinjam

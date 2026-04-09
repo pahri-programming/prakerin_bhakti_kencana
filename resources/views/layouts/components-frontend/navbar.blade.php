@@ -165,43 +165,15 @@
                         <a class="nav-link nav-link-custom {{ request()->is('/') ? 'active' : '' }}"
                             href="{{ url('/') }}">Beranda</a>
                     </li>
-
                     <li class="nav-item">
                         <a class="nav-link nav-link-custom {{ request()->routeIs('user.booking.*') ? 'active' : '' }}"
                             href="{{ route('user.booking.create') }}">Booking</a>
                     </li>
-
                     <li class="nav-item">
                         <a class="nav-link nav-link-custom {{ request()->routeIs('user.peminjaman.*') ? 'active' : '' }}"
                             href="{{ route('user.peminjaman.create') }}">Pinjam</a>
                     </li>
-
                     @auth
-                        {{-- Dropdown Denda --}}
-                        <li class="nav-item dropdown denda-dropdown">
-                            <a class="nav-link nav-link-custom dropdown-toggle
-                            {{ request()->routeIs('user.denda.*') || request()->routeIs('user.denda-booking.*') ? 'active' : '' }}"
-                                href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                Denda
-                            </a>
-                            <ul class="dropdown-menu">
-                                <li>
-                                    <a class="dropdown-item {{ request()->routeIs('user.denda.*') ? 'active-item' : '' }}"
-                                        href="{{ route('user.denda.index') }}">
-                                        <i class="fas fa-box text-warning" style="font-size:13px;"></i>
-                                        Denda Peminjaman
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item {{ request()->routeIs('user.denda-booking.*') ? 'active-item' : '' }}"
-                                        href="{{ route('user.denda-booking.index') }}">
-                                        <i class="fas fa-door-open text-danger" style="font-size:13px;"></i>
-                                        Denda Booking
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
-
                         <li class="nav-item">
                             @php
                                 $totalDendaAktif =
@@ -222,19 +194,15 @@
                                         ->count();
                             @endphp
                             <a class="nav-link nav-link-custom {{ request()->routeIs('riwayat.*') ? 'active' : '' }}"
-                                href="{{ route('riwayat.index') }}"
-                                style="display:inline-flex; align-items:center; gap:5px;">
+                                href="{{ route('riwayat.index') }}" style="display:inline-flex;align-items:center;gap:5px;">
                                 Riwayat
                                 @if ($totalDendaAktif > 0)
                                     <span
-                                        style="
-                background:#ef4444; color:#fff;
-                font-size:10px; font-weight:700;
-                min-width:18px; height:18px;
-                border-radius:50%;
-                display:inline-flex; align-items:center; justify-content:center;
-                padding:0 4px; line-height:1;
-            ">{{ $totalDendaAktif }}</span>
+                                        style="background:#ef4444;color:#fff;font-size:10px;font-weight:700;
+                    min-width:18px;height:18px;border-radius:50%;display:inline-flex;
+                    align-items:center;justify-content:center;padding:0 4px;">
+                                        {{ $totalDendaAktif }}
+                                    </span>
                                 @endif
                             </a>
                         </li>
@@ -280,9 +248,9 @@
                                 <a href="{{ route('profile') }}" class="dropdown-item-custom">
                                     <i class="bi bi-person text-primary"></i> Profile Saya
                                 </a>
-                                <a href="{{ route('riwayat.index') }}" class="dropdown-item-custom">
+                                {{-- <a href="{{ route('riwayat.index') }}" class="dropdown-item-custom">
                                     <i class="bi bi-clock-history text-info"></i> Riwayat
-                                </a>
+                                </a> --}}
                                 <a href="{{ route('user.denda.index') }}" class="dropdown-item-custom">
                                     <i class="bi bi-cash-coin text-warning"></i> Denda Peminjaman
                                 </a>

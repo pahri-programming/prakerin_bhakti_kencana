@@ -2,11 +2,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\Barang;
-use App\Models\Booking;
+use App\Models\booking;
 use App\Models\DendaPengembalian;
 use App\Models\DendaBooking;
 use App\Models\PeminjamanBarang;
-use App\Models\Ruangan;
+use App\Models\ruangan;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -18,8 +18,8 @@ class RiwayatController extends Controller
      */
     public function index(Request $request)
     {
-        // ── Booking ───────────────────────────────────────────────
-        $bookingQuery = Booking::with('ruangan')
+        // ── booking ───────────────────────────────────────────────
+        $bookingQuery = booking::with('ruangan')
             ->where('user_id', Auth::id());
 
         if ($request->filled('ruang_id')) {
@@ -76,7 +76,7 @@ class RiwayatController extends Controller
             })
             ->latest()
             ->get();
-        // ── Denda Booking ─────────────────────────────────────────
+        // ── Denda booking ─────────────────────────────────────────
         $dendaBooking = DendaBooking::with([
             'booking.ruangan',
             'verifikasiBooking',
@@ -86,7 +86,7 @@ class RiwayatController extends Controller
             ->get();
 
         // ── Master data untuk filter ──────────────────────────────
-        $ruangan = Ruangan::orderBy('nama_ruangan')->get();
+        $ruangan = ruangan::orderBy('nama_ruangan')->get();
         $barang  = Barang::orderBy('nama')->get();
 
         return view('user.riwayat.index', compact(
@@ -100,7 +100,7 @@ class RiwayatController extends Controller
      */
     public function exportBooking(Request $request)
     {
-        $query = Booking::with('ruangan')
+        $query = booking::with('ruangan')
             ->where('user_id', Auth::id());
 
         if ($request->filled('ruang_id')) {

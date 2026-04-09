@@ -3,8 +3,8 @@ namespace App\Http\Controllers\Backend;
 
 use App\Http\Controllers\Controller;
 use App\Models\Barang;
-use App\Models\BarangRuangan;
-use App\Models\Ruangan;
+use App\Models\barangruangan;
+use App\Models\ruangan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -15,7 +15,7 @@ class BarangRuanganController extends Controller
      */
     public function index(Request $request)
     {
-        $query = BarangRuangan::with(['barang', 'ruangan']);
+        $query = barangruangan::with(['barang', 'ruangan']);
 
         // Filter by search (barang atau ruangan)
         if ($request->filled('search')) {
@@ -43,7 +43,7 @@ class BarangRuanganController extends Controller
         }
 
         $barangRuangans = $query->latest()->paginate(10);
-        $ruangans       = Ruangan::orderBy('nama_ruangan')->get();
+        $ruangans       = ruangan::orderBy('nama_ruangan')->get();
 
         return view('backend.barangruangan.index', compact('barangRuangans', 'ruangans'));
     }
@@ -54,7 +54,7 @@ class BarangRuanganController extends Controller
     public function create()
     {
         $barangs  = Barang::all();
-        $ruangans = Ruangan::all();
+        $ruangans = ruangan::all();
 
         return view('backend.barangruangan.create', compact('barangs', 'ruangans'));
     }
@@ -87,7 +87,7 @@ class BarangRuanganController extends Controller
                 ->withInput();
         }
 
-        BarangRuangan::create($request->all());
+        barangruangan::create($request->all());
 
         return redirect()->route('backend.barangruangan.index')
             ->with('success', 'Data barang ruangan berhasil ditambahkan');
@@ -98,7 +98,7 @@ class BarangRuanganController extends Controller
      */
     public function show($id)
     {
-        $barangRuangan = BarangRuangan::with(['barang', 'ruangan'])->findOrFail($id);
+        $barangRuangan = barangruangan::with(['barang', 'ruangan'])->findOrFail($id);
 
         return view('backend.barangruangan.show', compact('barangRuangan'));
     }
@@ -108,9 +108,9 @@ class BarangRuanganController extends Controller
      */
     public function edit($id)
     {
-        $barangRuangan = BarangRuangan::findOrFail($id);
+        $barangRuangan = barangruangan::findOrFail($id);
         $barangs       = Barang::all();
-        $ruangans      = Ruangan::all();
+        $ruangans      = ruangan::all();
 
         return view('backend.barangruangan.edit', compact('barangRuangan', 'barangs', 'ruangans'));
     }
@@ -143,7 +143,7 @@ class BarangRuanganController extends Controller
                 ->withInput();
         }
 
-        $barangRuangan = BarangRuangan::findOrFail($id);
+        $barangRuangan = barangruangan::findOrFail($id);
         $barangRuangan->update($request->all());
 
         return redirect()->route('backend.barangruangan.index')
@@ -155,7 +155,7 @@ class BarangRuanganController extends Controller
      */
     public function destroy($id)
     {
-        $barangRuangan = BarangRuangan::findOrFail($id);
+        $barangRuangan = barangruangan::findOrFail($id);
         $barangRuangan->delete();
 
         return redirect()->route('backend.barangruangan.index')
@@ -176,7 +176,7 @@ class BarangRuanganController extends Controller
                 ->withErrors($validator);
         }
 
-        $barangRuangan = BarangRuangan::findOrFail($id);
+        $barangRuangan = barangruangan::findOrFail($id);
         $barangRuangan->update(['status' => $request->status]);
 
         return redirect()->back()
@@ -188,7 +188,7 @@ class BarangRuanganController extends Controller
      */
     public function getBarangByRuangan($ruangan_id)
     {
-        $barangs = BarangRuangan::with('barang')
+        $barangs = barangruangan::with('barang')
             ->where('ruangan_id', $ruangan_id)
             ->get();
 

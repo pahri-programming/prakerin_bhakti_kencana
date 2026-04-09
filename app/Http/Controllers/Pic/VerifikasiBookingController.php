@@ -2,7 +2,7 @@
 namespace App\Http\Controllers\Pic;
 
 use App\Http\Controllers\Controller;
-use App\Models\Booking;
+use App\Models\booking;
 use App\Models\VerifikasiBooking;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -19,7 +19,7 @@ class VerifikasiBookingController extends Controller
   
     public function index(Request $request)
     {
-        $query = Booking::with(['ruangan', 'user', 'verifikasi.pic'])
+        $query = booking::with(['ruangan', 'user', 'verifikasi.pic'])
             ->where('status', 'Selesai');
 
         // Filter: belum_verifikasi | pending | diterima | perlu_tindakan
@@ -54,7 +54,7 @@ class VerifikasiBookingController extends Controller
    
     public function create($id)
     {
-        $booking = Booking::with(['ruangan', 'user', 'verifikasi'])->findOrFail($id);
+        $booking = booking::with(['ruangan', 'user', 'verifikasi'])->findOrFail($id);
 
         if ($booking->status !== 'Selesai') {
             return redirect()->route('pic.verifikasi-booking.index')
@@ -87,7 +87,7 @@ class VerifikasiBookingController extends Controller
             'foto_bukti.*.max'         => 'Ukuran gambar maksimal 2MB per file.',
         ]);
 
-        $booking = Booking::findOrFail($id);
+        $booking = booking::findOrFail($id);
 
         if ($booking->isVerified()) {
             return back()->with('error', 'Booking ini sudah diverifikasi.');
@@ -157,7 +157,7 @@ class VerifikasiBookingController extends Controller
     
     public function show($id)
     {
-        $booking = Booking::with(['ruangan', 'user', 'verifikasi.pic'])->findOrFail($id);
+        $booking = booking::with(['ruangan', 'user', 'verifikasi.pic'])->findOrFail($id);
 
         if (! $booking->isVerified()) {
             return redirect()->route('pic.verifikasi-booking.create', $id)

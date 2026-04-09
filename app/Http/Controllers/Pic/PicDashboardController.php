@@ -2,10 +2,10 @@
 namespace App\Http\Controllers\Pic;
 
 use App\Http\Controllers\Controller;
-use App\Models\Booking;
+use App\Models\booking;
 use App\Models\PengembalianBarang;
 use App\Models\VerifikasiBooking;
-use App\Models\VerifikasiPengembalian;
+use App\Models\verifikasipengembalian;
 use Illuminate\Support\Facades\Auth;
 
 class PicDashboardController extends Controller
@@ -19,8 +19,8 @@ class PicDashboardController extends Controller
     {
         // Statistics
         $stats = [
-            // Booking Stats
-            'booking_perlu_verifikasi'      => Booking::where('status', 'selesai')
+            // booking Stats
+            'booking_perlu_verifikasi'      => booking::where('status', 'selesai')
                 ->doesntHave('verifikasi')
                 ->count(),
 
@@ -38,15 +38,15 @@ class PicDashboardController extends Controller
                 })
                 ->count(),
 
-            'pengembalian_sudah_verifikasi' => VerifikasiPengembalian::where('pic_id', Auth::id())->count(),
+            'pengembalian_sudah_verifikasi' => verifikasipengembalian::where('pic_id', Auth::id())->count(),
 
-            'pengembalian_bermasalah'       => VerifikasiPengembalian::where('pic_id', Auth::id())
+            'pengembalian_bermasalah'       => verifikasipengembalian::where('pic_id', Auth::id())
                 ->whereIn('kondisi', ['rusak_ringan', 'rusak_berat', 'hilang'])
                 ->count(),
         ];
 
-        // Pending Items - Booking
-        $pendingBooking = Booking::with(['user', 'ruangan', 'verifikasi'])
+        // Pending Items - booking
+        $pendingBooking = booking::with(['user', 'ruangan', 'verifikasi'])
             ->where('status', 'selesai')
             ->doesntHave('verifikasi')
             ->orderBy('tanggal', 'desc')
@@ -68,7 +68,7 @@ class PicDashboardController extends Controller
             ->take(5)
             ->get();
 
-        // Recent Verifikasi - Booking
+        // Recent Verifikasi - booking
         $recentVerifikasiBooking = VerifikasiBooking::with(['booking.user', 'booking.ruangan'])
             ->where('pic_id', Auth::id())
             ->orderBy('tanggal_verifikasi', 'desc')
@@ -76,7 +76,7 @@ class PicDashboardController extends Controller
             ->get();
 
         // Recent Verifikasi - Pengembalian
-        $recentVerifikasiPengembalian = VerifikasiPengembalian::with([
+        $recentVerifikasiPengembalian = verifikasipengembalian::with([
             'pengembalianBarang.peminjamanBarang.user',
             'pengembalianBarang.detailpengembalians.barang',
         ])

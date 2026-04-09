@@ -2,7 +2,7 @@
 namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
-use App\Models\BarangRuangan;
+use App\Models\barangruangan;
 use App\Models\DetailPeminjamanBarang;
 use App\Models\PeminjamanBarang;
 use Illuminate\Http\Request;
@@ -32,7 +32,7 @@ class UserPeminjamanController extends Controller
      */
     public function create()
     {
-        $barangRuangans = BarangRuangan::with(['barang', 'ruangan'])
+        $barangRuangans = barangruangan::with(['barang', 'ruangan'])
             ->where('status', 'tersedia')
             ->where('qty', '>', 0)
             ->orderBy('id', 'asc')
@@ -71,7 +71,7 @@ class UserPeminjamanController extends Controller
         foreach ($request->barang_ruangan_id as $index => $barangRuanganId) {
             $jumlah = $request->jumlah[$index];
 
-            $barangRuangan = BarangRuangan::with(['barang', 'ruangan'])
+            $barangRuangan = barangruangan::with(['barang', 'ruangan'])
                 ->findOrFail($barangRuanganId);
 
             // ❗ VALIDASI STATUS

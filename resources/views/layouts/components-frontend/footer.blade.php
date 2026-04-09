@@ -82,6 +82,7 @@
                     <a href="{{ route('user.peminjaman.create') }}" class="footer-link">Peminjaman Barang</a>
                     <a href="{{ url('/#barang') }}" class="footer-link">Daftar Barang</a>
                     <a href="{{ url('/#kontak') }}" class="footer-link">Kontak Kami</a>
+                    <a href="{{ url('/#kontak') }}" class="footer-link">Denda</a>
                 </div>
                 <div class="col-md-4">
                     <h5>Ikuti Kami</h5>

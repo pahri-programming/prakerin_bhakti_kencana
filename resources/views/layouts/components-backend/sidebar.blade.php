@@ -124,7 +124,7 @@
                             <span><i class="ti ti-door"></i></span>
                             <span class="hide-menu">Verifikasi Booking</span>
                             @php
-                                $pendingBooking = \App\Models\Booking::where('status', 'Selesai')
+                                $pendingBooking = \App\Models\booking::where('status', 'Selesai')
                                     ->doesntHave('verifikasi')
                                     ->count();
                             @endphp

@@ -3,7 +3,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Jadwal extends Model
+class jadwal extends Model
 {
     protected $fillable = [
         'ruang_id',

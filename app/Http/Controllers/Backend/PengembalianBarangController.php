@@ -3,7 +3,7 @@ namespace App\Http\Controllers\Backend;
 
 use App\Http\Controllers\Controller;
 use App\Models\Barang;
-use App\Models\BarangRuangan;
+use App\Models\barangruangan;
 use App\Models\DetailPengembalianBarang;
 use App\Models\PeminjamanBarang;
 use App\Models\PengembalianBarang;
@@ -152,7 +152,7 @@ class PengembalianBarangController extends Controller
             if (! $hasProblematicItems) {
                 // Semua baik → kembalikan semua stok
                 foreach ($peminjaman->detailbarangs as $detailPeminjaman) {
-                    $barangRuangan = BarangRuangan::where('id', $detailPeminjaman->barang_ruangan_id)->lockForUpdate()->first();
+                    $barangRuangan = barangruangan::where('id', $detailPeminjaman->barang_ruangan_id)->lockForUpdate()->first();
                     if ($barangRuangan) {
                         $barangRuangan->increment('qty', $detailPeminjaman->jumlah);
                         if ($barangRuangan->qty > 0) {
@@ -168,7 +168,7 @@ class PengembalianBarangController extends Controller
                 foreach ($peminjaman->detailbarangs as $detailPeminjaman) {
                     $barangId = $detailPeminjaman->barangRuangan->barang_id ?? null;
                     if ($barangId && in_array($barangId, $barangIdBaik)) {
-                        $barangRuangan = BarangRuangan::where('id', $detailPeminjaman->barang_ruangan_id)->lockForUpdate()->first();
+                        $barangRuangan = barangruangan::where('id', $detailPeminjaman->barang_ruangan_id)->lockForUpdate()->first();
                         if ($barangRuangan) {
                             $barangRuangan->increment('qty', $detailPeminjaman->jumlah);
                             if ($barangRuangan->qty > 0) {
@@ -234,7 +234,7 @@ class PengembalianBarangController extends Controller
         }
 
         $barangs        = Barang::orderBy('nama')->get();
-        $barangRuangans = BarangRuangan::with(['barang', 'ruangan'])->get();
+        $barangRuangans = barangruangan::with(['barang', 'ruangan'])->get();
         return view('backend.pengembalian.edit', compact('pengembalian', 'barangs', 'barangRuangans'));
     }
 
@@ -306,7 +306,7 @@ class PengembalianBarangController extends Controller
             if ($pengembalian->status === 'dikembalikan') {
                 $peminjaman = $pengembalian->peminjamanBarang;
                 foreach ($peminjaman->detailbarangs as $detail) {
-                    $barangRuangan = BarangRuangan::where('id', $detail->barang_ruangan_id)->lockForUpdate()->first();
+                    $barangRuangan = barangruangan::where('id', $detail->barang_ruangan_id)->lockForUpdate()->first();
                     if ($barangRuangan) {
                         if ($barangRuangan->qty >= $detail->jumlah) {
                             $barangRuangan->decrement('qty', $detail->jumlah);
@@ -413,7 +413,7 @@ class PengembalianBarangController extends Controller
                 $barangId = $detailPeminjaman->barangRuangan->barang_id ?? null;
 
                 if ($barangId && in_array($barangId, $barangIdBermasalah)) {
-                    $barangRuangan = BarangRuangan::where('id', $detailPeminjaman->barang_ruangan_id)
+                    $barangRuangan = barangruangan::where('id', $detailPeminjaman->barang_ruangan_id)
                         ->lockForUpdate()->first();
 
                     if ($barangRuangan) {

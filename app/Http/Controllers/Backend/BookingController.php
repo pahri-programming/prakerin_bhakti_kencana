@@ -3,9 +3,9 @@ namespace App\Http\Controllers\Backend;
 
 use App\Events\BookingExpired;
 use App\Http\Controllers\Controller;
-use App\Models\Booking;
-use App\Models\Jadwal;
-use App\Models\Ruangan;
+use App\Models\booking;
+use App\Models\jadwal;
+use App\Models\ruangan;
 use App\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
@@ -29,7 +29,7 @@ class BookingController extends Controller
         $this->checkExpiredBookings();
 
         // Query dengan filter
-        $query = Booking::with(['user', 'ruangan'])->orderBy('tanggal', 'DESC')->orderBy('created_at', 'DESC');
+        $query = booking::with(['user', 'ruangan'])->orderBy('tanggal', 'DESC')->orderBy('created_at', 'DESC');
 
         if ($request->filled('ruang_id')) {
             $query->where('ruang_id', $request->ruang_id);
@@ -49,7 +49,7 @@ class BookingController extends Controller
             return $b;
         });
 
-        $ruangan = Ruangan::orderBy('nama_ruangan')->get();
+        $ruangan = ruangan::orderBy('nama_ruangan')->get();
 
         confirmDelete('Data Booking', 'Yakin hapus booking ini?');
 
@@ -63,7 +63,7 @@ class BookingController extends Controller
     {
         $now = now();
 
-        $expired = Booking::whereNotIn('status', ['Selesai', 'Ditolak'])
+        $expired = booking::whereNotIn('status', ['Selesai', 'Ditolak'])
             ->where(function ($q) use ($now) {
                 $q->where('tanggal', '<', $now->toDateString())
                     ->orWhere(function ($s) use ($now) {
@@ -89,7 +89,7 @@ class BookingController extends Controller
         try {
             DB::beginTransaction();
 
-            $booking = Booking::with('ruangan')->findOrFail($id);
+            $booking = booking::with('ruangan')->findOrFail($id);
 
             // Validasi: Cek bentrok dengan booking lain yang "Diterima"
             $conflict = $this->checkBookingConflict(
@@ -135,7 +135,7 @@ class BookingController extends Controller
         ]);
 
         try {
-            $booking = Booking::findOrFail($id);
+            $booking = booking::findOrFail($id);
 
             $booking->update([
                 'status'     => 'Ditolak',
@@ -160,7 +160,7 @@ class BookingController extends Controller
     public function complete($id)
     {
         try {
-            $booking = Booking::findOrFail($id);
+            $booking = booking::findOrFail($id);
 
             // Update status jadi "Selesai" → Event akan cek & update status ruangan
             $booking->update(['status' => 'Selesai']);
@@ -182,7 +182,7 @@ class BookingController extends Controller
      */
     public function create()
     {
-        $ruangan = Ruangan::orderBy('nama_ruangan')->get();
+        $ruangan = ruangan::orderBy('nama_ruangan')->get();
         $users   = User::orderBy('name')->get();
 
         return view('backend.booking.create', compact('ruangan', 'users'));
@@ -248,7 +248,7 @@ class BookingController extends Controller
             DB::beginTransaction();
 
             // Buat booking baru (kode auto-generated oleh Model Event)
-            $booking = Booking::create([
+            $booking = booking::create([
                 'user_id'       => $request->user_id,
                 'ruang_id'      => $request->ruang_id,
                 'tanggal'       => $request->tanggal,
@@ -277,7 +277,7 @@ class BookingController extends Controller
      */
     public function show(string $id)
     {
-        $booking                 = Booking::with(['user', 'ruangan'])->findOrFail($id);
+        $booking                 = booking::with(['user', 'ruangan'])->findOrFail($id);
         $booking->tanggal_format = Carbon::parse($booking->tanggal)->translatedFormat('d F Y');
         $booking->hari           = Carbon::parse($booking->tanggal)->translatedFormat('l');
 
@@ -289,8 +289,8 @@ class BookingController extends Controller
      */
     public function edit(string $id)
     {
-        $booking = Booking::findOrFail($id);
-        $ruangan = Ruangan::orderBy('nama_ruangan')->get();
+        $booking = booking::findOrFail($id);
+        $ruangan = ruangan::orderBy('nama_ruangan')->get();
         $users   = User::orderBy('name')->get();
 
         return view('backend.booking.edit', compact('booking', 'ruangan', 'users'));
@@ -312,7 +312,7 @@ class BookingController extends Controller
         ]);
 
         try {
-            $booking = Booking::findOrFail($id);
+            $booking = booking::findOrFail($id);
 
             //  Validasi waktu sudah lewat (untuk hari ini)
             if (Carbon::parse($request->tanggal)->isToday()) {
@@ -382,7 +382,7 @@ class BookingController extends Controller
     public function destroy(string $id)
     {
         try {
-            $booking = Booking::findOrFail($id);
+            $booking = booking::findOrFail($id);
             $kode    = $booking->kode;
 
             // Delete booking → Event akan auto-update status ruangan jika perlu
@@ -405,7 +405,7 @@ class BookingController extends Controller
      */
     public function export()
     {
-        $query = Booking::with(['user', 'ruangan']);
+        $query = booking::with(['user', 'ruangan']);
 
         if (request()->filled('ruang_id')) {
             $query->where('ruang_id', request()->ruang_id);
@@ -434,7 +434,7 @@ class BookingController extends Controller
      */
     private function checkBookingConflict($ruangId, $tanggal, $waktuMulai, $waktuSelesai, $excludeId = null)
     {
-        $query = Booking::where('ruang_id', $ruangId)
+        $query = booking::where('ruang_id', $ruangId)
             ->where('tanggal', $tanggal)
             ->where('status', 'Diterima') // Hanya cek yang sudah diterima
             ->where(function ($q) use ($waktuMulai, $waktuSelesai) {
@@ -477,13 +477,13 @@ class BookingController extends Controller
     private function checkMinimalGap($ruangId, $tanggal, $waktuMulai, $excludeId = null)
     {
         // Dapatkan user_id dari request (untuk create) atau booking yang sedang diedit
-        $userId = request()->user_id ?? Booking::find($excludeId)?->user_id;
+        $userId = request()->user_id ?? booking::find($excludeId)?->user_id;
 
         if (! $userId) {
             return true; // Tidak bisa validasi tanpa user_id
         }
 
-        $query = Booking::where('ruang_id', $ruangId)
+        $query = booking::where('ruang_id', $ruangId)
             ->where('tanggal', $tanggal)
             ->where('user_id', $userId) // 🔥 HANYA CEK BOOKING USER YANG SAMA
             ->where('waktu_selesai', '<=', $waktuMulai)

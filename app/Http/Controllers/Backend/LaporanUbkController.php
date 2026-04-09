@@ -2,7 +2,7 @@
 namespace App\Http\Controllers\Backend;
 
 use App\Http\Controllers\Controller;
-use App\Models\Booking;
+use App\Models\booking;
 use App\Models\PeminjamanBarang;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
@@ -25,7 +25,7 @@ class LaporanUbkController extends Controller
         $total_peminjaman = 0;
 
         // otomatis update status booking yang sudah lewat
-        Booking::where('status', 'Diterima')
+       booking::where('status', 'Diterima')
             ->where(function ($q) {
                 $q->where('tanggal', '<', now()->toDateString())
                     ->orWhere(function ($s) {
@@ -42,7 +42,7 @@ class LaporanUbkController extends Controller
 
         // booking query
         if ($isBooking) {
-            $query = Booking::with(['user', 'ruangan'])
+            $query =booking::with(['user', 'ruangan'])
                 ->whereIn('status', ['Pending', 'Diterima', 'Selesai']);
 
             if ($start && $end) {
@@ -113,7 +113,7 @@ class LaporanUbkController extends Controller
         $start = $request->get('start_date');
         $end   = $request->get('end_date');
 
-        $query = Booking::with(['user', 'ruangan'])
+        $query =booking::with(['user', 'ruangan'])
             ->whereIn('status', ['Pending', 'Diterima', 'Selesai']);
 
         if ($start && $end) {

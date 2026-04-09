@@ -2,7 +2,7 @@
 namespace App\Http\Controllers\Backend;
 
 use App\Http\Controllers\Controller;
-use App\Models\Booking;
+use App\Models\booking;
 use App\Models\DendaBooking;
 use App\Models\VerifikasiBooking;
 use Exception;

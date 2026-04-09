@@ -119,6 +119,26 @@
                             </div>
                         </div>
                     </div>
+                    {{-- CARD: Keterangan --}}
+                    <div class="card border-0 shadow-sm rounded-3 mb-4">
+                        <div class="card-header bg-white border-bottom py-3 px-4">
+                            <h6 class="fw-bold mb-0">
+                                <i class="fas fa-sticky-note me-2 text-primary"></i>Keterangan
+                            </h6>
+                        </div>
+                        <div class="card-body p-4">
+                            <label class="form-label fw-semibold small">
+                                Keperluan Booking <span class="text-muted">(opsional)</span>
+                            </label>
+                            <textarea name="keterangan" class="form-control @error('keterangan') is-invalid @enderror" rows="3"
+                                placeholder="Contoh: Rapat jurusan, Ujian praktik, Seminar...">{{ old('keterangan') }}</textarea>
+                            @error('keterangan')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                    </div>
+
+
 
                     {{-- Action --}}
                     <div class="d-flex justify-content-between align-items-center">

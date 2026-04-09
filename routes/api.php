@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\DendaApiController;
 use App\Http\Controllers\Api\PeminjamanApiController;
 use App\Http\Controllers\Api\RiwayatApiController;
 use App\Http\Controllers\Api\RuanganController;
+use App\Http\Controllers\Api\ProfileApiController;
 use Illuminate\Support\Facades\Route;
 
 /*

@@ -300,7 +300,7 @@
                     </li>
 
                     <!-- Laporan Verifikasi PIC -->
-                    <li class="sidebar-item {{ request()->is('admin/verifikasi/laporan*') ? 'active' : '' }}">
+                    {{-- <li class="sidebar-item {{ request()->is('admin/verifikasi/laporan*') ? 'active' : '' }}">
                         <a class="sidebar-link has-arrow" href="javascript:void(0)"
                             aria-expanded="{{ request()->is('admin/verifikasi/laporan*') ? 'true' : 'false' }}">
                             <span><i class="ti ti-clipboard-check"></i></span>
@@ -344,7 +344,7 @@
                             </li>
 
                         </ul>
-                    </li>
+                    </li> --}}
 
                 @endif
 

@@ -205,8 +205,9 @@
                                 </label>
                                 <select name="user_id" class="form-select @error('user_id') is-invalid @enderror" required>
                                     <option value="">-- Pilih User --</option>
-                                    @foreach($users as $user)
-                                        <option value="{{ $user->id }}" {{ old('user_id') == $user->id ? 'selected' : '' }}>
+                                    @foreach ($users as $user)
+                                        <option value="{{ $user->id }}"
+                                            {{ old('user_id') == $user->id ? 'selected' : '' }}>
                                             {{ $user->name }} - {{ $user->email }}
                                         </option>
                                     @endforeach
@@ -223,10 +224,12 @@
                                 <label class="form-label">
                                     Ruangan <span class="required">*</span>
                                 </label>
-                                <select name="ruang_id" class="form-select @error('ruang_id') is-invalid @enderror" required>
+                                <select name="ruang_id" class="form-select @error('ruang_id') is-invalid @enderror"
+                                    required>
                                     <option value="">-- Pilih Ruangan --</option>
-                                    @foreach($ruangan as $r)
-                                        <option value="{{ $r->id }}" {{ old('ruang_id') == $r->id ? 'selected' : '' }}>
+                                    @foreach ($ruangan as $r)
+                                        <option value="{{ $r->id }}"
+                                            {{ old('ruang_id') == $r->id ? 'selected' : '' }}>
                                             {{ $r->nama_ruangan }} ({{ $r->kapasitas }} orang)
                                         </option>
                                     @endforeach
@@ -245,12 +248,9 @@
                                 <label class="form-label">
                                     Tanggal Booking <span class="required">*</span>
                                 </label>
-                                <input type="date" 
-                                    name="tanggal" 
-                                    class="form-control @error('tanggal') is-invalid @enderror" 
-                                    value="{{ old('tanggal') }}"
-                                    min="{{ date('Y-m-d') }}"
-                                    required>
+                                <input type="date" name="tanggal"
+                                    class="form-control @error('tanggal') is-invalid @enderror"
+                                    value="{{ old('tanggal') }}" min="{{ date('Y-m-d') }}" required>
                                 @error('tanggal')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -264,11 +264,9 @@
                                 <label class="form-label">
                                     Waktu Mulai <span class="required">*</span>
                                 </label>
-                                <input type="time" 
-                                    name="waktu_mulai" 
-                                    class="form-control @error('waktu_mulai') is-invalid @enderror" 
-                                    value="{{ old('waktu_mulai') }}"
-                                    required>
+                                <input type="time" name="waktu_mulai"
+                                    class="form-control @error('waktu_mulai') is-invalid @enderror"
+                                    value="{{ old('waktu_mulai') }}" required>
                                 @error('waktu_mulai')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -281,16 +279,23 @@
                                 <label class="form-label">
                                     Waktu Selesai <span class="required">*</span>
                                 </label>
-                                <input type="time" 
-                                    name="waktu_selesai" 
-                                    class="form-control @error('waktu_selesai') is-invalid @enderror" 
-                                    value="{{ old('waktu_selesai') }}"
-                                    required>
+                                <input type="time" name="waktu_selesai"
+                                    class="form-control @error('waktu_selesai') is-invalid @enderror"
+                                    value="{{ old('waktu_selesai') }}" required>
                                 @error('waktu_selesai')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                                 <small class="form-text">Harus lebih besar dari waktu mulai</small>
                             </div>
+                        </div>
+                        {{-- Keterangan --}}
+                        <div class="form-group">
+                            <label class="form-label">Keterangan</label>
+                            <textarea name="keterangan" class="form-control @error('keterangan') is-invalid @enderror" rows="3"
+                                placeholder="Tuliskan keperluan booking ruangan...">{{ old('keterangan') }}</textarea>
+                            @error('keterangan')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
                         </div>
                     </div>
 

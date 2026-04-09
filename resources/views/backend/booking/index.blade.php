@@ -5,479 +5,650 @@
 @push('styles')
     <link rel="stylesheet" href="https://cdn.datatables.net/2.3.2/css/dataTables.bootstrap5.css">
     <style>
-        .page-header {
-            background: linear-gradient(135deg, #ff9800 0%, #ff5722 100%);
-            padding: 2rem;
-            border-radius: 15px;
-            color: white;
-            margin-bottom: 2rem;
+        :root {
+            --orange-primary: #F97316;
+            --orange-dark:    #EA580C;
+            --orange-light:   #FFF7ED;
+            --orange-border:  #FED7AA;
         }
 
+        .page-hero {
+            background: linear-gradient(135deg, var(--orange-primary) 0%, var(--orange-dark) 100%);
+            border-radius: 20px;
+            padding: 2rem 2.5rem;
+            margin-bottom: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .page-hero::before {
+            content: '';
+            position: absolute;
+            top: -40px; right: -40px;
+            width: 200px; height: 200px;
+            background: rgba(255,255,255,0.08);
+            border-radius: 50%;
+        }
+
+        .page-hero::after {
+            content: '';
+            position: absolute;
+            bottom: -60px; right: 80px;
+            width: 150px; height: 150px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 50%;
+        }
+
+        .page-hero h2 {
+            font-size: 1.75rem;
+            font-weight: 800;
+            color: white;
+            margin: 0 0 0.25rem;
+        }
+
+        .page-hero p {
+            color: rgba(255,255,255,0.8);
+            margin: 0;
+            font-size: 0.95rem;
+        }
+
+        /* Stats Cards */
+        .stat-card {
+            background: white;
+            border-radius: 16px;
+            padding: 1.25rem 1.5rem;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+            border: 1px solid #F3F4F6;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+        }
+
+        .stat-icon {
+            width: 52px; height: 52px;
+            border-radius: 14px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.4rem;
+            flex-shrink: 0;
+        }
+
+        .stat-icon.pending  { background: #FEF3C7; color: #D97706; }
+        .stat-icon.diterima { background: #D1FAE5; color: #059669; }
+        .stat-icon.ditolak  { background: #FEE2E2; color: #DC2626; }
+        .stat-icon.selesai  { background: #EDE9FE; color: #7C3AED; }
+
+        .stat-value {
+            font-size: 1.75rem;
+            font-weight: 800;
+            line-height: 1;
+            color: #111827;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: #6B7280;
+            font-weight: 500;
+            margin-top: 2px;
+        }
+
+        /* Filter Card */
         .filter-card {
             background: white;
-            border-radius: 15px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            border-radius: 16px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+            border: 1px solid #F3F4F6;
             padding: 1.5rem;
-            margin-bottom: 2rem;
+            margin-bottom: 1.5rem;
         }
 
+        .filter-card .form-control,
+        .filter-card .form-select {
+            border: 1.5px solid #E5E7EB;
+            border-radius: 10px;
+            padding: 0.6rem 0.9rem;
+            font-size: 0.9rem;
+            transition: border-color 0.2s;
+        }
+
+        .filter-card .form-control:focus,
+        .filter-card .form-select:focus {
+            border-color: var(--orange-primary);
+            box-shadow: 0 0 0 3px rgba(249,115,22,0.1);
+        }
+
+        /* Table Card */
         .table-card {
-            border: none;
-            border-radius: 15px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+            border: 1px solid #F3F4F6;
+            overflow: hidden;
         }
 
         .table-card .card-header {
             background: white;
-            border-bottom: 2px solid #f0f0f0;
-            padding: 1.5rem;
-            border-radius: 15px 15px 0 0;
+            border-bottom: 1.5px solid #F3F4F6;
+            padding: 1.25rem 1.5rem;
         }
 
-        .status-badge {
-            padding: 0.5rem 1rem;
-            border-radius: 50px;
-            font-weight: 600;
-            font-size: 0.85rem;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.375rem;
-        }
-
-        .status-pending {
-            background: #fff3cd;
-            color: #856404;
-        }
-
-        .status-diterima {
-            background: #d1ecf1;
-            color: #0c5460;
-        }
-
-        .status-ditolak {
-            background: #f8d7da;
-            color: #721c24;
-        }
-
-        .status-selesai {
-            background: #d4edda;
-            color: #155724;
-        }
-
-        #dataBooking thead th {
-            background: linear-gradient(135deg, #ff9800 0%, #ff5722 100%);
+        /* Table */
+        #dataBooking thead tr th {
+            background: linear-gradient(135deg, var(--orange-primary), var(--orange-dark));
             color: white;
             font-weight: 600;
+            font-size: 0.85rem;
+            padding: 1rem 1.25rem;
             border: none;
-            padding: 1rem;
+            white-space: nowrap;
         }
 
         #dataBooking tbody tr {
-            transition: all 0.2s ease;
+            transition: background 0.15s;
         }
 
         #dataBooking tbody tr:hover {
-            background: #f3e5f5;
-            transform: scale(1.01);
+            background: var(--orange-light);
         }
 
-        .btn-group-actions {
-            display: flex;
-            gap: 0.5rem;
-            flex-wrap: wrap;
+        #dataBooking tbody td {
+            padding: 1rem 1.25rem;
+            vertical-align: middle;
+            border-color: #F9FAFB;
+            font-size: 0.9rem;
         }
 
+        /* Kode Badge */
         .kode-badge {
-            color: rgb(1, 1, 1);
-            padding: 0.375rem 0.75rem;
+            background: #F3F4F6;
+            color: #374151;
+            padding: 0.3rem 0.75rem;
             border-radius: 8px;
-            font-weight: 600;
-            font-size: 0.85rem;
-            font-family: 'jetbrains mono', monospace;
+            font-weight: 700;
+            font-size: 0.82rem;
+            font-family: 'Courier New', monospace;
+            letter-spacing: 0.3px;
         }
+
+        /* Status Badge */
+        .status-pill {
+            padding: 0.35rem 0.85rem;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 0.78rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            white-space: nowrap;
+        }
+
+        .status-pill.pending  { background: #FEF3C7; color: #92400E; }
+        .status-pill.diterima { background: #D1FAE5; color: #065F46; }
+        .status-pill.ditolak  { background: #FEE2E2; color: #991B1B; }
+        .status-pill.selesai  { background: #EDE9FE; color: #4C1D95; }
+
+        /* User Avatar */
+        .user-avatar {
+            width: 36px; height: 36px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--orange-primary), var(--orange-dark));
+            color: white;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700;
+            font-size: 0.9rem;
+            flex-shrink: 0;
+        }
+
+        /* Time Badge */
+        .time-range {
+            background: var(--orange-light);
+            color: var(--orange-dark);
+            padding: 0.25rem 0.6rem;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.82rem;
+            white-space: nowrap;
+        }
+
+        /* Action Buttons */
+        .btn-action {
+            width: 30px; height: 30px;
+            border-radius: 8px;
+            border: none;
+            display: inline-flex; align-items: center; justify-content: center;
+            font-size: 0.85rem;
+            transition: all 0.15s;
+            text-decoration: none;
+        }
+
+        .btn-action:hover { transform: translateY(-1px); }
+        .btn-action.approve  { background: #D1FAE5; color: #059669; }
+        .btn-action.reject   { background: #FEE2E2; color: #DC2626; }
+        .btn-action.complete { background: #EDE9FE; color: #7C3AED; }
+        .btn-action.view     { background: #DBEAFE; color: #2563EB; }
+        .btn-action.edit     { background: #FEF3C7; color: #D97706; }
+        .btn-action.delete   { background: #FEE2E2; color: #DC2626; }
+
+        /* Keterangan chip */
+        .note-chip {
+            background: #F3F4F6;
+            color: #6B7280;
+            font-size: 0.75rem;
+            padding: 0.15rem 0.5rem;
+            border-radius: 20px;
+            display: inline-flex; align-items: center; gap: 0.25rem;
+            margin-top: 4px;
+            cursor: pointer;
+        }
+
+        /* Buttons */
+        .btn-orange {
+            background: var(--orange-primary);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 0.6rem 1.25rem;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        .btn-orange:hover {
+            background: var(--orange-dark);
+            color: white;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(249,115,22,0.3);
+        }
+
+        .btn-outline-orange {
+            background: white;
+            color: var(--orange-primary);
+            border: 1.5px solid var(--orange-border);
+            border-radius: 10px;
+            padding: 0.6rem 1.25rem;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        .btn-outline-orange:hover {
+            background: var(--orange-light);
+            color: var(--orange-dark);
+        }
+
+        /* DataTables override */
+        .dataTables_wrapper .dataTables_filter input {
+            border: 1.5px solid #E5E7EB;
+            border-radius: 10px;
+            padding: 0.4rem 0.8rem;
+            font-size: 0.9rem;
+        }
+
+        .dataTables_wrapper .dataTables_filter input:focus {
+            border-color: var(--orange-primary);
+            outline: none;
+        }
+
+        .dataTables_wrapper .dataTables_length select {
+            border: 1.5px solid #E5E7EB;
+            border-radius: 8px;
+            padding: 0.3rem 0.5rem;
+        }
+
+        .page-item.active .page-link {
+            background: var(--orange-primary);
+            border-color: var(--orange-primary);
+        }
+
+        .page-link { color: var(--orange-primary); }
     </style>
 @endpush
 
 @section('content')
-    <div class="container-fluid">
-        <!-- Page Header -->
-        <div class="page-header">
-            <div class="d-flex justify-content-between align-items-center">
+<div class="container-fluid px-4">
+
+    {{-- ── HERO HEADER ─────────────────────────────────── --}}
+    <div class="page-hero mb-4">
+        <div class="d-flex justify-content-between align-items-center position-relative">
+            <div>
+                <h2><i class="ti ti-calendar-event me-2"></i>Manajemen Booking</h2>
+                <p>Kelola dan pantau semua pengajuan booking ruangan</p>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="{{ route('backend.booking.export', request()->all()) }}"
+                   class="btn btn-light btn-sm px-3 fw-600">
+                    <i class="ti ti-file-pdf me-1 text-danger"></i> Export PDF
+                </a>
+                <a href="{{ route('backend.booking.create') }}"
+                   class="btn btn-white btn-sm px-3 fw-600"
+                   style="background:white; color: var(--orange-primary);">
+                    <i class="ti ti-plus me-1"></i> Tambah Booking
+                </a>
+            </div>
+        </div>
+    </div>
+
+    {{-- ── STAT CARDS ───────────────────────────────────── --}}
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+            <div class="stat-card">
+                <div class="stat-icon pending">
+                    <i class="ti ti-clock"></i>
+                </div>
                 <div>
-                    <h2 class="fw-bold mb-2">
-                        <i class="ti ti-calendar-event"></i> Manajemen Booking
-                    </h2>
-                    <p class="mb-0 opacity-90">Kelola semua booking ruangan</p>
-                </div>
-                <div class="d-flex gap-2">
-                    <a href="{{ route('backend.booking.export', request()->all()) }}"
-                        class="btn btn-danger btn-lg shadow-sm">
-                        <i class="ti ti-file-pdf"></i> Export PDF
-                    </a>
-                    <a href="{{ route('backend.booking.create') }}" class="btn btn-light btn-lg shadow-sm">
-                        <i class="ti ti-plus"></i> Tambah Booking
-                    </a>
+                    <div class="stat-value">{{ $booking->where('status','Pending')->count() }}</div>
+                    <div class="stat-label">Pending</div>
                 </div>
             </div>
         </div>
-
-        <!-- Filter Card -->
-        <div class="filter-card">
-            <form action="{{ route('backend.booking.index') }}" method="GET">
-                <div class="row g-3">
-                    <div class="col-md-3">
-                        <label class="form-label fw-600">
-                            <i class="ti ti-door"></i> Ruangan
-                        </label>
-                        <select name="ruang_id" class="form-select">
-                            <option value="">Semua Ruangan</option>
-                            @foreach ($ruangan as $data)
-                                <option value="{{ $data->id }}"
-                                    {{ request('ruang_id') == $data->id ? 'selected' : '' }}>
-                                    {{ $data->nama_ruangan }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-
-                    <div class="col-md-3">
-                        <label class="form-label fw-600">
-                            <i class="ti ti-calendar"></i> Tanggal
-                        </label>
-                        <input type="date" name="tanggal" class="form-control" value="{{ request('tanggal') }}">
-                    </div>
-
-                    <div class="col-md-3">
-                        <label class="form-label fw-600">
-                            <i class="ti ti-info-circle"></i> Status
-                        </label>
-                        <select name="status" class="form-select">
-                            <option value="">Semua Status</option>
-                            <option value="Pending" {{ request('status') == 'Pending' ? 'selected' : '' }}>
-                                Pending
-                            </option>
-                            <option value="Diterima" {{ request('status') == 'Diterima' ? 'selected' : '' }}>
-                                Diterima
-                            </option>
-                            <option value="Ditolak" {{ request('status') == 'Ditolak' ? 'selected' : '' }}>
-                                Ditolak
-                            </option>
-                            <option value="Selesai" {{ request('status') == 'Selesai' ? 'selected' : '' }}>
-                                Selesai
-                            </option>
-                        </select>
-                    </div>
-
-                    <div class="col-md-3 d-flex align-items-end gap-2">
-                        <button type="submit" class="btn btn-primary w-100">
-                            <i class="ti ti-filter"></i> Filter
-                        </button>
-                        @if (request()->hasAny(['ruang_id', 'tanggal', 'status']))
-                            <a href="{{ route('backend.booking.index') }}" class="btn btn-outline-secondary">
-                                <i class="ti ti-x"></i>
-                            </a>
-                        @endif
-                    </div>
+        <div class="col-6 col-md-3">
+            <div class="stat-card">
+                <div class="stat-icon diterima">
+                    <i class="ti ti-check"></i>
                 </div>
-            </form>
-        </div>
-
-        <!-- Table Card -->
-        <div class="card table-card">
-            <div class="card-header">
-                <div class="d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0 fw-bold">
-                        <i class="ti ti-list"></i> Daftar Booking
-                    </h5>
-                    <div class="d-flex gap-2">
-                        <span class="status-badge status-pending">
-                            <i class="ti ti-clock"></i>
-                            Pending: {{ $booking->where('status', 'Pending')->count() }}
-                        </span>
-                        <span class="status-badge status-diterima">
-                            <i class="ti ti-check"></i>
-                            Diterima: {{ $booking->where('status', 'Diterima')->count() }}
-                        </span>
-                        <span class="status-badge status-selesai">
-                            <i class="ti ti-circle-check"></i>
-                            Selesai: {{ $booking->where('status', 'Selesai')->count() }}
-                        </span>
-                    </div>
+                <div>
+                    <div class="stat-value">{{ $booking->where('status','Diterima')->count() }}</div>
+                    <div class="stat-label">Diterima</div>
                 </div>
             </div>
-
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0" id="dataBooking">
-                        <thead>
-                            <tr>
-                                <th width="3%">No</th>
-                                <th width="12%">Kode Booking</th>
-                                <th width="15%">User</th>
-                                <th width="15%">Ruangan</th>
-                                <th width="12%">Tanggal</th>
-                                <th width="10%">Waktu</th>
-                                <th width="10%">Status</th>
-                                <th width="13%" class="text-center">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach ($booking as $data)
-                                <tr data-booking-id="{{ $data->id }}">
-                                    <td class="fw-bold">{{ $loop->iteration }}</td>
-                                    <td>
-                                        <span class="kode-badge">{{ $data->kode }}</span>
-                                    </td>
-                                    <td>
-                                        <div class="d-flex align-items-center">
-                                            <div class="avatar-sm bg-light-info text-info rounded-circle me-2 d-flex align-items-center justify-content-center"
-                                                style="width: 35px; height: 35px;">
-                                                <i class="ti ti-user fs-6"></i>
-                                            </div>
-                                            <div>
-                                                <strong>{{ $data->user->name }}</strong>
-                                                <br>
-                                                <small class="text-muted">{{ $data->user->email }}</small>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <i class="ti ti-door text-primary me-1"></i>
-                                        <strong>{{ $data->ruangan->nama_ruangan }}</strong>
-                                    </td>
-                                    <td>
-                                        <i class="ti ti-calendar text-warning me-1"></i>
-                                        {{ $data->tanggal_format }}
-                                    </td>
-                                    <td>
-                                        <small class="d-block">
-                                            <i class="ti ti-clock"></i>
-                                            {{ substr($data->waktu_mulai, 0, 5) }}
-                                        </small>
-                                        <small class="d-block">
-                                            <i class="ti ti-clock"></i>
-                                            {{ substr($data->waktu_selesai, 0, 5) }}
-                                        </small>
-                                    </td>
-                                    <td>
-                                        @switch($data->status)
-                                            @case('Pending')
-                                                <span class="status-badge status-pending">
-                                                    <i class="ti ti-clock"></i> Pending
-                                                </span>
-                                            @break
-
-                                            @case('Diterima')
-                                                <span class="status-badge status-diterima">
-                                                    <i class="ti ti-check"></i> Diterima
-                                                </span>
-                                            @break
-
-                                            @case('Ditolak')
-                                                <span class="status-badge status-ditolak">
-                                                    <i class="ti ti-x"></i> Ditolak
-                                                </span>
-                                            @break
-
-                                            @case('Selesai')
-                                                <span class="status-badge status-selesai">
-                                                    <i class="ti ti-circle-check"></i> Selesai
-                                                </span>
-                                            @break
-                                        @endswitch
-                                        @if ($data->status === 'Ditolak' && $data->keterangan)
-                                            <br>
-                                            <small class="text-danger" data-bs-toggle="tooltip"
-                                                title="{{ $data->keterangan }}">
-                                                <i class="ti ti-alert-circle"></i> Ada alasan
-                                            </small>
-                                        @endif
-                                    </td>
-                                    <td>
-                                        <div class="btn-group-actions justify-content-center">
-                                            {{-- ✅ FIXED: Approve Button - Tambah @method('PATCH') --}}
-                                            @if ($data->status === 'Pending')
-                                                <form action="{{ route('backend.booking.approve', $data->id) }}"
-                                                    method="POST" class="d-inline">
-                                                    @csrf
-                                                    @method('PATCH')
-                                                    <button type="submit" class="btn btn-sm btn-success"
-                                                        data-bs-toggle="tooltip" title="Terima"
-                                                        onclick="return confirm('Setujui booking ini?')">
-                                                        <i class="ti ti-check"></i>
-                                                    </button>
-                                                </form>
-                                                <button type="button" class="btn btn-sm btn-danger"
-                                                    onclick="rejectBooking({{ $data->id }})" data-bs-toggle="tooltip"
-                                                    title="Tolak">
-                                                    <i class="ti ti-x"></i>
-                                                </button>
-                                            @endif
-
-                                            {{-- ✅ FIXED: Complete Button - Tambah @method('PATCH') --}}
-                                            @if ($data->status === 'Diterima')
-                                                <form action="{{ route('backend.booking.complete', $data->id) }}"
-                                                    method="POST" class="d-inline">
-                                                    @csrf
-                                                    @method('PATCH')
-                                                    <button type="submit" class="btn btn-sm btn-info"
-                                                        data-bs-toggle="tooltip" title="Selesaikan"
-                                                        onclick="return confirm('Selesaikan booking ini?')">
-                                                        <i class="ti ti-circle-check"></i>
-                                                    </button>
-                                                </form>
-                                            @endif
-
-                                            <a href="{{ route('backend.booking.show', $data->id) }}"
-                                                class="btn btn-sm btn-info" data-bs-toggle="tooltip" title="Detail">
-                                                <i class="ti ti-eye"></i>
-                                            </a>
-                                            <a href="{{ route('backend.booking.edit', $data->id) }}"
-                                                class="btn btn-sm btn-warning" data-bs-toggle="tooltip" title="Edit">
-                                                <i class="ti ti-edit"></i>
-                                            </a>
-                                            <form id="delete-form-{{ $data->id }}"
-                                                action="{{ route('backend.booking.destroy', $data->id) }}" method="POST"
-                                                class="d-inline">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="button" class="btn btn-sm btn-danger"
-                                                    onclick="confirmDelete({{ $data->id }})" data-bs-toggle="tooltip"
-                                                    title="Hapus">
-                                                    <i class="ti ti-trash"></i>
-                                                </button>
-                                            </form>
-                                        </div>
-                                    </td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="stat-card">
+                <div class="stat-icon ditolak">
+                    <i class="ti ti-x"></i>
+                </div>
+                <div>
+                    <div class="stat-value">{{ $booking->where('status','Ditolak')->count() }}</div>
+                    <div class="stat-label">Ditolak</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="stat-card">
+                <div class="stat-icon selesai">
+                    <i class="ti ti-circle-check"></i>
+                </div>
+                <div>
+                    <div class="stat-value">{{ $booking->where('status','Selesai')->count() }}</div>
+                    <div class="stat-label">Selesai</div>
                 </div>
             </div>
         </div>
     </div>
+
+    {{-- ── FILTER ───────────────────────────────────────── --}}
+    <div class="filter-card">
+        <form action="{{ route('backend.booking.index') }}" method="GET">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label fw-600 small mb-1">
+                        <i class="ti ti-door me-1 text-muted"></i>Ruangan
+                    </label>
+                    <select name="ruang_id" class="form-select">
+                        <option value="">Semua Ruangan</option>
+                        @foreach ($ruangan as $r)
+                            <option value="{{ $r->id }}" {{ request('ruang_id') == $r->id ? 'selected' : '' }}>
+                                {{ $r->nama_ruangan }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-600 small mb-1">
+                        <i class="ti ti-calendar me-1 text-muted"></i>Tanggal
+                    </label>
+                    <input type="date" name="tanggal" class="form-control" value="{{ request('tanggal') }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-600 small mb-1">
+                        <i class="ti ti-adjustments me-1 text-muted"></i>Status
+                    </label>
+                    <select name="status" class="form-select">
+                        <option value="">Semua Status</option>
+                        @foreach(['Pending','Diterima','Ditolak','Selesai'] as $s)
+                            <option value="{{ $s }}" {{ request('status') == $s ? 'selected' : '' }}>{{ $s }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex gap-2">
+                    <button type="submit" class="btn-orange flex-fill">
+                        <i class="ti ti-search me-1"></i> Filter
+                    </button>
+                    @if(request()->hasAny(['ruang_id','tanggal','status']))
+                        <a href="{{ route('backend.booking.index') }}" class="btn-outline-orange">
+                            <i class="ti ti-x"></i>
+                        </a>
+                    @endif
+                </div>
+            </div>
+        </form>
+    </div>
+
+    {{-- ── TABLE ────────────────────────────────────────── --}}
+    <div class="table-card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <div>
+                <h6 class="fw-bold mb-0 text-gray-800">
+                    <i class="ti ti-list me-2 text-orange"></i>Daftar Booking
+                </h6>
+                <small class="text-muted">Total {{ $booking->count() }} data</small>
+            </div>
+        </div>
+
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0" id="dataBooking">
+                    <thead>
+                        <tr>
+                            <th width="3%">#</th>
+                            <th width="12%">Kode</th>
+                            <th width="17%">Peminjam</th>
+                            <th width="15%">Ruangan</th>
+                            <th width="11%">Tanggal</th>
+                            <th width="11%">Waktu</th>
+                            <th width="12%">Status</th>
+                            <th width="19%" class="text-center">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($booking as $data)
+                        <tr>
+                            <td class="fw-600 text-muted">{{ $loop->iteration }}</td>
+
+                            <td>
+                                <span class="kode-badge">{{ $data->kode }}</span>
+                            </td>
+
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="user-avatar">
+                                        {{ strtoupper(substr($data->user->name, 0, 1)) }}
+                                    </div>
+                                    <div>
+                                        <div class="fw-600" style="font-size:0.88rem">{{ $data->user->name }}</div>
+                                        <div class="text-muted" style="font-size:0.78rem">{{ $data->user->email }}</div>
+                                    </div>
+                                </div>
+                            </td>
+
+                            <td>
+                                <div class="fw-600" style="font-size:0.88rem">
+                                    <i class="ti ti-door me-1" style="color:var(--orange-primary)"></i>
+                                    {{ $data->ruangan->nama_ruangan }}
+                                </div>
+                                @if($data->ruangan->lokasi)
+                                    <div class="text-muted" style="font-size:0.78rem">
+                                        <i class="ti ti-map-pin me-1"></i>{{ $data->ruangan->lokasi }}
+                                    </div>
+                                @endif
+                            </td>
+
+                            <td>
+                                <div class="fw-600" style="font-size:0.88rem">{{ $data->tanggal_format }}</div>
+                                <div class="text-muted" style="font-size:0.78rem">{{ $data->hari }}</div>
+                            </td>
+
+                            <td>
+                                <span class="time-range">
+                                    {{ substr($data->waktu_mulai,0,5) }} – {{ substr($data->waktu_selesai,0,5) }}
+                                </span>
+                            </td>
+
+                            <td>
+                                @php
+                                    $pill = match($data->status) {
+                                        'Pending'  => ['pending',  'ti-clock',        'Pending'],
+                                        'Diterima' => ['diterima', 'ti-check',        'Diterima'],
+                                        'Ditolak'  => ['ditolak',  'ti-x',            'Ditolak'],
+                                        'Selesai'  => ['selesai',  'ti-circle-check', 'Selesai'],
+                                        default    => ['pending',  'ti-help',         $data->status],
+                                    };
+                                @endphp
+                                <span class="status-pill {{ $pill[0] }}">
+                                    <i class="ti {{ $pill[1] }}"></i> {{ $pill[2] }}
+                                </span>
+
+                                @if($data->keterangan && $data->status !== 'Ditolak')
+                                    <br>
+                                    <span class="note-chip" data-bs-toggle="tooltip" title="{{ $data->keterangan }}">
+                                        <i class="ti ti-notes"></i> Keterangan
+                                    </span>
+                                @endif
+
+                                @if($data->status === 'Ditolak' && $data->keterangan)
+                                    <br>
+                                    <span class="note-chip text-danger" style="background:#FEE2E2"
+                                          data-bs-toggle="tooltip" title="{{ $data->keterangan }}">
+                                        <i class="ti ti-alert-circle"></i> Alasan
+                                    </span>
+                                @endif
+                            </td>
+
+                            <td>
+                                <div class="d-flex gap-1 justify-content-center flex-wrap">
+                                    {{-- Approve --}}
+                                    @if($data->status === 'Pending')
+                                        <form action="{{ route('backend.booking.approve', $data->id) }}"
+                                              method="POST" class="d-inline">
+                                            @csrf @method('PATCH')
+                                            <button type="submit" class="btn-action approve"
+                                                    data-bs-toggle="tooltip" title="Terima"
+                                                    onclick="return confirm('Setujui booking ini?')">
+                                                <i class="ti ti-check"></i>
+                                            </button>
+                                        </form>
+                                        <button type="button" class="btn-action reject"
+                                                data-bs-toggle="tooltip" title="Tolak"
+                                                onclick="rejectBooking({{ $data->id }})">
+                                            <i class="ti ti-x"></i>
+                                        </button>
+                                    @endif
+
+                                    {{-- Complete --}}
+                                    @if($data->status === 'Diterima')
+                                        <form action="{{ route('backend.booking.complete', $data->id) }}"
+                                              method="POST" class="d-inline">
+                                            @csrf @method('PATCH')
+                                            <button type="submit" class="btn-action complete"
+                                                    data-bs-toggle="tooltip" title="Selesaikan"
+                                                    onclick="return confirm('Selesaikan booking ini?')">
+                                                <i class="ti ti-circle-check"></i>
+                                            </button>
+                                        </form>
+                                    @endif
+
+                                    <a href="{{ route('backend.booking.show', $data->id) }}"
+                                       class="btn-action view" data-bs-toggle="tooltip" title="Detail">
+                                        <i class="ti ti-eye"></i>
+                                    </a>
+                                    <a href="{{ route('backend.booking.edit', $data->id) }}"
+                                       class="btn-action edit" data-bs-toggle="tooltip" title="Edit">
+                                        <i class="ti ti-edit"></i>
+                                    </a>
+                                    <form id="del-{{ $data->id }}"
+                                          action="{{ route('backend.booking.destroy', $data->id) }}"
+                                          method="POST" class="d-inline">
+                                        @csrf @method('DELETE')
+                                        <button type="button" class="btn-action delete"
+                                                data-bs-toggle="tooltip" title="Hapus"
+                                                onclick="confirmDelete({{ $data->id }})">
+                                            <i class="ti ti-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>
 @endsection
 
 @push('scripts')
-    <script src="https://cdn.datatables.net/2.3.2/js/dataTables.js"></script>
-    <script src="https://cdn.datatables.net/2.3.2/js/dataTables.bootstrap5.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script>
-        $(document).ready(function() {
-            // Init DataTable
-            $('#dataBooking').DataTable({
-                language: {
-                    url: 'https://cdn.datatables.net/plug-ins/1.13.6/i18n/id.json'
-                },
-                order: [
-                    [4, 'desc']
-                ], // Sort by tanggal descending
-                pageLength: 15
-            });
+<script src="https://cdn.datatables.net/2.3.2/js/dataTables.js"></script>
+<script src="https://cdn.datatables.net/2.3.2/js/dataTables.bootstrap5.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+$(document).ready(function () {
+    $('#dataBooking').DataTable({
+        language: { url: 'https://cdn.datatables.net/plug-ins/1.13.6/i18n/id.json' },
+        order: [[4, 'desc']],
+        pageLength: 15,
+    });
 
-            // Initialize tooltips
-            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-            var tooltipList = tooltipTriggerList.map(function(tooltipTriggerEl) {
-                return new bootstrap.Tooltip(tooltipTriggerEl);
-            });
+    document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
+        new bootstrap.Tooltip(el);
+    });
+});
 
-            // Auto-refresh setiap 30 detik untuk update status
-            setInterval(async () => {
-                try {
-                    await fetch("{{ route('backend.booking.index') }}", {
-                        headers: {
-                            "X-CSRF-TOKEN": "{{ csrf_token() }}"
-                        }
-                    });
-                } catch (e) {
-                    console.log('Auto-refresh failed');
-                }
-            }, 30000);
-        });
+function confirmDelete(id) {
+    Swal.fire({
+        title: 'Hapus Booking?',
+        text: 'Data akan dihapus permanen.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#EF4444',
+        cancelButtonColor: '#6B7280',
+        confirmButtonText: 'Ya, Hapus',
+        cancelButtonText: 'Batal',
+        borderRadius: '16px',
+    }).then(r => { if (r.isConfirmed) document.getElementById('del-' + id).submit(); });
+}
 
-        // Konfirmasi delete
-        function confirmDelete(id) {
-            Swal.fire({
-                title: 'Yakin Hapus Booking?',
-                text: "Data booking akan dihapus permanen!",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#d33',
-                cancelButtonColor: '#6c757d',
-                confirmButtonText: 'Ya, Hapus!',
-                cancelButtonText: 'Batal'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    document.getElementById('delete-form-' + id).submit();
-                }
-            });
-        }
-
-        // ✅ FIXED: Reject booking dengan alasan - Tambah method PATCH
-        function rejectBooking(id) {
-            Swal.fire({
-                title: 'Tolak Booking?',
-                input: 'textarea',
-                inputLabel: 'Alasan Penolakan',
-                inputPlaceholder: 'Masukkan alasan penolakan...',
-                inputAttributes: {
-                    'aria-label': 'Masukkan alasan penolakan',
-                    'required': 'required'
-                },
-                showCancelButton: true,
-                confirmButtonText: 'Tolak',
-                confirmButtonColor: '#d33',
-                cancelButtonText: 'Batal',
-                preConfirm: (alasan) => {
-                    if (!alasan) {
-                        Swal.showValidationMessage('Alasan penolakan harus diisi!');
-                    }
-                    return alasan;
-                }
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    // Submit form reject
-                    const form = document.createElement('form');
-                    form.method = 'POST';
-                    form.action = `/admin/booking/${id}/reject`;
-
-                    const csrf = document.createElement('input');
-                    csrf.type = 'hidden';
-                    csrf.name = '_token';
-                    csrf.value = '{{ csrf_token() }}';
-
-                    // ✅ FIXED: Tambah method PATCH
-                    const method = document.createElement('input');
-                    method.type = 'hidden';
-                    method.name = '_method';
-                    method.value = 'PATCH';
-
-                    const keterangan = document.createElement('input');
-                    keterangan.type = 'hidden';
-                    keterangan.name = 'keterangan';
-                    keterangan.value = result.value;
-
-                    form.appendChild(csrf);
-                    form.appendChild(method); // ✅ Tambahkan ini
-                    form.appendChild(keterangan);
-                    document.body.appendChild(form);
-                    form.submit();
-                }
-            });
-        }
-
-        // Real-time update (jika menggunakan Pusher/Echo)
-        @if (config('broadcasting.default') === 'pusher')
-            window.Echo.channel('booking')
-                .listen('BookingExpired', (e) => {
-                    const row = document.querySelector(`[data-booking-id="${e.booking.id}"]`);
-                    if (row) {
-                        const badge = row.querySelector('.status-badge');
-                        badge.className = 'status-badge status-selesai';
-                        badge.innerHTML = '<i class="ti ti-circle-check"></i> Selesai';
-                    }
-                });
-        @endif
-    </script>
+function rejectBooking(id) {
+    Swal.fire({
+        title: 'Tolak Booking',
+        input: 'textarea',
+        inputLabel: 'Alasan Penolakan',
+        inputPlaceholder: 'Tuliskan alasan penolakan...',
+        showCancelButton: true,
+        confirmButtonColor: '#EF4444',
+        cancelButtonColor: '#6B7280',
+        confirmButtonText: 'Tolak',
+        cancelButtonText: 'Batal',
+        preConfirm: v => { if (!v) Swal.showValidationMessage('Alasan wajib diisi'); return v; }
+    }).then(r => {
+        if (!r.isConfirmed) return;
+        const f = document.createElement('form');
+        f.method = 'POST';
+        f.action = `/admin/booking/${id}/reject`;
+        f.innerHTML = `
+            <input type="hidden" name="_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="_method" value="PATCH">
+            <input type="hidden" name="keterangan" value="${r.value}">
+        `;
+        document.body.appendChild(f);
+        f.submit();
+    });
+}
+</script>
 @endpush

@@ -34,7 +34,7 @@ class DendaBooking extends Model
 
     public function booking()
     {
-        return $this->belongsTo(Booking::class);
+        return $this->belongsTo(booking::class);
     }
 
     public function verifikasiBooking()

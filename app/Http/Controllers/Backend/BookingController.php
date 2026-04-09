@@ -199,6 +199,8 @@ class BookingController extends Controller
             'tanggal'       => 'required|date|after_or_equal:today',
             'waktu_mulai'   => 'required|date_format:H:i',
             'waktu_selesai' => 'required|date_format:H:i|after:waktu_mulai',
+            'keterangan'    => 'nullable|string|max:500',
+
         ], [
             'tanggal.after_or_equal' => 'Tanggal booking tidak boleh sebelum hari ini',
             'waktu_selesai.after'    => 'Waktu selesai harus lebih besar dari waktu mulai',
@@ -252,6 +254,7 @@ class BookingController extends Controller
                 'tanggal'       => $request->tanggal,
                 'waktu_mulai'   => $request->waktu_mulai,
                 'waktu_selesai' => $request->waktu_selesai,
+                'keterangan'    => $request->keterangan ?? null,
                 'status'        => 'Pending', // Default pending
             ]);
 

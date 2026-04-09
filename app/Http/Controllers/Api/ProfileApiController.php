@@ -2,7 +2,8 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Booking;
+use App\Models\User;
+use App\Models\booking;
 use App\Models\PeminjamanBarang;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -21,12 +22,12 @@ class ProfileApiController extends Controller
         $today = Carbon::today();
 
         $totalPeminjamanBarang = PeminjamanBarang::where('user_id', $user->id)->count();
-        $totalBookingRuangan   = Booking::where('user_id', $user->id)->count();
+        $totalBookingRuangan   = booking::where('user_id', $user->id)->count();
         $totalKembali          = PeminjamanBarang::where('user_id', $user->id)
             ->whereIn('status', ['dikembalikan', 'selesai'])->count();
         $belumKembali = PeminjamanBarang::where('user_id', $user->id)
             ->where('status', 'disetujui')->count();
-        $bookingAktif = Booking::where('user_id', $user->id)
+        $bookingAktif = booking::where('user_id', $user->id)
             ->whereDate('tanggal', $today)
             ->whereIn('status', ['Diterima'])->count();
 

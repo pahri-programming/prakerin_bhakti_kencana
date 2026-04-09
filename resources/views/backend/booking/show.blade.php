@@ -309,22 +309,25 @@
                                 <span class="status-badge status-pending">
                                     <i class="ti ti-clock"></i> Pending
                                 </span>
-                                @break
+                            @break
+
                             @case('Diterima')
                                 <span class="status-badge status-diterima">
                                     <i class="ti ti-check"></i> Diterima
                                 </span>
-                                @break
+                            @break
+
                             @case('Ditolak')
                                 <span class="status-badge status-ditolak">
                                     <i class="ti ti-x"></i> Ditolak
                                 </span>
-                                @break
+                            @break
+
                             @case('Selesai')
                                 <span class="status-badge status-selesai">
                                     <i class="ti ti-circle-check"></i> Selesai
                                 </span>
-                                @break
+                            @break
                         @endswitch
                     </div>
                 </div>
@@ -358,7 +361,7 @@
                         <strong>{{ $booking->ruangan->nama_ruangan }}</strong><br>
                         <small class="text-muted">
                             <i class="ti ti-users"></i> Kapasitas: {{ $booking->ruangan->kapasitas }} orang
-                            @if($booking->ruangan->lokasi)
+                            @if ($booking->ruangan->lokasi)
                                 | <i class="ti ti-map-pin"></i> {{ $booking->ruangan->lokasi }}
                             @endif
                         </small>
@@ -395,7 +398,9 @@
                             </span>
                         </div>
                         <small class="text-muted mt-1 d-block">
-                            Durasi: {{ \Carbon\Carbon::parse($booking->waktu_mulai)->diffInMinutes(\Carbon\Carbon::parse($booking->waktu_selesai)) }} menit
+                            Durasi:
+                            {{ \Carbon\Carbon::parse($booking->waktu_mulai)->diffInMinutes(\Carbon\Carbon::parse($booking->waktu_selesai)) }}
+                            menit
                         </small>
                     </div>
                 </div>
@@ -423,10 +428,16 @@
                 </div>
 
                 <!-- Keterangan (jika ditolak) -->
-                @if($booking->status === 'Ditolak' && $booking->keterangan)
-                    <div class="alert-keterangan">
-                        <strong><i class="ti ti-alert-circle"></i> Alasan Penolakan:</strong>
-                        <p>{{ $booking->keterangan }}</p>
+                {{-- Keterangan User --}}
+                @if ($booking->keterangan && $booking->status !== 'Ditolak')
+                    <div class="info-row">
+                        <div class="info-label">
+                            <i class="ti ti-notes"></i>
+                            Keperluan
+                        </div>
+                        <div class="info-value">
+                            {{ $booking->keterangan }}
+                        </div>
                     </div>
                 @endif
 
@@ -438,7 +449,8 @@
                     <a href="{{ route('backend.booking.edit', $booking->id) }}" class="btn btn-edit">
                         <i class="ti ti-edit"></i> Edit Booking
                     </a>
-                    <form id="delete-form" action="{{ route('backend.booking.destroy', $booking->id) }}" method="POST" class="d-inline">
+                    <form id="delete-form" action="{{ route('backend.booking.destroy', $booking->id) }}" method="POST"
+                        class="d-inline">
                         @csrf
                         @method('DELETE')
                         <button type="button" class="btn btn-delete" onclick="confirmDelete()">

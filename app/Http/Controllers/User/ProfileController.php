@@ -2,7 +2,7 @@
 namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
-use App\Models\Booking;
+use App\Models\booking;
 use App\Models\PeminjamanBarang;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -16,11 +16,11 @@ class ProfileController extends Controller
         $today = Carbon::today();
 
         $totalPinjamBarang      = PeminjamanBarang::where('user_id', $user->id)->count();
-        $totalPinjamRuangan     = Booking::where('user_id', $user->id)->count();
+        $totalPinjamRuangan     = booking::where('user_id', $user->id)->count();
         $totalPeminjaman        = $totalPinjamBarang + $totalPinjamRuangan;
         $totalKembali           = PeminjamanBarang::where('user_id', $user->id)->whereIn('status', ['dikembalikan', 'selesai'])->count();
         $belumKembali           = PeminjamanBarang::where('user_id', $user->id)->where('status', 'disetujui')->count();
-        $ruanganSedangDigunakan = Booking::where('user_id', $user->id)->whereDate('tanggal', $today)->whereIn('status', ['Diterima'])->count();
+        $ruanganSedangDigunakan = booking::where('user_id', $user->id)->whereDate('tanggal', $today)->whereIn('status', ['Diterima'])->count();
         $roleDisplay            = $user->isAdmin == 1 ? 'Admin' : 'User';
 
         return view('frontend.profile.index', compact(

@@ -2,9 +2,9 @@
 namespace App\Http\Controllers\Backend;
 
 use App\Http\Controllers\Controller;
-use App\Models\Booking;
-use App\Models\Jadwal;
-use App\Models\Ruangan;
+use App\Models\booking;
+use App\Models\jadwal;
+use App\Models\ruangan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -21,7 +21,7 @@ class RuanganController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Ruangan::query();
+        $query = ruangan::query();
 
         //  Filter by status
         if ($request->filled('status')) {
@@ -77,7 +77,7 @@ class RuanganController extends Controller
         try {
             DB::beginTransaction();
 
-            $ruangan = Ruangan::create([
+            $ruangan = ruangan::create([
                 'nama_ruangan' => $request->nama_ruangan,
                 'kapasitas'    => $request->kapasitas,
                 'lokasi'       => $request->lokasi,
@@ -104,7 +104,7 @@ class RuanganController extends Controller
      */
     public function show(string $id)
     {
-        $ruangan = Ruangan::withCount([
+        $ruangan = ruangan::withCount([
             'booking as total_booking',
             'booking as booking_pending'  => function ($q) {
                 $q->where('status', 'Pending');
@@ -118,7 +118,7 @@ class RuanganController extends Controller
             'jadwal as total_jadwal',
         ])->findOrFail($id);
 
-        //  Booking terbaru di ruangan ini
+        //  booking terbaru di ruangan ini
         $recentBookings = $ruangan->booking()
             ->with('user')
             ->latest()
@@ -133,7 +133,7 @@ class RuanganController extends Controller
      */
     public function edit(string $id)
     {
-        $ruangan = Ruangan::findOrFail($id);
+        $ruangan = ruangan::findOrFail($id);
         return view('backend.ruangan.edit', compact('ruangan'));
     }
 
@@ -152,7 +152,7 @@ class RuanganController extends Controller
         try {
             DB::beginTransaction();
 
-            $ruangan = Ruangan::findOrFail($id);
+            $ruangan = ruangan::findOrFail($id);
 
             //  Validasi: Jangan set "tersedia" jika masih ada booking aktif
             if ($request->status === 'tersedia') {
@@ -194,7 +194,7 @@ class RuanganController extends Controller
     public function destroy(string $id)
     {
         try {
-            $ruangan = Ruangan::findOrFail($id);
+            $ruangan = ruangan::findOrFail($id);
 
             //  Cek booking yang terkait
             if ($ruangan->booking()->exists()) {
@@ -237,7 +237,7 @@ class RuanganController extends Controller
     public function toggleStatus(Request $request, string $id)
     {
         try {
-            $ruangan = Ruangan::findOrFail($id);
+            $ruangan = ruangan::findOrFail($id);
 
             // Jangan toggle manual jika ada booking aktif
             $adaBookingAktif = $ruangan->booking()

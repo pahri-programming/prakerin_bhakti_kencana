@@ -46,7 +46,7 @@ class DendaPengembalian extends Model
      */
     public function verifikasiPengembalian()
     {
-        return $this->belongsTo(VerifikasiPengembalian::class);
+        return $this->belongsTo(Verifikasipengembalian::class);
     }
 
     /**

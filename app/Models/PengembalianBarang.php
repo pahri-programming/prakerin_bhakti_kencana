@@ -39,7 +39,7 @@ class PengembalianBarang extends Model
      */
     public function barangRuangan()
     {
-        return $this->belongsTo(BarangRuangan::class, 'barang_ruangan_id');
+        return $this->belongsTo(barangruangan::class, 'barang_ruangan_id');
     }
 
     /**

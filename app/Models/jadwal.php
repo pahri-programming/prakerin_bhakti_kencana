@@ -20,7 +20,7 @@ class jadwal extends Model
     // Relasi
     public function ruangan()
     {
-        return $this->belongsTo(Ruangan::class, 'ruang_id');
+        return $this->belongsTo(ruangan::class, 'ruang_id');
     }
 
     // Accessor untuk format tanggal

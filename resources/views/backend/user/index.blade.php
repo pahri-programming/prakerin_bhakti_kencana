@@ -36,10 +36,10 @@
                                             <td>{{ $data->isAdmin == 1 ? 'Admin' : 'User' }}</td>
                                             <td class="text-center">
                                                 <div class="d-flex justify-content-center gap-2">
-                                                    <a href="{{ route('backend.user.edit', $data->id) }}"
+                                                    {{-- <a href="{{ route('backend.user.edit', $data->id) }}"
                                                         class="btn btn-sm btn-warning d-flex align-items-center">
                                                         <i class="ti ti-pencil me-1"></i>Edit
-                                                    </a>
+                                                    </a> --}}
 
                                                     @if (!($data->isAdmin == 1 && $loop->first))
                                                         <form id="delete-form-{{ $data->id }}"
